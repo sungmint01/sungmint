@@ -230,9 +230,9 @@ function StudentApp(){
         </div>
         {probs.map((p,i)=>(
           <div key={i} style={{background:"#ffffff",borderRadius:16,border:"1px solid #e2e8f0",marginBottom:14,overflow:"hidden"}}>
-            <div style={{padding:"11px 16px",borderBottom:"1px solid #0f172a",display:"flex",alignItems:"center",gap:8}}>
-              <div style={{width:30,height:30,borderRadius:9,background:answers[i]!==undefined&&answers[i]!==""?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#334155",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Black Han Sans',sans-serif",fontSize:14,color:"#fff",flexShrink:0}}>{i+1}</div>
-              <span style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:5,background:p.type==="객관식"?"#1e3a5f":"#1a2e1a",color:p.type==="객관식"?"#60a5fa":"#4ade80"}}>{p.type}</span>
+            <div style={{padding:"11px 16px",borderBottom:"1px solid #e9e4ff",display:"flex",alignItems:"center",gap:8}}>
+              <div style={{width:30,height:30,borderRadius:9,background:answers[i]!==undefined&&answers[i]!==""?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#ede9fe",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Black Han Sans',sans-serif",fontSize:14,color:answers[i]!==undefined&&answers[i]!==""?"#fff":"#7c3aed",flexShrink:0}}>{i+1}</div>
+              <span style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:5,background:p.type==="객관식"?"#ede9fe":"#f0fff4",color:p.type==="객관식"?"#6d28d9":"#16a34a"}}>{p.type}</span>
               {p.unit&&<span style={{fontSize:11,color:"#a0aec0",marginLeft:2}}>📌 {p.unit}</span>}
             </div>
             <div style={{padding:"14px 16px"}}>
@@ -241,8 +241,8 @@ function StudentApp(){
               {p.type==="객관식"?(
                 <div style={{display:"flex",flexDirection:"column",gap:7}}>
                   {p.options.map((opt,oi)=>(
-                    <div key={oi} onClick={()=>setAnswers(a=>({...a,[i]:String(oi+1)}))} style={{padding:"11px 14px",borderRadius:10,cursor:"pointer",border:"2px solid "+(answers[i]===String(oi+1)?"#6366f1":"#334155"),background:answers[i]===String(oi+1)?"#1e1b4b":"#0f172a",display:"flex",alignItems:"center",gap:10,transition:"all 0.12s"}}>
-                      <div style={{width:24,height:24,borderRadius:"50%",flexShrink:0,background:answers[i]===String(oi+1)?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#334155",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#fff"}}>{oi+1}</div>
+                    <div key={oi} onClick={()=>setAnswers(a=>({...a,[i]:String(oi+1)}))} style={{padding:"11px 14px",borderRadius:10,cursor:"pointer",border:"2px solid "+(answers[i]===String(oi+1)?"#6366f1":"#e2e8f0"),background:answers[i]===String(oi+1)?"#ede9fe":"#ffffff",display:"flex",alignItems:"center",gap:10,transition:"all 0.12s"}}>
+                      <div style={{width:24,height:24,borderRadius:"50%",flexShrink:0,background:answers[i]===String(oi+1)?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:answers[i]===String(oi+1)?"#fff":"#718096"}}>{oi+1}</div>
                       <span style={{fontSize:14,color:"#1a202c"}}>{opt}</span>
                     </div>
                   ))}
@@ -278,7 +278,7 @@ function StudentApp(){
         {result.graded.map((p,i)=>{
           return(
             <div key={i} style={{background:"#ffffff",borderRadius:14,border:"2px solid "+(p.correct?"#059669":"#dc2626"),marginBottom:12,overflow:"hidden"}}>
-              <div style={{padding:"11px 16px",borderBottom:"1px solid #0f172a",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+              <div style={{padding:"11px 16px",borderBottom:"1px solid #e9e4ff",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                 <div style={{width:28,height:28,borderRadius:8,background:p.correct?"#059669":"#dc2626",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"#fff",fontWeight:900,flexShrink:0}}>{i+1}</div>
                 <span style={{fontSize:13,fontWeight:700,color:p.correct?"#4ade80":"#f87171"}}>{p.correct?"✅ 정답":"❌ 오답"}</span>
                 {p.unit&&<span style={{fontSize:11,color:"#a0aec0"}}>📌 {p.unit}</span>}
@@ -449,7 +449,7 @@ function TeacherApp(){
 
           {problems.map((p,i)=>(
             <div key={i} style={{background:"#ffffff",borderRadius:14,border:"1px solid #e2e8f0",marginBottom:14,overflow:"hidden"}}>
-              <div style={{padding:"11px 16px",borderBottom:"1px solid #0f172a",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+              <div style={{padding:"11px 16px",borderBottom:"1px solid #e9e4ff",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                 <div style={{width:28,height:28,borderRadius:8,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Black Han Sans',sans-serif",fontSize:13,color:"#fff"}}>{i+1}</div>
                 <span style={{fontWeight:700,color:"#1a202c",fontSize:13}}>문제 {i+1}</span>
                 <div style={{display:"flex",gap:5,marginLeft:"auto"}}>
@@ -490,7 +490,7 @@ function TeacherApp(){
                     <div style={{fontSize:11,color:"#a0aec0",marginBottom:6}}>보기 (번호 클릭 → 정답 설정)</div>
                     {p.options.map((opt,oi)=>(
                       <div key={oi} style={{display:"flex",gap:7,alignItems:"center",marginBottom:5}}>
-                        <div onClick={()=>updateProb(i,"answer",String(oi+1))} style={{width:26,height:26,borderRadius:"50%",flexShrink:0,cursor:"pointer",background:p.answer===String(oi+1)?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#334155",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#fff"}}>{oi+1}</div>
+                        <div onClick={()=>updateProb(i,"answer",String(oi+1))} style={{width:26,height:26,borderRadius:"50%",flexShrink:0,cursor:"pointer",background:p.answer===String(oi+1)?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#334155",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:answers[i]===String(oi+1)?"#fff":"#718096"}}>{oi+1}</div>
                         <input value={opt} onChange={e=>updateOpt(i,oi,e.target.value)} placeholder={`${oi+1}번 보기`}
                           style={{flex:1,background:"#f8faff",border:"2px solid "+(p.answer===String(oi+1)?"#6366f1":"#334155"),borderRadius:7,padding:"7px 11px",fontSize:12,color:"#1a202c",outline:"none"}}/>
                       </div>
@@ -618,7 +618,7 @@ function TeacherApp(){
               const weakUnits=Object.entries(st.byUnit).filter(([,v])=>v.total>=1&&Math.round(v.correct/v.total*100)<60).sort((a,b)=>Math.round(a[1].correct/a[1].total*100)-Math.round(b[1].correct/b[1].total*100));
               return(
                 <div key={sName} style={{background:"#ffffff",borderRadius:14,border:"1px solid #e2e8f0",marginBottom:14,overflow:"hidden"}}>
-                  <div style={{padding:"14px 18px",borderBottom:"1px solid #0f172a",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+                  <div style={{padding:"14px 18px",borderBottom:"1px solid #e9e4ff",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
                     <div style={{width:40,height:40,borderRadius:10,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>👤</div>
                     <div style={{flex:1}}>
                       <div style={{fontWeight:700,fontSize:16,color:"#1a202c"}}>{sName}</div>
