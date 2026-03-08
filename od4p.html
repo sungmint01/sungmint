@@ -192,7 +192,8 @@ function StudentApp(){
           </div>
         ):(
           <div style={{background:"#1e293b",borderRadius:20,border:"1px solid #334155",padding:28,boxShadow:"0 8px 32px rgba(0,0,0,0.3)"}}>
-            <div style={{fontSize:13,color:"#64748b",marginBottom:16}}>이름을 입력하고 시작해요 ✏️</div>
+            <div style={{fontSize:13,color:"#64748b",marginBottom:8}}>이름을 입력하고 시작해요 ✏️</div>
+            <div style={{fontSize:14,fontWeight:700,color:"#f87171",marginBottom:16}}>실명으로 적으세요!!</div>
             <input value={name} onChange={e=>setName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&startQuiz()} placeholder="홍길동"
               style={{width:"100%",background:"#0f172a",border:"2px solid #334155",borderRadius:10,padding:"13px 16px",fontSize:16,color:"#f1f5f9",outline:"none",textAlign:"center",marginBottom:16}}/>
             <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:20,flexWrap:"wrap"}}>
