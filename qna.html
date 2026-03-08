@@ -277,7 +277,6 @@ function App(){
           {pending>0&&mode==="teacher"&&authed&&<span style={{background:"#ff4757",color:"#fff",borderRadius:20,padding:"1px 8px",fontSize:11,fontWeight:700}}>미답변 {pending}</span>}
         </div>
         <div style={{display:"flex",gap:6}}>
-          <button onClick={()=>{setMode("student");setAuthed(false);setPw("");}} style={{padding:"5px 14px",borderRadius:6,border:"none",cursor:"pointer",background:mode==="student"?"#e8f4fd":"transparent",color:mode==="student"?"#1565c0":"#94a3b8",fontWeight:600,fontSize:12}}>📷 질문하기</button>
           <button onClick={()=>setMode("teacher")} style={{padding:"5px 14px",borderRadius:6,border:"none",cursor:"pointer",background:mode==="teacher"?"#fff0f6":"transparent",color:mode==="teacher"?"#c2185b":"#94a3b8",fontWeight:600,fontSize:12}}>🔐 선생님</button>
         </div>
       </header>
