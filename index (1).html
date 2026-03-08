@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>sungmint</title>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Noto Sans KR',sans-serif;background:#080b14;color:#e8eef7;min-height:100vh}
+    input,textarea,button,select{font-family:'Noto Sans KR',sans-serif}
+    ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#0f1623}::-webkit-scrollbar-thumb{background:#1e2d45;border-radius:3px}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script>emailjs.init("9834V_7luPj7hfNIz");</script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.23.6/babel.min.js"></script>
+<script>
+const firebaseConfig={apiKey:"AIzaSyAN7K0-V9PPepqmcNq0qA1xg_Sr8n-xiu0",authDomain:"qna-sungmint.firebaseapp.com",databaseURL:"https://qna-sungmint-default-rtdb.firebaseio.com",projectId:"qna-sungmint",storageBucket:"qna-sungmint.firebasestorage.app",messagingSenderId:"1050653821753",appId:"1:1050653821753:web:eb604160345bea4fd5b6e8"};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
+</script>
+<script type="text/babel" data-presets="react">
+const {useState,useEffect,useRef,useMemo}=React;
+const TEACHER_PW="1340";
+
+// ══════════════════════════════════
+// QnA 앱
+// ══════════════════════════════════
+
+const SC = {
+  "공통수학1":["#fff3e0","#e65100"],
+  "공통수학2":["#fce4ec","#c62828"],
+  "대수(수1)":["#e3f2fd","#1565c0"],
+  "미적분1(수2)":["#e8f5e9","#1b5e20"],
+  "확통":["#f3e5f5","#6a1b9a"],
+  "기하":["#e0f7fa","#006064"],
+  "미적분2":["#fff8e1","#f57f17"]
+};
+
+function getYtId(url){
+  if(!url) return null;
+  const m = url.match(/(?:youtu\.be\/|v=|\/embed\/)([A-Za-z0-9_-]{11})/);
+  return m?m[1]:null;
+}
+
+function compressImage(file, cb){
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX=800;
+      let w=img.width, h=img.height;
+      if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+      if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
+      const c=document.createElement("canvas");
+      c.width=w; c.height=h;
+      c.getContext("2d").drawImage(img,0,0,w,h);
+      cb(c.toDataURL("image/jpeg",0.6));
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// Firebase DB functions
+function listenQs(cb){
+  const ref=db.ref("questions");
+  ref.on("value", snap=>{
+    const val=snap.val()||{};
+    cb(Object.values(val).sort((a,b)=>b.ts-a.ts));
+  });
+  return ()=>ref.off();
+}
+function pushQ(q){ return db.ref("questions/"+q.id).set(q); }
+function updateQ(id,data){ return db.ref("questions/"+id).update(data); }
+function deleteQ(id){ return db.ref("questions/"+id).remove(); }
+
+// Question Card
+function QCard({q,isTeacher,replyTarget,setReplyTarget,videoUrl,setVideoUrl,replyComment,setReplyComment,onReply,onDelete}){
+  const [big,setBig]=useState(false);
+  const [bg,text]=SC[q.subject]||SC["기타"];
+  const ytId=getYtId(q.videoUrl);
+  return(
+    <div style={{background:"#fff",borderRadius:16,border:"2px solid "+(q.answered?"#c8e6c9":"#e8eaf6"),marginBottom:16,overflow:"hidden",boxShadow:"0 2px 10px rgba(0,0,0,0.06)"}}>
+      <div style={{padding:"12px 16px",display:"flex",alignItems:"center",gap:8,borderBottom:"1px solid #f0f0f0",flexWrap:"wrap"}}>
+        <span style={{fontSize:20}}>🙈</span>
+        <div style={{flex:1}}>
+          <span style={{fontWeight:700,fontSize:13,color:"#546e7a"}}>익명의 학생</span>
+          <span style={{fontSize:11,color:"#b0bec5",marginLeft:8}}>{new Date(q.ts).toLocaleDateString("ko-KR",{month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}</span>
+        </div>
+        <span style={{background:bg,color:text,borderRadius:6,padding:"2px 8px",fontSize:11,fontWeight:700}}>{q.subject}</span>
+        {q.answered
+          ?<span style={{background:"#e8f5e9",color:"#2e7d32",borderRadius:6,padding:"2px 8px",fontSize:11,fontWeight:700}}>✅ 해설완료</span>
+          :<span style={{background:"#fff3e0",color:"#e65100",borderRadius:6,padding:"2px 8px",fontSize:11,fontWeight:700}}>⏳ 대기중</span>
+        }
+        {isTeacher&&<button onClick={onDelete} style={{background:"#ffebee",border:"none",borderRadius:6,color:"#f44336",padding:"3px 8px",cursor:"pointer",fontSize:11}}>삭제</button>}
+      </div>
+
+      {q.photo&&(
+        <div style={{background:"#f8f9fe",padding:10,cursor:"pointer"}} onClick={()=>setBig(!big)}>
+          <img src={q.photo} alt="질문" style={{width:"100%",maxHeight:big?9999:200,objectFit:big?"contain":"cover",borderRadius:8,display:"block"}}/>
+          <div style={{textAlign:"center",fontSize:11,color:"#b0bec5",marginTop:4}}>{big?"▲ 접기":"▼ 펼쳐보기"}</div>
+        </div>
+      )}
+      {q.text&&<div style={{padding:"10px 16px",fontSize:14,color:"#37474f",lineHeight:1.7,borderBottom:"1px solid #f0f0f0"}}>{q.text}</div>}
+
+      {q.answered&&(
+        <div style={{background:"#f1f8e9",padding:"14px 16px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+            <span>🎬</span><span style={{fontWeight:700,fontSize:14,color:"#2e7d32"}}>선생님 해설</span>
+          </div>
+          {q.comment&&<div style={{fontSize:13,color:"#33691e",lineHeight:1.6,marginBottom:10,background:"#dcedc8",borderRadius:8,padding:"8px 12px"}}>{q.comment}</div>}
+          {q.videoUrl&&(ytId
+            ?<div style={{borderRadius:10,overflow:"hidden"}}><iframe width="100%" height="220" src={"https://www.youtube.com/embed/"+ytId} frameBorder="0" allowFullScreen style={{display:"block"}}/></div>
+            :<a href={q.videoUrl} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:8,background:"#fff",border:"2px solid #a5d6a7",borderRadius:10,padding:"10px 14px",color:"#2e7d32",fontWeight:700,fontSize:13,textDecoration:"none"}}>🔗 해설 영상 보러가기</a>
+          )}
+        </div>
+      )}
+
+      {isTeacher&&(
+        replyTarget===q.id?(
+          <div style={{padding:"12px 16px",background:"#fafafa",borderTop:"1px solid #f0f0f0"}}>
+            <div style={{fontWeight:700,fontSize:13,color:"#546e7a",marginBottom:8}}>🎬 해설 달기</div>
+            <textarea value={replyComment} onChange={e=>setReplyComment(e.target.value)} placeholder="코멘트 (선택)" rows={2}
+              style={{width:"100%",border:"2px solid #e8eaf6",borderRadius:8,padding:"8px 12px",fontSize:13,resize:"none",outline:"none",marginBottom:6}}/>
+            <input value={videoUrl} onChange={e=>setVideoUrl(e.target.value)} placeholder="YouTube 링크 붙여넣기"
+              style={{width:"100%",border:"2px solid #e8eaf6",borderRadius:8,padding:"8px 12px",fontSize:13,outline:"none",marginBottom:8}}/>
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+              <button onClick={()=>{setReplyTarget(null);setVideoUrl("");setReplyComment("");}}
+                style={{background:"#f0f0f0",border:"none",borderRadius:8,color:"#546e7a",padding:"7px 16px",cursor:"pointer",fontSize:13}}>취소</button>
+              <button onClick={onReply}
+                style={{background:"linear-gradient(135deg,#2e7d32,#43a047)",border:"none",borderRadius:8,color:"#fff",padding:"7px 16px",cursor:"pointer",fontSize:13,fontWeight:700}}>✅ 등록</button>
+            </div>
+          </div>
+        ):(
+          <div style={{padding:"8px 16px",borderTop:"1px solid #f0f0f0"}}>
+            <button onClick={()=>{setReplyTarget(q.id);setVideoUrl(q.videoUrl||"");setReplyComment(q.comment||"");}}
+              style={{width:"100%",background:"linear-gradient(135deg,#3f51b5,#7c4dff)",border:"none",borderRadius:8,color:"#fff",padding:"9px 0",cursor:"pointer",fontSize:13,fontWeight:700}}>
+              {q.answered?"✏️ 해설 수정":"🎬 해설 달기"}
+            </button>
+          </div>
+        )
+      )}
+
+      {big&&q.photo&&(
+        <div onClick={()=>setBig(false)} style={{position:"fixed",inset:0,background:"#000000cc",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,cursor:"zoom-out"}}>
+          <img src={q.photo} alt="전체" style={{maxWidth:"95vw",maxHeight:"90vh",borderRadius:12}}/>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Main App
+function QnaApp(){
+  const [questions,setQuestions]=useState([]);
+  const [mode,setMode]=useState("student");
+  const [pw,setPw]=useState("");
+  const [pwErr,setPwErr]=useState(false);
+  const [authed,setAuthed]=useState(false);
+  const [emailAlert,setEmailAlert]=useState(true);
+  const emailAlertRef=useRef(true);
+  const [loading,setLoading]=useState(true);
+  const [submitting,setSubmitting]=useState(false);
+  const [done,setDone]=useState(false);
+  const [photo,setPhoto]=useState(null);
+  const [preview,setPreview]=useState(null);
+  const [qText,setQText]=useState("");
+  const [subject,setSubject]=useState("공통수학1");
+  const [replyTarget,setReplyTarget]=useState(null);
+  const [videoUrl,setVideoUrl]=useState("");
+  const [replyComment,setReplyComment]=useState("");
+  const [filter,setFilter]=useState("all");
+  const [subjectFilter,setSubjectFilter]=useState("전체");
+  const fileRef=useRef();
+
+  useEffect(()=>{
+    const unsub=listenQs(qs=>{setQuestions(qs);setLoading(false);});
+    return unsub;
+  },[]);
+
+  const onFile=e=>{
+    const f=e.target.files[0];
+    if(!f) return;
+    compressImage(f,(compressed)=>{setPhoto(compressed);setPreview(compressed);});
+  };
+
+  const submit=async()=>{
+    if(!photo&&!qText.trim()) return;
+    setSubmitting(true);
+    try{
+      const id=Date.now().toString();
+      await pushQ({id,ts:Date.now(),subject,text:qText.trim(),photo:photo||"",answered:false,videoUrl:"",comment:""});
+      // 이메일 알림
+      if(emailAlertRef.current){
+        try{
+          await emailjs.send("service_fl4emqp","template_jsdwyw9",{
+            subject: subject,
+            question_text: qText.trim()||"(사진 첨부)",
+            time: new Date().toLocaleString("ko-KR"),
+          });
+        }catch(e){ console.warn("이메일 오류:",e); }
+      }
+      setPhoto(null);setPreview(null);setQText("");setSubject("공통수학1");
+      setDone(true);setTimeout(()=>setDone(false),3000);
+    }catch(err){
+      alert("전송 실패 😢\n원인: "+err.message);
+    }finally{
+      setSubmitting(false);
+    }
+  };
+
+  const login=()=>{
+    if(pw===TEACHER_PW){setAuthed(true);setPwErr(false);}
+    else{setPwErr(true);setPw("");}
+  };
+
+  const onReply=async(qId)=>{
+    if(!videoUrl.trim()&&!replyComment.trim()) return;
+    await updateQ(qId,{answered:true,videoUrl:videoUrl.trim(),comment:replyComment.trim()});
+    setReplyTarget(null);setVideoUrl("");setReplyComment("");
+  };
+
+  const onDelete=async(qId)=>{
+    if(!window.confirm("삭제할까요?")) return;
+    await deleteQ(qId);
+    if(replyTarget===qId) setReplyTarget(null);
+  };
+
+  const filtered=questions.filter(q=>filter==="all"?true:filter==="pending"?!q.answered:q.answered);
+  const pending=questions.filter(q=>!q.answered).length;
+
+  return(
+    <div style={{minHeight:"100vh",background:"#f8f9fe"}}>
+      <header style={{background:"#1a1a2e",padding:"0 20px",display:"flex",alignItems:"center",justifyContent:"space-between",height:56,position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 16px rgba(0,0,0,0.2)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:18}}>💬</span>
+          <span style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:16,color:"#fff"}}>익명 질문함</span>
+          {pending>0&&mode==="teacher"&&authed&&<span style={{background:"#ff4757",color:"#fff",borderRadius:20,padding:"1px 8px",fontSize:11,fontWeight:700}}>미답변 {pending}</span>}
+        </div>
+        <div style={{display:"flex",gap:6}}>
+          <button onClick={()=>{setMode("student");setAuthed(false);setPw("");}} style={{padding:"5px 14px",borderRadius:6,border:"none",cursor:"pointer",background:mode==="student"?"#e8f4fd":"transparent",color:mode==="student"?"#1565c0":"#94a3b8",fontWeight:600,fontSize:12}}>📷 질문하기</button>
+          <button onClick={()=>setMode("teacher")} style={{padding:"5px 14px",borderRadius:6,border:"none",cursor:"pointer",background:mode==="teacher"?"#fff0f6":"transparent",color:mode==="teacher"?"#c2185b":"#94a3b8",fontWeight:600,fontSize:12}}>🔐 선생님</button>
+        </div>
+      </header>
+
+      <div style={{maxWidth:680,margin:"0 auto",padding:"22px 16px"}}>
+
+        {/* 학생 모드 */}
+        {mode==="student"&&(
+          <>
+            <div style={{background:"#fff",borderRadius:18,border:"2px solid #e8eaf6",padding:22,marginBottom:22,boxShadow:"0 4px 20px rgba(0,0,0,0.06)"}}>
+              <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:20,marginBottom:4}}>모르는 문제 올려봐요</div>
+              <div style={{fontSize:13,color:"#90a4ae",marginBottom:18}}>익명으로 전송돼요. 선생님이 해설 영상을 달아드려요 🎬</div>
+              <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:14}}>
+                {SUBJECTS.map(s=>{const [bg,text]=SC[s];return(
+                  <button key={s} onClick={()=>setSubject(s)} style={{padding:"5px 14px",borderRadius:20,border:"none",cursor:"pointer",background:subject===s?text:bg,color:subject===s?"#fff":text,fontWeight:700,fontSize:12}}>{s}</button>
+                );})}
+              </div>
+              <div onClick={()=>fileRef.current?.click()} style={{border:"2px dashed "+(preview?"#3f51b5":"#c5cae9"),borderRadius:14,padding:preview?8:"26px 20px",textAlign:"center",cursor:"pointer",background:preview?"#e8eaf6":"#f8f9fe",marginBottom:12,overflow:"hidden"}}>
+                <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={onFile}/>
+                {preview?(
+                  <div style={{position:"relative"}}>
+                    <img src={preview} style={{maxWidth:"100%",maxHeight:260,borderRadius:10,display:"block",margin:"0 auto"}}/>
+                    <button onClick={e=>{e.stopPropagation();setPhoto(null);setPreview(null);}} style={{position:"absolute",top:8,right:8,background:"#ff4757",border:"none",borderRadius:"50%",width:28,height:28,color:"#fff",cursor:"pointer",fontWeight:900,fontSize:14}}>✕</button>
+                  </div>
+                ):(
+                  <><div style={{fontSize:32,marginBottom:6}}>📷</div>
+                  <div style={{fontWeight:700,color:"#3f51b5",marginBottom:3}}>문제 사진 업로드</div>
+                  <div style={{fontSize:12,color:"#90a4ae"}}>클릭하거나 사진을 찍어서 올려주세요</div></>
+                )}
+              </div>
+              <textarea value={qText} onChange={e=>setQText(e.target.value)} placeholder="어떤 부분이 모르는지 적어주세요 (선택)" rows={3}
+                style={{width:"100%",border:"2px solid #e8eaf6",borderRadius:10,padding:"10px 14px",fontSize:14,resize:"none",outline:"none",background:"#f8f9fe",marginBottom:14}}/>
+              {done?(
+                <div style={{background:"#e8f5e9",border:"2px solid #a5d6a7",borderRadius:10,padding:"12px 16px",textAlign:"center",color:"#2e7d32",fontWeight:700}}>✅ 질문이 전송됐어요! 선생님이 곧 확인할게요.</div>
+              ):(
+                <button onClick={submit} disabled={submitting||(!photo&&!qText.trim())} style={{width:"100%",background:(!photo&&!qText.trim())?"#e8eaf6":"linear-gradient(135deg,#3f51b5,#7c4dff)",border:"none",borderRadius:10,color:(!photo&&!qText.trim())?"#90a4ae":"#fff",padding:"13px 0",fontSize:15,fontWeight:900,cursor:(!photo&&!qText.trim())?"not-allowed":"pointer",fontFamily:"'Black Han Sans',sans-serif"}}>
+                  {submitting?"전송 중... ⏳":"익명으로 질문 보내기 💌"}
+                </button>
+              )}
+            </div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:8}}>
+              <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:15,color:"#546e7a"}}>✅ 해설 완료된 질문</div>
+            </div>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
+              {["전체",...SUBJECTS].map(s=>(
+                <button key={s} onClick={()=>setSubjectFilter(s)} style={{padding:"5px 12px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,transition:"all 0.15s",
+                  background:subjectFilter===s?"#1a1a2e":"#e8eaf6",
+                  color:subjectFilter===s?"#fff":"#546e7a"
+                }}>{s}</button>
+              ))}
+            </div>
+            {loading?<div style={{textAlign:"center",padding:"40px 0",color:"#90a4ae"}}>불러오는 중...</div>
+              :questions.filter(q=>q.answered&&(subjectFilter==="전체"||q.subject===subjectFilter)).length===0
+                ?<div style={{textAlign:"center",padding:"40px 0",color:"#c5cae9",fontSize:14}}>해당 과목의 해설된 질문이 없어요</div>
+                :questions.filter(q=>q.answered&&(subjectFilter==="전체"||q.subject===subjectFilter)).map(q=><QCard key={q.id} q={q} isTeacher={false}/>)
+            }
+          </>
+        )}
+
+        {/* 선생님 로그인 */}
+        {mode==="teacher"&&!authed&&(
+          <div style={{background:"#fff",borderRadius:18,border:"2px solid #fce4ec",padding:36,maxWidth:320,margin:"60px auto",textAlign:"center",boxShadow:"0 4px 20px rgba(194,24,91,0.08)"}}>
+            <div style={{fontSize:38,marginBottom:10}}>🔐</div>
+            <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:20,marginBottom:6}}>선생님 전용</div>
+            <div style={{fontSize:13,color:"#90a4ae",marginBottom:20}}>비밀번호를 입력해 주세요</div>
+            <input type="password" value={pw} onChange={e=>{setPw(e.target.value);setPwErr(false);}} onKeyDown={e=>e.key==="Enter"&&login()} placeholder="비밀번호"
+              style={{width:"100%",border:"2px solid "+(pwErr?"#f44336":"#fce4ec"),borderRadius:10,padding:"11px 14px",fontSize:16,outline:"none",textAlign:"center",marginBottom:8}}/>
+            {pwErr&&<div style={{color:"#f44336",fontSize:12,marginBottom:8}}>비밀번호가 틀렸어요</div>}
+            <button onClick={login} style={{width:"100%",background:"linear-gradient(135deg,#c2185b,#e91e63)",border:"none",borderRadius:10,color:"#fff",padding:"12px 0",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"'Black Han Sans',sans-serif",marginTop:4}}>입장하기</button>
+          </div>
+        )}
+
+        {/* 선생님 대시보드 */}
+        {mode==="teacher"&&authed&&(
+          <>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,flexWrap:"wrap",gap:8}}>
+              <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:18}}>질문 관리 <span style={{fontSize:13,fontWeight:400,fontFamily:"'Noto Sans KR'",color:"#90a4ae"}}>총 {questions.length}개 · 미답변 {pending}개</span></div>
+              <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                {[["all","전체"],["pending","미답변"],["answered","완료"]].map(([val,label])=>(
+                  <button key={val} onClick={()=>setFilter(val)} style={{padding:"5px 14px",borderRadius:20,border:"none",cursor:"pointer",background:filter===val?"#1a1a2e":"#e8eaf6",color:filter===val?"#fff":"#546e7a",fontWeight:700,fontSize:12}}>{label}</button>
+                ))}
+                <div onClick={()=>{const next=!emailAlert;db.ref('settings/emailAlert').set(next);emailAlertRef.current=next;setEmailAlert(next);}} style={{display:"flex",alignItems:"center",gap:7,cursor:"pointer",background:emailAlert?"#e8f5e9":"#f5f5f5",border:"2px solid "+(emailAlert?"#a5d6a7":"#e0e0e0"),borderRadius:20,padding:"4px 12px 4px 8px",transition:"all 0.2s"}}>
+                  <div style={{width:32,height:18,borderRadius:9,background:emailAlert?"#43a047":"#bdbdbd",position:"relative",transition:"background 0.2s",flexShrink:0}}>
+                    <div style={{position:"absolute",top:2,left:emailAlert?14:2,width:14,height:14,borderRadius:"50%",background:"#fff",transition:"left 0.2s",boxShadow:"0 1px 3px rgba(0,0,0,0.2)"}}/>
+                  </div>
+                  <span style={{fontSize:12,fontWeight:700,color:emailAlert?"#2e7d32":"#9e9e9e",whiteSpace:"nowrap"}}>📧 메일 알림 {emailAlert?"ON":"OFF"}</span>
+                </div>
+              </div>
+            </div>
+            {loading?<div style={{textAlign:"center",padding:"40px 0",color:"#90a4ae"}}>불러오는 중...</div>
+              :filtered.length===0
+                ?<div style={{textAlign:"center",padding:"60px 0",color:"#c5cae9",fontSize:14}}>질문이 없어요</div>
+                :filtered.map(q=>(
+                  <QCard key={q.id} q={q} isTeacher={true}
+                    replyTarget={replyTarget} setReplyTarget={setReplyTarget}
+                    videoUrl={videoUrl} setVideoUrl={setVideoUrl}
+                    replyComment={replyComment} setReplyComment={setReplyComment}
+                    onReply={()=>onReply(q.id)}
+                    onDelete={()=>onDelete(q.id)}/>
+                ))
+            }
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+document.getElementById("loading").style.display="none";
+document.getElementById("root").style.display="block";
+
+
+// ══════════════════════════════════
+// OD4P 앱
+// ══════════════════════════════════
+
+const SUBJECTS=[{label:"공통수학1",key:"gongmath1"},{label:"대수(수1)",key:"daesoo1"}];
+
+// ── 시간 로직 ─────────────────────────────────────────
+// 오전6시~다음날오전2시 접근 가능
+function getAvailableDate(){
+  const now=new Date();
+  const h=now.getHours();
+  if(h>=6){return now.toISOString().slice(0,10);}
+  else if(h<2){const y=new Date(now);y.setDate(y.getDate()-1);return y.toISOString().slice(0,10);}
+  else return null; // 오전2시~6시: 접근불가
+}
+function todayKey(){return new Date().toISOString().slice(0,10);}
+function formatDate(d){if(!d)return"";const[y,m,day]=d.split("-");return`${parseInt(m)}월 ${parseInt(day)}일`;}
+
+// ── Firebase ─────────────────────────────────────────
+function listenQuiz(date,subKey,cb){
+  const ref=db.ref(`od4p/${date}/${subKey}`);
+  ref.on("value",snap=>cb(snap.val()));
+  return()=>ref.off("value");
+}
+function saveProblems(date,subKey,problems){return db.ref(`od4p/${date}/${subKey}/problems`).set(problems);}
+function saveSubmission(date,subKey,name,answers){
+  const key=name.replace(/[.#$[\]\s]/g,"_")+"-"+Date.now();
+  return db.ref(`od4p/${date}/${subKey}/submissions/${key}`).set({name,answers,ts:Date.now()});
+}
+function deleteSubmission(date,subKey,subId){return db.ref(`od4p/${date}/${subKey}/submissions/${subId}`).remove();}
+function deleteAllSubmissions(date,subKey){return db.ref(`od4p/${date}/${subKey}/submissions`).remove();}
+async function fetchAllData(){
+  const snap=await db.ref("od4p").once("value");
+  return snap.val()||{};
+}
+async function listenAllDates(cb){
+  db.ref("od4p").on("value",snap=>cb(snap.val()||{}));
+  return()=>db.ref("od4p").off();
+}
+
+// ── 학생 앱 ──────────────────────────────────────────
+function StudentApp(){
+  const[step,setStep]=useState("subject"); // subject|name|quiz|result|closed|rest
+  const[selSubject,setSelSubject]=useState(null);
+  const[name,setName]=useState("");
+  const[quiz,setQuiz]=useState(null);
+  const[answers,setAnswers]=useState({});
+  const[result,setResult]=useState(null);
+  const[showSol,setShowSol]=useState({});
+  const[loading,setLoading]=useState(false);
+
+  const availDate=getAvailableDate();
+  const now=new Date();
+  const h=now.getHours();
+  const isClosed=(h>=2&&h<6); // 오전2~6시 접근불가
+
+  const loadQuiz=async(sub)=>{
+    if(!availDate){setStep("closed");return;}
+    setLoading(true);
+    listenQuiz(availDate,sub.key,data=>{
+      setQuiz(data);setLoading(false);
+      setSelSubject(sub);setStep("name");
+    });
+  };
+
+  const startQuiz=()=>{
+    if(!name.trim())return;
+    // 기존 제출 기록 확인
+    if(quiz?.submissions){
+      const existing=Object.values(quiz.submissions).find(s=>s.name===name.trim());
+      if(existing){
+        // 기존 결과 복원
+        const probs=Object.values(quiz.problems);
+        let score=0;
+        const graded=probs.map((p,i)=>{
+          const ua=String(existing.answers?.[i]||"").trim();
+          const correct=p.type==="객관식"?ua===String(p.answer):ua.replace(/\s/g,"")===String(p.answer).replace(/\s/g,"");
+          if(correct)score++;
+          return{...p,userAnswer:ua,correct};
+        });
+        setResult({graded,score,total:probs.length,isReview:true});
+        setStep("result");
+        return;
+      }
+    }
+    setStep("quiz");
+  };
+
+  const submit=async()=>{
+    if(!quiz?.problems)return;
+    const probs=Object.values(quiz.problems);
+    const allAnswered=probs.every((_,i)=>answers[i]!==undefined&&answers[i]!=="");
+    if(!allAnswered){alert("모든 문제에 답을 입력해주세요!");return;}
+    let score=0;
+    const graded=probs.map((p,i)=>{
+      const ua=String(answers[i]||"").trim();
+      const correct=p.type==="객관식"?ua===String(p.answer):ua.replace(/\s/g,"")===String(p.answer).replace(/\s/g,"");
+      if(correct)score++;
+      return{...p,userAnswer:ua,correct};
+    });
+    await saveSubmission(availDate,selSubject.key,name,answers);
+    setResult({graded,score,total:probs.length});
+    setStep("result");
+  };
+
+  // ── 오전2~6시 접근불가 화면 ────────────────────────
+  if(isClosed)return(
+    <div style={{maxWidth:400,margin:"0 auto",padding:"80px 20px",textAlign:"center"}}>
+      <div style={{fontSize:52,marginBottom:16}}>🌙</div>
+      <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:24,color:"#f1f5f9",marginBottom:10}}>지금은 쉬는 시간</div>
+      <div style={{color:"#64748b",fontSize:14,lineHeight:1.8}}>오전 6시부터 문제를 풀 수 있어요<br/>조금만 기다려줘요 😴</div>
+    </div>
+  );
+
+  // ── 과목 선택 ───────────────────────────────────────
+  if(step==="subject")return(
+    <div style={{maxWidth:440,margin:"0 auto",padding:"50px 20px",textAlign:"center"}}>
+      <div style={{marginBottom:6,fontSize:13,color:"#475569"}}>{availDate?formatDate(availDate):"─"}</div>
+      <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:38,marginBottom:4,background:"linear-gradient(135deg,#6366f1,#a78bfa)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>OD4P</div>
+      <div style={{fontSize:12,color:"#475569",marginBottom:36,letterSpacing:1}}>OneDay 4 Problem</div>
+      <div style={{fontSize:14,color:"#94a3b8",marginBottom:18}}>풀 과목을 선택하세요</div>
+      <div style={{display:"flex",flexDirection:"column",gap:12}}>
+        {SUBJECTS.map(sub=>(
+          <button key={sub.key} onClick={()=>loadQuiz(sub)} style={{background:"#1e293b",border:"2px solid #334155",borderRadius:16,padding:"20px 24px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"all 0.15s"}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="#6366f1";e.currentTarget.style.background="#1e1b4b";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="#334155";e.currentTarget.style.background="#1e293b";}}>
+            <div>
+              <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:18,color:"#f1f5f9",textAlign:"left"}}>{sub.label}</div>
+              <div style={{fontSize:12,color:"#64748b",marginTop:2,textAlign:"left"}}>오늘의 문제 4개</div>
+            </div>
+            <div style={{fontSize:22}}>→</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  if(loading)return<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"60vh",color:"#64748b",flexDirection:"column",gap:12}}><div style={{fontSize:32}}>⏳</div>불러오는 중...</div>;
+
+  // ── 이름 입력 ───────────────────────────────────────
+  if(step==="name"){
+    const noQuiz=!quiz?.problems;
+    return(
+      <div style={{maxWidth:420,margin:"0 auto",padding:"40px 20px",textAlign:"center"}}>
+        <button onClick={()=>setStep("subject")} style={{background:"none",border:"none",color:"#64748b",cursor:"pointer",fontSize:13,marginBottom:20}}>← 과목 선택으로</button>
+        <div style={{display:"inline-block",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",borderRadius:10,padding:"4px 14px",fontSize:12,fontWeight:700,color:"#fff",marginBottom:12}}>{selSubject?.label}</div>
+        <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:28,color:"#f1f5f9",marginBottom:4}}>오늘의 문제</div>
+        <div style={{fontSize:13,color:"#64748b",marginBottom:24}}>{formatDate(availDate)}</div>
+        {noQuiz?(
+          <div style={{background:"#1e293b",borderRadius:18,border:"1px solid #334155",padding:40}}>
+            <div style={{fontSize:48,marginBottom:14}}>🎉</div>
+            <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:22,color:"#f1f5f9",marginBottom:8}}>오늘은 쉬는 날!!</div>
+            <div style={{color:"#64748b",fontSize:13}}>내일 또 열심히 해봐요 😊</div>
+          </div>
+        ):(
+          <div style={{background:"#1e293b",borderRadius:20,border:"1px solid #334155",padding:28,boxShadow:"0 8px 32px rgba(0,0,0,0.3)"}}>
+            <div style={{fontSize:13,color:"#64748b",marginBottom:16}}>이름을 입력하고 시작해요 ✏️</div>
+            <input value={name} onChange={e=>setName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&startQuiz()} placeholder="홍길동"
+              style={{width:"100%",background:"#0f172a",border:"2px solid #334155",borderRadius:10,padding:"13px 16px",fontSize:16,color:"#f1f5f9",outline:"none",textAlign:"center",marginBottom:16}}/>
+            <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:20,flexWrap:"wrap"}}>
+              {Object.values(quiz.problems).map((p,i)=>(
+                <div key={i} style={{background:"#0f172a",borderRadius:8,padding:"5px 11px",fontSize:11,color:"#64748b",border:"1px solid #334155"}}>{i+1}번 {p.type==="객관식"?"🔵":"✏️"}</div>
+              ))}
+            </div>
+            <button onClick={startQuiz} disabled={!name.trim()} style={{width:"100%",background:name.trim()?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#334155",border:"none",borderRadius:12,color:name.trim()?"#fff":"#64748b",padding:"15px 0",fontSize:16,fontWeight:900,cursor:name.trim()?"pointer":"not-allowed",fontFamily:"'Black Han Sans',sans-serif"}}>
+              시작하기 →
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── 문제 풀기 ───────────────────────────────────────
+  if(step==="quiz"){
+    const probs=Object.values(quiz.problems);
+    return(
+      <div style={{maxWidth:600,margin:"0 auto",padding:"24px 16px"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+          <div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{background:"linear-gradient(135deg,#6366f1,#8b5cf6)",borderRadius:6,padding:"2px 10px",fontSize:11,fontWeight:700,color:"#fff"}}>{selSubject?.label}</span>
+              <span style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:18,color:"#f1f5f9"}}>{formatDate(availDate)}</span>
+            </div>
+            <div style={{fontSize:12,color:"#64748b",marginTop:2}}>{name}</div>
+          </div>
+          <div style={{background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"6px 14px",fontSize:13,color:"#94a3b8"}}>{Object.keys(answers).length}/{probs.length}</div>
+        </div>
+        {probs.map((p,i)=>(
+          <div key={i} style={{background:"#1e293b",borderRadius:16,border:"1px solid #334155",marginBottom:14,overflow:"hidden"}}>
+            <div style={{padding:"11px 16px",borderBottom:"1px solid #0f172a",display:"flex",alignItems:"center",gap:8}}>
+              <div style={{width:30,height:30,borderRadius:9,background:answers[i]!==undefined&&answers[i]!==""?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#334155",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Black Han Sans',sans-serif",fontSize:14,color:"#fff",flexShrink:0}}>{i+1}</div>
+              <span style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:5,background:p.type==="객관식"?"#1e3a5f":"#1a2e1a",color:p.type==="객관식"?"#60a5fa":"#4ade80"}}>{p.type}</span>
+              {p.unit&&<span style={{fontSize:11,color:"#64748b",marginLeft:2}}>📌 {p.unit}</span>}
+            </div>
+            <div style={{padding:"14px 16px"}}>
+              {p.image&&<img src={p.image} style={{width:"100%",borderRadius:10,marginBottom:12,maxHeight:300,objectFit:"contain",background:"#fff"}}/>}
+              {p.question&&<div style={{fontSize:15,lineHeight:1.8,color:"#e2e8f0",marginBottom:14,whiteSpace:"pre-wrap"}}>{p.question}</div>}
+              {p.type==="객관식"?(
+                <div style={{display:"flex",flexDirection:"column",gap:7}}>
+                  {p.options.map((opt,oi)=>(
+                    <div key={oi} onClick={()=>setAnswers(a=>({...a,[i]:String(oi+1)}))} style={{padding:"11px 14px",borderRadius:10,cursor:"pointer",border:"2px solid "+(answers[i]===String(oi+1)?"#6366f1":"#334155"),background:answers[i]===String(oi+1)?"#1e1b4b":"#0f172a",display:"flex",alignItems:"center",gap:10,transition:"all 0.12s"}}>
+                      <div style={{width:24,height:24,borderRadius:"50%",flexShrink:0,background:answers[i]===String(oi+1)?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#334155",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#fff"}}>{oi+1}</div>
+                      <span style={{fontSize:14,color:"#e2e8f0"}}>{opt}</span>
+                    </div>
+                  ))}
+                </div>
+              ):(
+                <input value={answers[i]||""} onChange={e=>setAnswers(a=>({...a,[i]:e.target.value}))} placeholder="답을 입력하세요"
+                  style={{width:"100%",background:"#0f172a",border:"2px solid #334155",borderRadius:10,padding:"12px 14px",fontSize:15,color:"#f1f5f9",outline:"none"}}/>
+              )}
+            </div>
+          </div>
+        ))}
+        <button onClick={submit} style={{width:"100%",background:"linear-gradient(135deg,#059669,#10b981)",border:"none",borderRadius:14,color:"#fff",padding:"15px 0",fontSize:17,fontWeight:900,cursor:"pointer",fontFamily:"'Black Han Sans',sans-serif",marginTop:4}}>✅ 제출하기</button>
+      </div>
+    );
+  }
+
+  // ── 결과 ────────────────────────────────────────────
+  if(step==="result"&&result){
+    const pct=Math.round(result.score/result.total*100);
+    const emoji=pct===100?"🏆":pct>=75?"😊":pct>=50?"😅":"💪";
+    return(
+      <div style={{maxWidth:600,margin:"0 auto",padding:"24px 16px"}}>
+        <div style={{background:"#1e293b",borderRadius:20,border:"1px solid #334155",padding:26,textAlign:"center",marginBottom:18}}>
+          <div style={{fontSize:48,marginBottom:8}}>{emoji}</div>
+          <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:28,color:"#f1f5f9",marginBottom:4}}>{result.score}/{result.total} 맞았어요!</div>
+          {result.isReview&&<div style={{display:"inline-block",background:"#1e3a5f",border:"1px solid #3b82f6",borderRadius:8,padding:"3px 12px",fontSize:11,color:"#60a5fa",marginBottom:8}}>📋 이미 제출한 기록이에요</div>}
+          <div style={{fontSize:13,color:"#64748b",marginBottom:18}}>{name} · {selSubject?.label} · {formatDate(availDate)}</div>
+          <div style={{height:8,background:"#334155",borderRadius:4,overflow:"hidden",marginBottom:4}}>
+            <div style={{height:"100%",width:pct+"%",background:"linear-gradient(90deg,#6366f1,#8b5cf6)",borderRadius:4}}/>
+          </div>
+          <div style={{fontSize:13,color:"#94a3b8"}}>{pct}점</div>
+        </div>
+        {result.graded.map((p,i)=>{
+          return(
+            <div key={i} style={{background:"#1e293b",borderRadius:14,border:"2px solid "+(p.correct?"#059669":"#dc2626"),marginBottom:12,overflow:"hidden"}}>
+              <div style={{padding:"11px 16px",borderBottom:"1px solid #0f172a",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                <div style={{width:28,height:28,borderRadius:8,background:p.correct?"#059669":"#dc2626",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"#fff",fontWeight:900,flexShrink:0}}>{i+1}</div>
+                <span style={{fontSize:13,fontWeight:700,color:p.correct?"#4ade80":"#f87171"}}>{p.correct?"✅ 정답":"❌ 오답"}</span>
+                {p.unit&&<span style={{fontSize:11,color:"#64748b"}}>📌 {p.unit}</span>}
+                <span style={{fontSize:12,color:"#64748b",marginLeft:"auto"}}>내 답: <strong style={{color:"#e2e8f0"}}>{p.userAnswer||"미입력"}</strong>{!p.correct&&<> · 정답: <strong style={{color:"#4ade80"}}>{p.type==="객관식"?p.answer+"번":p.answer}</strong></>}</span>
+              </div>
+              <div style={{padding:"12px 16px"}}>
+                {p.image&&<img src={p.image} style={{width:"100%",borderRadius:8,marginBottom:10,maxHeight:200,objectFit:"contain",background:"#fff"}}/>}
+                {p.question&&<div style={{fontSize:13,color:"#64748b",marginBottom:10,whiteSpace:"pre-wrap"}}>{p.question}</div>}
+                <button onClick={()=>setShowSol(s=>({...s,[i]:!s[i]}))} style={{background:"#334155",border:"none",borderRadius:8,color:"#94a3b8",padding:"7px 14px",cursor:"pointer",fontSize:12,fontWeight:700,marginBottom:showSol[i]?10:0}}>
+                  {showSol[i]?"▲ 해설 닫기":"📖 해설 보기"}
+                </button>
+                {showSol[i]&&(
+                  <div style={{background:"#0f172a",borderRadius:10,padding:14}}>
+                    {p.solutionText&&<div style={{fontSize:13,color:"#cbd5e1",lineHeight:1.8,marginBottom:p.solutionImage?12:0,whiteSpace:"pre-wrap"}}>{p.solutionText}</div>}
+                    {p.solutionImage&&<img src={p.solutionImage} style={{width:"100%",borderRadius:8,objectFit:"contain",background:"#fff"}}/>}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        <button onClick={()=>{setStep("subject");setAnswers({});setResult(null);setShowSol({});setName("");}} style={{width:"100%",background:"#1e293b",border:"2px solid #334155",borderRadius:14,color:"#94a3b8",padding:"13px 0",fontSize:14,cursor:"pointer",marginTop:4}}>← 처음으로</button>
+      </div>
+    );
+  }
+  return null;
+}
+
+// ── 선생님 앱 ─────────────────────────────────────────
+function TeacherApp(){
+  const[pw,setPw]=useState("");const[pwErr,setPwErr]=useState(false);const[authed,setAuthed]=useState(false);
+  const[tab,setTab]=useState("upload");
+  const[allData,setAllData]=useState({});
+  const[dataLoaded,setDataLoaded]=useState(false);
+
+  // 출제 탭 상태
+  const[editDate,setEditDate]=useState(todayKey());
+  const[editSub,setEditSub]=useState(SUBJECTS[0]);
+  const emptyProb=()=>({type:"객관식",unit:"",question:"",image:"",options:["","","","",""],answer:"1",solutionText:"",solutionImage:""});
+  const[problems,setProblems]=useState([emptyProb(),emptyProb(),emptyProb(),emptyProb()]);
+  const[saveOk,setSaveOk]=useState(false);
+  const[confirmDel,setConfirmDel]=useState(null); // {type:'one'|'all', date, subKey, subId, name}
+  const fr=[useRef(),useRef(),useRef(),useRef()];
+  const frs=[useRef(),useRef(),useRef(),useRef()]; // solution image refs
+
+  // 현황 탭 상태
+  const[selDate,setSelDate]=useState(todayKey());
+  const[selSub,setSelSub]=useState(SUBJECTS[0]);
+
+  const login=()=>{if(pw===TEACHER_PW){setAuthed(true);setPwErr(false);}else{setPwErr(true);setPw("");}};
+
+  useEffect(()=>{
+    if(!authed)return;
+    const unsub=listenAllDates(data=>{setAllData(data);setDataLoaded(true);});
+    return unsub;
+  },[authed]);
+
+  const updateProb=(i,f,v)=>setProblems(ps=>ps.map((p,pi)=>pi===i?{...p,[f]:v}:p));
+  const updateOpt=(i,oi,v)=>setProblems(ps=>ps.map((p,pi)=>pi===i?{...p,options:p.options.map((o,j)=>j===oi?v:o)}:p));
+  const handleImg=(i,e)=>{
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{const img=new Image();img.onload=()=>{const c=document.createElement("canvas");const MAX=1000;let w=img.width,h=img.height;if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);updateProb(i,"image",c.toDataURL("image/jpeg",0.7));};img.src=ev.target.result;};
+    reader.readAsDataURL(file);
+  };
+  const loadIntoForm=()=>{
+    const data=allData?.[editDate]?.[editSub.key];
+    if(!data?.problems){alert("해당 날짜/과목에 저장된 문제가 없어요");return;}
+    const loaded=Object.values(data.problems).map(p=>({type:p.type||"객관식",unit:p.unit||"",question:p.question||"",image:p.image||"",options:p.options||["","","","",""],answer:String(p.answer||"1"),solutionText:p.solutionText||"",solutionImage:p.solutionImage||""}));
+    while(loaded.length<4)loaded.push(emptyProb());
+    setProblems(loaded.slice(0,4));
+  };
+  const handleSolImg=(i,e)=>{
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{const img=new Image();img.onload=()=>{const c=document.createElement("canvas");const MAX=1000;let w=img.width,h=img.height;if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);updateProb(i,"solutionImage",c.toDataURL("image/jpeg",0.7));};img.src=ev.target.result;};
+    reader.readAsDataURL(file);
+  };
+  const saveQuiz=async()=>{
+    const cleaned=problems.map(p=>{const base={type:p.type,unit:p.unit.trim(),question:p.question.trim(),image:p.image||"",solutionText:p.solutionText.trim(),solutionImage:p.solutionImage||"",answer:p.answer};if(p.type==="객관식")base.options=p.options.map(o=>o.trim());return base;});
+    await saveProblems(editDate,editSub.key,cleaned);
+    setSaveOk(true);setTimeout(()=>setSaveOk(false),3000);
+  };
+
+  // 날짜 목록 (allData 기준)
+  const allDates=useMemo(()=>{
+    const dates=new Set(Object.keys(allData||{}));
+    dates.add(todayKey());
+    return Array.from(dates).sort().reverse();
+  },[allData]);
+
+  // 현황 데이터
+  const curData=allData?.[selDate]?.[selSub.key];
+  const curSubs=curData?.submissions?Object.values(curData.submissions):[];
+  const curProbs=curData?.problems?Object.values(curData.problems):[];
+
+  // 학생 분석 데이터
+  const studentStats=useMemo(()=>{
+    const stats={};
+    Object.entries(allData||{}).forEach(([date,dateData])=>{
+      SUBJECTS.forEach(sub=>{
+        const subData=dateData?.[sub.key];
+        if(!subData?.problems||!subData?.submissions)return;
+        const probs=Object.values(subData.problems);
+        Object.values(subData.submissions).forEach(submission=>{
+          const sName=submission.name;
+          if(!stats[sName])stats[sName]={total:0,correct:0,byUnit:{},bySub:{}};
+          if(!stats[sName].bySub[sub.label])stats[sName].bySub[sub.label]={total:0,correct:0};
+          probs.forEach((p,i)=>{
+            const ua=String(submission.answers?.[i]||"").trim();
+            const correct=p.type==="객관식"?ua===String(p.answer):ua.replace(/\s/g,"")===String(p.answer).replace(/\s/g,"");
+            stats[sName].total++;
+            stats[sName].bySub[sub.label].total++;
+            if(correct){stats[sName].correct++;stats[sName].bySub[sub.label].correct++;}
+            const unit=p.unit||"미분류";
+            if(!stats[sName].byUnit[unit])stats[sName].byUnit[unit]={total:0,correct:0};
+            stats[sName].byUnit[unit].total++;
+            if(correct)stats[sName].byUnit[unit].correct++;
+          });
+        });
+      });
+    });
+    return stats;
+  },[allData]);
+
+  if(!authed)return(
+    <div style={{maxWidth:340,margin:"80px auto",padding:"0 20px",textAlign:"center"}}>
+      <div style={{fontSize:36,marginBottom:12}}>🔐</div>
+      <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:22,color:"#f1f5f9",marginBottom:6}}>선생님 전용</div>
+      <div style={{fontSize:13,color:"#64748b",marginBottom:24}}>비밀번호를 입력해 주세요</div>
+      <input type="password" value={pw} onChange={e=>{setPw(e.target.value);setPwErr(false);}} onKeyDown={e=>e.key==="Enter"&&login()} placeholder="비밀번호"
+        style={{width:"100%",background:"#1e293b",border:"2px solid "+(pwErr?"#ef4444":"#334155"),borderRadius:10,padding:"12px 16px",fontSize:16,color:"#f1f5f9",outline:"none",textAlign:"center",marginBottom:8}}/>
+      {pwErr&&<div style={{color:"#ef4444",fontSize:12,marginBottom:8}}>비밀번호가 틀렸어요</div>}
+      <button onClick={login} style={{width:"100%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",borderRadius:10,color:"#fff",padding:"13px 0",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"'Black Han Sans',sans-serif",marginTop:4}}>입장하기</button>
+    </div>
+  );
+
+  return(
+    <div style={{maxWidth:800,margin:"0 auto",padding:"20px 16px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:20,flexWrap:"wrap"}}>
+        <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:18,color:"#f1f5f9"}}>문제 관리</div>
+        <div style={{display:"flex",gap:6,marginLeft:"auto",flexWrap:"wrap"}}>
+          {[["upload","📝 출제"],["results","📊 현황"],["students","👥 학생 분석"]].map(([t,l])=>(
+            <button key={t} onClick={()=>setTab(t)} style={{padding:"7px 14px",borderRadius:8,border:"none",cursor:"pointer",background:tab===t?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#1e293b",color:tab===t?"#fff":"#64748b",fontWeight:700,fontSize:12}}>{l}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── 출제 탭 ── */}
+      {tab==="upload"&&(
+        <div>
+          <div style={{background:"#1e293b",borderRadius:12,border:"1px solid #334155",padding:"14px 16px",marginBottom:18,display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
+            <div>
+              <div style={{fontSize:11,color:"#64748b",marginBottom:4}}>날짜</div>
+              <input type="date" value={editDate} onChange={e=>setEditDate(e.target.value)}
+                style={{background:"#0f172a",border:"2px solid #334155",borderRadius:8,padding:"7px 12px",fontSize:13,color:"#f1f5f9",outline:"none"}}/>
+            </div>
+            <div>
+              <div style={{fontSize:11,color:"#64748b",marginBottom:4}}>과목</div>
+              <div style={{display:"flex",gap:6}}>
+                {SUBJECTS.map(s=>(
+                  <button key={s.key} onClick={()=>setEditSub(s)} style={{padding:"7px 14px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:editSub.key===s.key?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#334155",color:editSub.key===s.key?"#fff":"#94a3b8"}}>{s.label}</button>
+                ))}
+              </div>
+            </div>
+            <button onClick={loadIntoForm} style={{background:"#334155",border:"none",borderRadius:8,color:"#94a3b8",padding:"8px 14px",cursor:"pointer",fontSize:12,marginTop:16}}>기존 불러오기</button>
+          </div>
+
+          {problems.map((p,i)=>(
+            <div key={i} style={{background:"#1e293b",borderRadius:14,border:"1px solid #334155",marginBottom:14,overflow:"hidden"}}>
+              <div style={{padding:"11px 16px",borderBottom:"1px solid #0f172a",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                <div style={{width:28,height:28,borderRadius:8,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Black Han Sans',sans-serif",fontSize:13,color:"#fff"}}>{i+1}</div>
+                <span style={{fontWeight:700,color:"#f1f5f9",fontSize:13}}>문제 {i+1}</span>
+                <div style={{display:"flex",gap:5,marginLeft:"auto"}}>
+                  {["객관식","단답형"].map(t=>(
+                    <button key={t} onClick={()=>updateProb(i,"type",t)} style={{padding:"4px 10px",borderRadius:6,border:"none",cursor:"pointer",fontSize:11,fontWeight:700,background:p.type===t?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#334155",color:p.type===t?"#fff":"#64748b"}}>{t}</button>
+                  ))}
+                </div>
+              </div>
+              <div style={{padding:"14px 16px",display:"flex",flexDirection:"column",gap:11}}>
+                {/* 단원 */}
+                <div>
+                  <div style={{fontSize:11,color:"#64748b",marginBottom:5}}>단원 (통계 분류용)</div>
+                  <input value={p.unit} onChange={e=>updateProb(i,"unit",e.target.value)} placeholder="예: 지수법칙, 인수분해, 함수의 개념..."
+                    style={{width:"100%",background:"#0f172a",border:"2px solid #334155",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#f1f5f9",outline:"none"}}/>
+                </div>
+                {/* 이미지 */}
+                <div>
+                  <div style={{fontSize:11,color:"#64748b",marginBottom:5}}>문제 이미지 (선택)</div>
+                  <input ref={fr[i]} type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImg(i,e)}/>
+                  {p.image?(
+                    <div style={{position:"relative",display:"inline-block"}}>
+                      <img src={p.image} style={{maxWidth:"100%",maxHeight:180,borderRadius:8,objectFit:"contain",background:"#fff"}}/>
+                      <button onClick={()=>updateProb(i,"image","")} style={{position:"absolute",top:5,right:5,background:"#ef4444",border:"none",borderRadius:"50%",width:22,height:22,color:"#fff",cursor:"pointer",fontWeight:900,fontSize:11}}>✕</button>
+                    </div>
+                  ):(
+                    <button onClick={()=>fr[i].current?.click()} style={{background:"#0f172a",border:"2px dashed #334155",borderRadius:8,color:"#64748b",padding:"10px 18px",cursor:"pointer",fontSize:12}}>📷 이미지 업로드</button>
+                  )}
+                </div>
+                {/* 텍스트 */}
+                <div>
+                  <div style={{fontSize:11,color:"#64748b",marginBottom:5}}>문제 텍스트 (선택)</div>
+                  <textarea value={p.question} onChange={e=>updateProb(i,"question",e.target.value)} rows={2} placeholder="문제 내용 입력"
+                    style={{width:"100%",background:"#0f172a",border:"2px solid #334155",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#f1f5f9",outline:"none",resize:"vertical"}}/>
+                </div>
+                {/* 객관식 보기 */}
+                {p.type==="객관식"&&(
+                  <div>
+                    <div style={{fontSize:11,color:"#64748b",marginBottom:6}}>보기 (번호 클릭 → 정답 설정)</div>
+                    {p.options.map((opt,oi)=>(
+                      <div key={oi} style={{display:"flex",gap:7,alignItems:"center",marginBottom:5}}>
+                        <div onClick={()=>updateProb(i,"answer",String(oi+1))} style={{width:26,height:26,borderRadius:"50%",flexShrink:0,cursor:"pointer",background:p.answer===String(oi+1)?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#334155",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#fff"}}>{oi+1}</div>
+                        <input value={opt} onChange={e=>updateOpt(i,oi,e.target.value)} placeholder={`${oi+1}번 보기`}
+                          style={{flex:1,background:"#0f172a",border:"2px solid "+(p.answer===String(oi+1)?"#6366f1":"#334155"),borderRadius:7,padding:"7px 11px",fontSize:12,color:"#f1f5f9",outline:"none"}}/>
+                      </div>
+                    ))}
+                    <div style={{fontSize:11,color:"#6366f1",marginTop:3}}>✓ 정답: {p.answer}번</div>
+                  </div>
+                )}
+                {/* 단답형 정답 */}
+                {p.type==="단답형"&&(
+                  <div>
+                    <div style={{fontSize:11,color:"#64748b",marginBottom:5}}>정답</div>
+                    <input value={p.answer} onChange={e=>updateProb(i,"answer",e.target.value)} placeholder="정답 입력"
+                      style={{width:"100%",background:"#0f172a",border:"2px solid #6366f1",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#4ade80",fontWeight:700,outline:"none"}}/>
+                  </div>
+                )}
+                {/* 해설 */}
+                <div style={{borderTop:"1px solid #334155",paddingTop:10}}>
+                  <div style={{fontSize:11,color:"#64748b",marginBottom:6}}>해설</div>
+                  <textarea value={p.solutionText} onChange={e=>updateProb(i,"solutionText",e.target.value)} rows={2} placeholder="텍스트 해설 (선택)"
+                    style={{width:"100%",background:"#0f172a",border:"2px solid #334155",borderRadius:8,padding:"9px 12px",fontSize:12,color:"#f1f5f9",outline:"none",resize:"vertical",marginBottom:7}}/>
+                  <input ref={frs[i]} type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleSolImg(i,e)}/>
+                  {p.solutionImage?(
+                    <div style={{position:"relative",display:"inline-block",marginBottom:7}}>
+                      <img src={p.solutionImage} style={{maxWidth:"100%",maxHeight:160,borderRadius:8,objectFit:"contain",background:"#fff"}}/>
+                      <button onClick={()=>updateProb(i,"solutionImage","")} style={{position:"absolute",top:5,right:5,background:"#ef4444",border:"none",borderRadius:"50%",width:22,height:22,color:"#fff",cursor:"pointer",fontWeight:900,fontSize:11}}>✕</button>
+                    </div>
+                  ):(
+                    <button onClick={()=>frs[i].current?.click()} style={{background:"#0f172a",border:"2px dashed #334155",borderRadius:8,color:"#64748b",padding:"8px 16px",cursor:"pointer",fontSize:12,marginBottom:7}}>🖼️ 해설 이미지 업로드</button>
+                  )}
+
+                </div>
+              </div>
+            </div>
+          ))}
+          {saveOk?(
+            <div style={{background:"#064e3b",border:"2px solid #059669",borderRadius:12,padding:14,textAlign:"center",color:"#4ade80",fontWeight:700}}>✅ {formatDate(editDate)} · {editSub.label} 저장 완료!</div>
+          ):(
+            <button onClick={saveQuiz} style={{width:"100%",background:"linear-gradient(135deg,#059669,#10b981)",border:"none",borderRadius:14,color:"#fff",padding:"15px 0",fontSize:16,fontWeight:900,cursor:"pointer",fontFamily:"'Black Han Sans',sans-serif"}}>💾 저장하기</button>
+          )}
+        </div>
+      )}
+
+      {/* ── 현황 탭 ── */}
+      {tab==="results"&&(
+        <div>
+          {/* 날짜/과목 선택 */}
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
+            {allDates.slice(0,10).map(d=>(
+              <button key={d} onClick={()=>setSelDate(d)} style={{padding:"5px 12px",borderRadius:7,border:"none",cursor:"pointer",fontSize:11,fontWeight:700,background:selDate===d?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#1e293b",color:selDate===d?"#fff":"#64748b"}}>
+                {d===todayKey()?"오늘":formatDate(d)}
+              </button>
+            ))}
+          </div>
+          <div style={{display:"flex",gap:6,marginBottom:18}}>
+            {SUBJECTS.map(s=>(
+              <button key={s.key} onClick={()=>setSelSub(s)} style={{padding:"6px 14px",borderRadius:7,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:selSub.key===s.key?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#1e293b",color:selSub.key===s.key?"#fff":"#64748b"}}>{s.label}</button>
+            ))}
+          </div>
+
+          {!curData?.problems?(
+            <div style={{textAlign:"center",padding:"60px",color:"#475569"}}><div style={{fontSize:32,marginBottom:8}}>📭</div>이 날은 문제가 없어요</div>
+          ):(
+            <>
+              {/* 요약 카드 */}
+              {(()=>{
+                const total=curSubs.length;
+                const scores=curSubs.map(s=>{let sc=0;curProbs.forEach((p,i)=>{const ua=String(s.answers?.[i]||"").trim();const correct=p.type==="객관식"?ua===String(p.answer):ua.replace(/\s/g,"")===String(p.answer).replace(/\s/g,"");if(correct)sc++;});return sc;});
+                const avg=total?Math.round(scores.reduce((a,b)=>a+b,0)/total*10)/10:0;
+                const perfect=scores.filter(s=>s===curProbs.length).length;
+                return(
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:18}}>
+                    {[{l:"제출 인원",v:total+"명",c:"#6366f1"},{l:"평균 점수",v:avg+"점",c:"#10b981"},{l:"만점자",v:perfect+"명",c:"#f59e0b"}].map((s,si)=>(
+                      <div key={si} style={{background:"#1e293b",borderRadius:10,border:"1px solid #334155",padding:"12px 14px"}}>
+                        <div style={{fontSize:10,color:"#64748b",marginBottom:3}}>{s.l}</div>
+                        <div style={{fontWeight:900,fontSize:20,color:s.c}}>{s.v}</div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+              <div style={{display:"flex",justifyContent:"flex-end",marginBottom:10}}>
+                <button onClick={()=>setConfirmDel({type:"all",date:selDate,subKey:selSub.key})} style={{background:"#450a0a",border:"1px solid #7f1d1d",borderRadius:8,color:"#f87171",padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700}}>🗑️ 전체 기록 삭제</button>
+              </div>
+              {curSubs.length===0?(
+                <div style={{textAlign:"center",padding:"40px",color:"#475569"}}>아직 제출자가 없어요</div>
+              ):curSubs.sort((a,b)=>b.ts-a.ts).map((sub,si)=>{
+                let score=0;
+                const graded=curProbs.map((p,i)=>{const ua=String(sub.answers?.[i]||"").trim();const correct=p.type==="객관식"?ua===String(p.answer):ua.replace(/\s/g,"")===String(p.answer).replace(/\s/g,"");if(correct)score++;return{correct};});
+                return(
+                  <div key={si} style={{background:"#1e293b",borderRadius:12,border:"1px solid #334155",marginBottom:8,padding:"12px 16px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                    <div style={{width:34,height:34,borderRadius:9,background:"#0f172a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>👤</div>
+                    <div style={{flex:1,minWidth:80}}>
+                      <div style={{fontWeight:700,fontSize:14,color:"#f1f5f9"}}>{sub.name}</div>
+                      <div style={{fontSize:10,color:"#64748b"}}>{new Date(sub.ts).toLocaleString("ko-KR",{hour:"2-digit",minute:"2-digit"})}</div>
+                    </div>
+                    <div style={{display:"flex",gap:4}}>
+                      {graded.map((g,gi)=>(
+                        <div key={gi} style={{width:28,height:28,borderRadius:6,background:g.correct?"#064e3b":"#450a0a",border:"1px solid "+(g.correct?"#059669":"#dc2626"),display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1}}>
+                          <span style={{fontSize:8,color:"#64748b"}}>{gi+1}번</span>
+                          <span style={{fontSize:11,color:g.correct?"#4ade80":"#f87171",fontWeight:700}}>{g.correct?"O":"X"}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:18,color:score===curProbs.length?"#fbbf24":score>=curProbs.length/2?"#4ade80":"#f87171",minWidth:40,textAlign:"right"}}>{score}/{curProbs.length}</div>
+                    <button onClick={()=>{const subId=Object.keys(curData.submissions)[si];setConfirmDel({type:"one",date:selDate,subKey:selSub.key,subId,name:sub.name});}} style={{background:"#450a0a",border:"1px solid #7f1d1d",borderRadius:7,color:"#f87171",padding:"5px 9px",cursor:"pointer",fontSize:11}}>삭제</button>
+                  </div>
+                );
+              })}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── 학생 분석 탭 ── */}
+      {tab==="students"&&(
+        <div>
+          {!dataLoaded?(
+            <div style={{textAlign:"center",padding:"60px",color:"#64748b"}}>불러오는 중...</div>
+          ):Object.keys(studentStats).length===0?(
+            <div style={{textAlign:"center",padding:"60px",color:"#475569"}}><div style={{fontSize:32,marginBottom:8}}>👤</div>아직 데이터가 없어요</div>
+          ):(
+            Object.entries(studentStats).sort((a,b)=>b[1].total-a[1].total).map(([sName,st])=>{
+              const pct=st.total?Math.round(st.correct/st.total*100):0;
+              // 취약 단원 (정답률 60% 미만)
+              const weakUnits=Object.entries(st.byUnit).filter(([,v])=>v.total>=1&&Math.round(v.correct/v.total*100)<60).sort((a,b)=>Math.round(a[1].correct/a[1].total*100)-Math.round(b[1].correct/b[1].total*100));
+              return(
+                <div key={sName} style={{background:"#1e293b",borderRadius:14,border:"1px solid #334155",marginBottom:14,overflow:"hidden"}}>
+                  <div style={{padding:"14px 18px",borderBottom:"1px solid #0f172a",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+                    <div style={{width:40,height:40,borderRadius:10,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>👤</div>
+                    <div style={{flex:1}}>
+                      <div style={{fontWeight:700,fontSize:16,color:"#f1f5f9"}}>{sName}</div>
+                      <div style={{fontSize:11,color:"#64748b"}}>총 {st.total}문제 · {st.correct}개 정답</div>
+                    </div>
+                    <div style={{textAlign:"right"}}>
+                      <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:24,color:pct>=80?"#4ade80":pct>=60?"#fbbf24":"#f87171"}}>{pct}%</div>
+                      <div style={{fontSize:10,color:"#64748b"}}>전체 정답률</div>
+                    </div>
+                  </div>
+                  <div style={{padding:"14px 18px"}}>
+                    {/* 과목별 */}
+                    <div style={{marginBottom:12}}>
+                      <div style={{fontSize:11,color:"#64748b",marginBottom:8}}>과목별 정답률</div>
+                      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                        {Object.entries(st.bySub).map(([subLabel,sv])=>{
+                          const sp=Math.round(sv.correct/sv.total*100);
+                          return(
+                            <div key={subLabel} style={{background:"#0f172a",borderRadius:8,padding:"8px 14px",border:"1px solid #334155"}}>
+                              <div style={{fontSize:11,color:"#94a3b8",marginBottom:3}}>{subLabel}</div>
+                              <div style={{fontWeight:700,fontSize:15,color:sp>=80?"#4ade80":sp>=60?"#fbbf24":"#f87171"}}>{sp}% <span style={{fontSize:10,color:"#64748b"}}>({sv.correct}/{sv.total})</span></div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    {/* 단원별 */}
+                    <div>
+                      <div style={{fontSize:11,color:"#64748b",marginBottom:8}}>단원별 정답률</div>
+                      <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                        {Object.entries(st.byUnit).sort((a,b)=>Math.round(a[1].correct/a[1].total*100)-Math.round(b[1].correct/b[1].total*100)).map(([unit,uv])=>{
+                          const up=Math.round(uv.correct/uv.total*100);
+                          return(
+                            <div key={unit} style={{display:"flex",alignItems:"center",gap:10}}>
+                              <div style={{fontSize:12,color:"#94a3b8",width:140,flexShrink:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{unit}</div>
+                              <div style={{flex:1,height:6,background:"#334155",borderRadius:3,overflow:"hidden"}}>
+                                <div style={{height:"100%",width:up+"%",background:up>=80?"#059669":up>=60?"#d97706":"#dc2626",borderRadius:3}}/>
+                              </div>
+                              <div style={{fontSize:12,fontWeight:700,color:up>=80?"#4ade80":up>=60?"#fbbf24":"#f87171",minWidth:40,textAlign:"right"}}>{up}%</div>
+                              <div style={{fontSize:10,color:"#64748b",minWidth:36}}>({uv.correct}/{uv.total})</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {weakUnits.length>0&&(
+                        <div style={{marginTop:10,background:"#450a0a",borderRadius:8,padding:"8px 12px",border:"1px solid #7f1d1d"}}>
+                          <div style={{fontSize:11,color:"#f87171",fontWeight:700,marginBottom:4}}>🎯 취약 단원</div>
+                          <div style={{fontSize:12,color:"#fca5a5"}}>{weakUnits.map(([u])=>u).join(", ")}</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+      {/* 삭제 확인 모달 */}
+      {confirmDel&&(
+        <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999,padding:20}}>
+          <div style={{background:"#1e293b",borderRadius:16,border:"2px solid #7f1d1d",padding:28,maxWidth:340,width:"100%",textAlign:"center"}}>
+            <div style={{fontSize:32,marginBottom:12}}>🗑️</div>
+            <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:18,color:"#f1f5f9",marginBottom:8}}>
+              {confirmDel.type==="one"?`${confirmDel.name}의 기록을 삭제할까요?`:"이 날 전체 기록을 삭제할까요?"}
+            </div>
+            <div style={{fontSize:13,color:"#64748b",marginBottom:24}}>삭제 후 복구가 불가능해요</div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>setConfirmDel(null)} style={{flex:1,background:"#334155",border:"none",borderRadius:10,color:"#94a3b8",padding:"12px 0",cursor:"pointer",fontSize:14,fontWeight:700}}>취소</button>
+              <button onClick={async()=>{
+                if(confirmDel.type==="one") await deleteSubmission(confirmDel.date,confirmDel.subKey,confirmDel.subId);
+                else await deleteAllSubmissions(confirmDel.date,confirmDel.subKey);
+                setConfirmDel(null);
+              }} style={{flex:1,background:"#dc2626",border:"none",borderRadius:10,color:"#fff",padding:"12px 0",cursor:"pointer",fontSize:14,fontWeight:700}}>삭제</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── 메인 ─────────────────────────────────────────────
+function OD4PApp(){
+  const[mode,setMode]=useState("student");
+  return(
+    <div style={{minHeight:"100vh",background:"#0f172a"}}>
+      <header style={{background:"#1e293b",borderBottom:"1px solid #334155",padding:"0 20px",display:"flex",alignItems:"center",justifyContent:"space-between",height:54,position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 16px rgba(0,0,0,0.4)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:15,background:"linear-gradient(135deg,#6366f1,#a78bfa)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>OD4P</span>
+          <span style={{fontSize:10,color:"#475569",letterSpacing:0.5}}>OneDay 4 Problem</span>
+        </div>
+        <div style={{display:"flex",gap:5}}>
+          <button onClick={()=>setMode("student")} style={{padding:"5px 12px",borderRadius:6,border:"none",cursor:"pointer",background:mode==="student"?"#1e3a5f":"transparent",color:mode==="student"?"#60a5fa":"#64748b",fontWeight:600,fontSize:12}}>📝 문제 풀기</button>
+          <button onClick={()=>setMode("teacher")} style={{padding:"5px 12px",borderRadius:6,border:"none",cursor:"pointer",background:mode==="teacher"?"#2d1b69":"transparent",color:mode==="teacher"?"#a78bfa":"#64748b",fontWeight:600,fontSize:12}}>🔐 선생님</button>
+        </div>
+      </header>
+      {mode==="student"?<StudentApp/>:<TeacherApp/>}
+    </div>
+  );
+}
+
+
+// ══════════════════════════════════
+// 홈 화면
+// ══════════════════════════════════
+function HomePage({onNav}){
+  return(
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 20px",position:"relative",overflow:"hidden"}}>
+      <div style={{position:"fixed",inset:0,backgroundImage:"linear-gradient(rgba(30,45,69,0.4) 1px,transparent 1px),linear-gradient(90deg,rgba(30,45,69,0.4) 1px,transparent 1px)",backgroundSize:"60px 60px",pointerEvents:"none"}}/>
+      <div style={{position:"fixed",width:500,height:500,borderRadius:"50%",background:"radial-gradient(circle,rgba(0,198,255,0.06),transparent 70%)",top:-100,left:-100,filter:"blur(60px)",pointerEvents:"none"}}/>
+      <div style={{position:"fixed",width:500,height:500,borderRadius:"50%",background:"radial-gradient(circle,rgba(167,139,250,0.06),transparent 70%)",bottom:-100,right:-100,filter:"blur(60px)",pointerEvents:"none"}}/>
+      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:520,display:"flex",flexDirection:"column",alignItems:"center",gap:40}}>
+        <div style={{textAlign:"center"}}>
+          <div style={{fontFamily:"'Space Mono',monospace",fontSize:46,fontWeight:700,letterSpacing:-2,lineHeight:1,marginBottom:10}}>
+            <span style={{background:"linear-gradient(135deg,#e8eef7,#8ba5cc)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>sung</span>
+            <span style={{background:"linear-gradient(135deg,#00c6ff,#a78bfa)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>mint</span>
+          </div>
+          <div style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"#4a5a72",letterSpacing:3,textTransform:"uppercase"}}>Math Learning Tools</div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,width:"100%"}}>
+          {[
+            {id:"qna",icon:"💬",name:"익명 질문함",sub:"QnA",desc:"모르는 문제를
+익명으로 질문해요",ca:"#00c6ff",cb:"#4f8fff",glow:"rgba(0,198,255,0.1)"},
+            {id:"od4p",icon:"📚",name:"오늘의 문제",sub:"OD4P",desc:"매일 4문제 풀고
+즉시 채점·해설 확인",ca:"#a78bfa",cb:"#6366f1",glow:"rgba(167,139,250,0.1)"},
+          ].map(c=>(
+            <div key={c.id} onClick={()=>onNav(c.id)} style={{background:"#0f1623",border:"1px solid #1e2d45",borderRadius:20,padding:"28px 22px 52px",cursor:"pointer",position:"relative",overflow:"hidden",transition:"all 0.2s ease"}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=c.ca+"77";e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow=`0 8px 40px ${c.glow}`;}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="#1e2d45";e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="none";}}>
+              <div style={{position:"absolute",inset:0,background:`radial-gradient(circle at 30% 30%,${c.glow},transparent 60%)`,pointerEvents:"none"}}/>
+              <div style={{width:46,height:46,borderRadius:13,background:c.ca+"1a",border:`1px solid ${c.ca}33`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,marginBottom:14}}>{c.icon}</div>
+              <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:20,background:`linear-gradient(135deg,${c.ca},${c.cb})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:4}}>{c.name}</div>
+              <div style={{fontFamily:"'Space Mono',monospace",fontSize:9,color:"#4a5a72",letterSpacing:2,textTransform:"uppercase",marginBottom:10}}>{c.sub}</div>
+              <div style={{fontSize:12,color:"#4a6080",lineHeight:1.8,whiteSpace:"pre-line"}}>{c.desc}</div>
+              <div style={{position:"absolute",bottom:18,right:18,width:30,height:30,borderRadius:9,border:"1px solid #1e2d45",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"#4a5a72"}}>→</div>
+            </div>
+          ))}
+        </div>
+        <div style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"#2a3a52",letterSpacing:2}}>SUNGMINT · MATH TOOLS</div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════
+// 라우터
+// ══════════════════════════════════
+function App(){
+  const[page,setPage]=useState(()=>{
+    const h=window.location.hash.replace("#","");
+    return (h==="qna"||h==="od4p")?h:"home";
+  });
+  const nav=(target)=>{window.location.hash=target;setPage(target);};
+  useEffect(()=>{
+    const fn=()=>{const h=window.location.hash.replace("#","");setPage((h==="qna"||h==="od4p")?h:"home");};
+    window.addEventListener("hashchange",fn);
+    return()=>window.removeEventListener("hashchange",fn);
+  },[]);
+
+  const BackBtn=({color})=>(
+    <button onClick={()=>nav("home")} style={{position:"fixed",top:12,left:12,zIndex:999,background:"rgba(8,11,20,0.85)",backdropFilter:"blur(8px)",border:"1px solid #1e2d45",borderRadius:10,color:color||"#64748b",padding:"7px 14px",cursor:"pointer",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:6}}>← 홈</button>
+  );
+
+  if(page==="home") return <HomePage onNav={nav}/>;
+  if(page==="qna") return <div style={{background:"#0f172a",minHeight:"100vh"}}><BackBtn color="#60a5fa"/><QnaApp/></div>;
+  if(page==="od4p") return <div style={{background:"#0f172a",minHeight:"100vh"}}><BackBtn color="#a78bfa"/><OD4PApp/></div>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
