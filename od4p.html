@@ -344,13 +344,18 @@ function TeacherApp(){
     reader.onload=ev=>{const img=new Image();img.onload=()=>{const c=document.createElement("canvas");const MAX=1000;let w=img.width,h=img.height;if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);updateProb(i,"image",c.toDataURL("image/jpeg",0.7));};img.src=ev.target.result;};
     reader.readAsDataURL(file);
   };
-  const loadIntoForm=()=>{
+  // 날짜/과목 변경 시 자동 불러오기
+  useEffect(()=>{
+    if(!allData) return;
     const data=allData?.[editDate]?.[editSub.key];
-    if(!data?.problems){alert("해당 날짜/과목에 저장된 문제가 없어요");return;}
-    const loaded=Object.values(data.problems).map(p=>({type:p.type||"객관식",unit:p.unit||"",question:p.question||"",image:p.image||"",options:p.options||["","","","",""],answer:String(p.answer||"1"),solutionText:p.solutionText||"",solutionImage:p.solutionImage||""}));
-    while(loaded.length<4)loaded.push(emptyProb());
-    setProblems(loaded.slice(0,4));
-  };
+    if(data?.problems){
+      const loaded=Object.values(data.problems).map(p=>({type:p.type||"객관식",unit:p.unit||"",question:p.question||"",image:p.image||"",options:p.options||["","","","",""],answer:String(p.answer||"1"),solutionText:p.solutionText||"",solutionImage:p.solutionImage||""}));
+      while(loaded.length<4)loaded.push(emptyProb());
+      setProblems(loaded.slice(0,4));
+    } else {
+      setProblems([emptyProb(),emptyProb(),emptyProb(),emptyProb()]);
+    }
+  },[editDate,editSub,allData]);
   const handleSolImg=(i,e)=>{
     const file=e.target.files[0];if(!file)return;
     const reader=new FileReader();
@@ -444,7 +449,6 @@ function TeacherApp(){
                 ))}
               </div>
             </div>
-            <button onClick={loadIntoForm} style={{background:"#ede9fe",border:"none",borderRadius:8,color:"#6d28d9",padding:"8px 14px",cursor:"pointer",fontSize:12,marginTop:16}}>기존 불러오기</button>
           </div>
 
           {problems.map((p,i)=>(
