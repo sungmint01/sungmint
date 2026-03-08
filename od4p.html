@@ -490,7 +490,7 @@ function TeacherApp(){
                     <div style={{fontSize:11,color:"#a0aec0",marginBottom:6}}>보기 (번호 클릭 → 정답 설정)</div>
                     {p.options.map((opt,oi)=>(
                       <div key={oi} style={{display:"flex",gap:7,alignItems:"center",marginBottom:5}}>
-                        <div onClick={()=>updateProb(i,"answer",String(oi+1))} style={{width:26,height:26,borderRadius:"50%",flexShrink:0,cursor:"pointer",background:p.answer===String(oi+1)?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#334155",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:answers[i]===String(oi+1)?"#fff":"#718096"}}>{oi+1}</div>
+                        <div onClick={()=>updateProb(i,"answer",String(oi+1))} style={{width:26,height:26,borderRadius:"50%",flexShrink:0,cursor:"pointer",background:p.answer===String(oi+1)?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#334155",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#718096"}}>{oi+1}</div>
                         <input value={opt} onChange={e=>updateOpt(i,oi,e.target.value)} placeholder={`${oi+1}번 보기`}
                           style={{flex:1,background:"#f8faff",border:"2px solid "+(p.answer===String(oi+1)?"#6366f1":"#334155"),borderRadius:7,padding:"7px 11px",fontSize:12,color:"#1a202c",outline:"none"}}/>
                       </div>
