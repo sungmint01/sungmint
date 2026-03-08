@@ -1058,23 +1058,26 @@ function HomePage({onNav}){
           <div style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"#4a5a72",letterSpacing:3,textTransform:"uppercase"}}>Math Learning Tools</div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,width:"100%"}}>
-          {[
-            {id:"qna",icon:"💬",name:"익명 질문함",sub:"QnA",desc:"모르는 문제를
-익명으로 질문해요",ca:"#00c6ff",cb:"#4f8fff",glow:"rgba(0,198,255,0.1)"},
-            {id:"od4p",icon:"📚",name:"오늘의 문제",sub:"OD4P",desc:"매일 4문제 풀고
-즉시 채점·해설 확인",ca:"#a78bfa",cb:"#6366f1",glow:"rgba(167,139,250,0.1)"},
-          ].map(c=>(
-            <div key={c.id} onClick={()=>onNav(c.id)} style={{background:"#0f1623",border:"1px solid #1e2d45",borderRadius:20,padding:"28px 22px 52px",cursor:"pointer",position:"relative",overflow:"hidden",transition:"all 0.2s ease"}}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor=c.ca+"77";e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow=`0 8px 40px ${c.glow}`;}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor="#1e2d45";e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="none";}}>
-              <div style={{position:"absolute",inset:0,background:`radial-gradient(circle at 30% 30%,${c.glow},transparent 60%)`,pointerEvents:"none"}}/>
-              <div style={{width:46,height:46,borderRadius:13,background:c.ca+"1a",border:`1px solid ${c.ca}33`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,marginBottom:14}}>{c.icon}</div>
-              <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:20,background:`linear-gradient(135deg,${c.ca},${c.cb})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:4}}>{c.name}</div>
-              <div style={{fontFamily:"'Space Mono',monospace",fontSize:9,color:"#4a5a72",letterSpacing:2,textTransform:"uppercase",marginBottom:10}}>{c.sub}</div>
-              <div style={{fontSize:12,color:"#4a6080",lineHeight:1.8,whiteSpace:"pre-line"}}>{c.desc}</div>
-              <div style={{position:"absolute",bottom:18,right:18,width:30,height:30,borderRadius:9,border:"1px solid #1e2d45",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"#4a5a72"}}>→</div>
-            </div>
-          ))}
+          <div onClick={()=>onNav("qna")} style={{background:"#0f1623",border:"1px solid #1e2d45",borderRadius:20,padding:"28px 22px 52px",cursor:"pointer",position:"relative",overflow:"hidden",transition:"all 0.2s ease"}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(0,198,255,0.45)";e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow="0 8px 40px rgba(0,198,255,0.1)";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="#1e2d45";e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="none";}}>
+            <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 30%,rgba(0,198,255,0.06),transparent 60%)",pointerEvents:"none"}}/>
+            <div style={{width:46,height:46,borderRadius:13,background:"rgba(0,198,255,0.1)",border:"1px solid rgba(0,198,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,marginBottom:14}}>💬</div>
+            <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:20,background:"linear-gradient(135deg,#00c6ff,#4f8fff)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:4}}>익명 질문함</div>
+            <div style={{fontFamily:"'Space Mono',monospace",fontSize:9,color:"#4a5a72",letterSpacing:2,textTransform:"uppercase",marginBottom:10}}>QnA</div>
+            <div style={{fontSize:12,color:"#4a6080",lineHeight:1.8}}>모르는 문제를<br/>익명으로 질문해요</div>
+            <div style={{position:"absolute",bottom:18,right:18,width:30,height:30,borderRadius:9,border:"1px solid #1e2d45",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"#4a5a72"}}>→</div>
+          </div>
+          <div onClick={()=>onNav("od4p")} style={{background:"#0f1623",border:"1px solid #1e2d45",borderRadius:20,padding:"28px 22px 52px",cursor:"pointer",position:"relative",overflow:"hidden",transition:"all 0.2s ease"}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(167,139,250,0.45)";e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow="0 8px 40px rgba(167,139,250,0.1)";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="#1e2d45";e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="none";}}>
+            <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 30% 30%,rgba(167,139,250,0.06),transparent 60%)",pointerEvents:"none"}}/>
+            <div style={{width:46,height:46,borderRadius:13,background:"rgba(167,139,250,0.1)",border:"1px solid rgba(167,139,250,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,marginBottom:14}}>📚</div>
+            <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:20,background:"linear-gradient(135deg,#a78bfa,#6366f1)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:4}}>오늘의 문제</div>
+            <div style={{fontFamily:"'Space Mono',monospace",fontSize:9,color:"#4a5a72",letterSpacing:2,textTransform:"uppercase",marginBottom:10}}>OD4P</div>
+            <div style={{fontSize:12,color:"#4a6080",lineHeight:1.8}}>매일 4문제 풀고<br/>즉시 채점·해설 확인</div>
+            <div style={{position:"absolute",bottom:18,right:18,width:30,height:30,borderRadius:9,border:"1px solid #1e2d45",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"#4a5a72"}}>→</div>
+          </div>
         </div>
         <div style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"#2a3a52",letterSpacing:2}}>SUNGMINT · MATH TOOLS</div>
       </div>
