@@ -15,7 +15,7 @@
     #loading{display:flex;align-items:center;justify-content:center;height:100vh;font-size:16px;color:#90a4ae}
   
   .back-home{
-    position:fixed;top:12px;right:12px;z-index:999;
+    position:fixed;top:12px;left:12px;z-index:999;
     background:rgba(8,11,20,0.9);backdrop-filter:blur(8px);
     border:1px solid #1e2d45;border-radius:10px;
     color:#60a5fa;padding:7px 14px;cursor:pointer;
@@ -26,7 +26,6 @@
 </style>
 </head>
 <body>
-<a class="back-home" href="./index.html">&#8592; &#54856;</a>
 <div id="loading">⏳ 로딩 중...</div>
 <div id="root"></div>
 
@@ -272,6 +271,7 @@ function App(){
     <div style={{minHeight:"100vh",background:"#0f172a"}}>
       <header style={{background:"#0f172a",padding:"0 20px",display:"flex",alignItems:"center",justifyContent:"space-between",height:56,position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 16px rgba(0,0,0,0.2)"}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <a href="./index.html?v=3" style={{color:"#60a5fa",fontSize:12,fontWeight:700,textDecoration:"none",padding:"5px 10px",background:"rgba(30,50,80,0.8)",borderRadius:8,border:"1px solid #1e3a5f",marginRight:4}}>{"← 홈"}</a>
           <span style={{fontSize:18}}>💬</span>
           <span style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:16,color:"#fff"}}>익명 질문함</span>
           {pending>0&&mode==="teacher"&&authed&&<span style={{background:"#ff4757",color:"#fff",borderRadius:20,padding:"1px 8px",fontSize:11,fontWeight:700}}>미답변 {pending}</span>}
