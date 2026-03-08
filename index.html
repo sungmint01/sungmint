@@ -367,8 +367,6 @@ document.getElementById("root").style.display="block";
 // OD4P 앱
 // ══════════════════════════════════
 
-const {useState,useEffect,useRef,useMemo}=React;
-
 const SUBJECTS=[{label:"공통수학1",key:"gongmath1"},{label:"대수(수1)",key:"daesoo1"}];
 
 // ── 시간 로직 ─────────────────────────────────────────
@@ -382,7 +380,6 @@ function getAvailableDate(){
 }
 function todayKey(){return new Date().toISOString().slice(0,10);}
 function formatDate(d){if(!d)return"";const[y,m,day]=d.split("-");return`${parseInt(m)}월 ${parseInt(day)}일`;}
-function getYtId(url){if(!url)return null;const m=url.match(/(?:youtu\.be\/|v=|\/embed\/)([A-Za-z0-9_-]{11})/);return m?m[1]:null;}
 
 // ── Firebase ─────────────────────────────────────────
 function listenQuiz(date,subKey,cb){
