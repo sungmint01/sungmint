@@ -213,6 +213,14 @@ function App(){
 
   useEffect(()=>{
     const unsub=listenQs(qs=>{setQuestions(qs);setLoading(false);});
+    // Firebase에서 emailAlert 상태 로드
+    db.ref('settings/emailAlert').on('value', snap=>{
+      const val = snap.val();
+      if(val !== null){
+        setEmailAlert(val);
+        emailAlertRef.current = val;
+      }
+    });
     return unsub;
   },[]);
 
