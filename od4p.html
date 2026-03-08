@@ -90,10 +90,29 @@ function StudentApp(){
   const[showSol,setShowSol]=useState({});
   const[loading,setLoading]=useState(false);
 
-  const availDate=getAvailableDate();
+  const [availDate,setAvailDate]=useState(getAvailableDate());
   const now=new Date();
   const h=now.getHours();
   const isClosed=(h>=2&&h<6); // 오전2~6시 접근불가
+
+  // 날짜 변경 감지 (1분마다 체크)
+  useEffect(()=>{
+    const timer=setInterval(()=>{
+      const newDate=getAvailableDate();
+      setAvailDate(prev=>{
+        if(prev!==newDate){
+          // 날짜 바뀌면 처음으로 리셋
+          setStep("subject");
+          setQuiz(null);
+          setAnswers({});
+          setResult(null);
+          setName("");
+        }
+        return newDate;
+      });
+    },60000);
+    return()=>clearInterval(timer);
+  },[]);
 
   const loadQuiz=async(sub)=>{
     if(!availDate){setStep("closed");return;}
