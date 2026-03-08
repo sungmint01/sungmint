@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>익명 질문함</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Black+Han+Sans&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Noto Sans KR',sans-serif;background:#f8f9fe;color:#1a1a2e}
+    input,textarea,button{font-family:'Noto Sans KR',sans-serif}
+    #loading{display:flex;align-items:center;justify-content:center;height:100vh;font-size:16px;color:#90a4ae}
+  
+  .back-home{
+    position:fixed;top:12px;left:12px;z-index:999;
+    background:rgba(8,11,20,0.9);backdrop-filter:blur(8px);
+    border:1px solid #1e2d45;border-radius:10px;
+    color:#60a5fa;padding:7px 14px;cursor:pointer;
+    font-size:12px;font-weight:700;text-decoration:none;
+    font-family:'Noto Sans KR',sans-serif;
+  }
+  .back-home:hover{background:rgba(30,50,80,0.95)}
+</style>
+</head>
+<body>
+<div id="loading">⏳ 로딩 중...</div>
+<div id="root" style="display:none"></div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script>emailjs.init("9834V_7luPj7hfNIz");</script>
+
+<!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script>emailjs.init("9834V_7luPj7hfNIz");</script>
+
+<!-- React -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.23.6/babel.min.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAN7K0-V9PPepqmcNq0qA1xg_Sr8n-xiu0",
+  authDomain: "qna-sungmint.firebaseapp.com",
+  databaseURL: "https://qna-sungmint-default-rtdb.firebaseio.com",
+  projectId: "qna-sungmint",
+  storageBucket: "qna-sungmint.firebasestorage.app",
+  messagingSenderId: "1050653821753",
+  appId: "1:1050653821753:web:eb604160345bea4fd5b6e8"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+</script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef } = React;
+const TEACHER_PW = "1340";
+const SUBJECTS = ["공통수학1","공통수학2","대수(수1)","미적분1(수2)","확통","기하","미적분2"];
+const SC = {
+  "공통수학1":["#fff3e0","#e65100"],
+  "공통수학2":["#fce4ec","#c62828"],
+  "대수(수1)":["#e3f2fd","#1565c0"],
+  "미적분1(수2)":["#e8f5e9","#1b5e20"],
+  "확통":["#f3e5f5","#6a1b9a"],
+  "기하":["#e0f7fa","#006064"],
+  "미적분2":["#fff8e1","#f57f17"]
+};
+
+function getYtId(url){
+  if(!url) return null;
+  const m = url.match(/(?:youtu\.be\/|v=|\/embed\/)([A-Za-z0-9_-]{11})/);
+  return m?m[1]:null;
+}
+
+function compressImage(file, cb){
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX=800;
+      let w=img.width, h=img.height;
+      if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+      if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
+      const c=document.createElement("canvas");
+      c.width=w; c.height=h;
+      c.getContext("2d").drawImage(img,0,0,w,h);
+      cb(c.toDataURL("image/jpeg",0.6));
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// Firebase DB functions
+function listenQs(cb){
+  const ref=db.ref("questions");
+  ref.on("value", snap=>{
+    const val=snap.val()||{};
+    cb(Object.values(val).sort((a,b)=>b.ts-a.ts));
+  });
+  return ()=>ref.off();
+}
+function pushQ(q){ return db.ref("questions/"+q.id).set(q); }
+function updateQ(id,data){ return db.ref("questions/"+id).update(data); }
+function deleteQ(id){ return db.ref("questions/"+id).remove(); }
+
+// Question Card
+function QCard({q,isTeacher,replyTarget,setReplyTarget,videoUrl,setVideoUrl,replyComment,setReplyComment,onReply,onDelete}){
+  const [big,setBig]=useState(false);
+  const [bg,text]=SC[q.subject]||SC["기타"];
+  const ytId=getYtId(q.videoUrl);
+  return(
+    <div style={{background:"#fff",borderRadius:16,border:"2px solid "+(q.answered?"#c8e6c9":"#e8eaf6"),marginBottom:16,overflow:"hidden",boxShadow:"0 2px 10px rgba(0,0,0,0.06)"}}>
+      <div style={{padding:"12px 16px",display:"flex",alignItems:"center",gap:8,borderBottom:"1px solid #f0f0f0",flexWrap:"wrap"}}>
+        <span style={{fontSize:20}}>🙈</span>
+        <div style={{flex:1}}>
+          <span style={{fontWeight:700,fontSize:13,color:"#546e7a"}}>익명의 학생</span>
+          <span style={{fontSize:11,color:"#b0bec5",marginLeft:8}}>{new Date(q.ts).toLocaleDateString("ko-KR",{month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}</span>
+        </div>
+        <span style={{background:bg,color:text,borderRadius:6,padding:"2px 8px",fontSize:11,fontWeight:700}}>{q.subject}</span>
+        {q.answered
+          ?<span style={{background:"#e8f5e9",color:"#2e7d32",borderRadius:6,padding:"2px 8px",fontSize:11,fontWeight:700}}>✅ 해설완료</span>
+          :<span style={{background:"#fff3e0",color:"#e65100",borderRadius:6,padding:"2px 8px",fontSize:11,fontWeight:700}}>⏳ 대기중</span>
+        }
+        {isTeacher&&<button onClick={onDelete} style={{background:"#ffebee",border:"none",borderRadius:6,color:"#f44336",padding:"3px 8px",cursor:"pointer",fontSize:11}}>삭제</button>}
+      </div>
+
+      {q.photo&&(
+        <div style={{background:"#f8f9fe",padding:10,cursor:"pointer"}} onClick={()=>setBig(!big)}>
+          <img src={q.photo} alt="질문" style={{width:"100%",maxHeight:big?9999:200,objectFit:big?"contain":"cover",borderRadius:8,display:"block"}}/>
+          <div style={{textAlign:"center",fontSize:11,color:"#b0bec5",marginTop:4}}>{big?"▲ 접기":"▼ 펼쳐보기"}</div>
+        </div>
+      )}
+      {q.text&&<div style={{padding:"10px 16px",fontSize:14,color:"#37474f",lineHeight:1.7,borderBottom:"1px solid #f0f0f0"}}>{q.text}</div>}
+
+      {q.answered&&(
+        <div style={{background:"#f1f8e9",padding:"14px 16px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+            <span>🎬</span><span style={{fontWeight:700,fontSize:14,color:"#2e7d32"}}>선생님 해설</span>
+          </div>
+          {q.comment&&<div style={{fontSize:13,color:"#33691e",lineHeight:1.6,marginBottom:10,background:"#dcedc8",borderRadius:8,padding:"8px 12px"}}>{q.comment}</div>}
+          {q.videoUrl&&(ytId
+            ?<div style={{borderRadius:10,overflow:"hidden"}}><iframe width="100%" height="220" src={"https://www.youtube.com/embed/"+ytId} frameBorder="0" allowFullScreen style={{display:"block"}}/></div>
+            :<a href={q.videoUrl} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:8,background:"#fff",border:"2px solid #a5d6a7",borderRadius:10,padding:"10px 14px",color:"#2e7d32",fontWeight:700,fontSize:13,textDecoration:"none"}}>🔗 해설 영상 보러가기</a>
+          )}
+        </div>
+      )}
+
+      {isTeacher&&(
+        replyTarget===q.id?(
+          <div style={{padding:"12px 16px",background:"#fafafa",borderTop:"1px solid #f0f0f0"}}>
+            <div style={{fontWeight:700,fontSize:13,color:"#546e7a",marginBottom:8}}>🎬 해설 달기</div>
+            <textarea value={replyComment} onChange={e=>setReplyComment(e.target.value)} placeholder="코멘트 (선택)" rows={2}
+              style={{width:"100%",border:"2px solid #e8eaf6",borderRadius:8,padding:"8px 12px",fontSize:13,resize:"none",outline:"none",marginBottom:6}}/>
+            <input value={videoUrl} onChange={e=>setVideoUrl(e.target.value)} placeholder="YouTube 링크 붙여넣기"
+              style={{width:"100%",border:"2px solid #e8eaf6",borderRadius:8,padding:"8px 12px",fontSize:13,outline:"none",marginBottom:8}}/>
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+              <button onClick={()=>{setReplyTarget(null);setVideoUrl("");setReplyComment("");}}
+                style={{background:"#f0f0f0",border:"none",borderRadius:8,color:"#546e7a",padding:"7px 16px",cursor:"pointer",fontSize:13}}>취소</button>
+              <button onClick={onReply}
+                style={{background:"linear-gradient(135deg,#2e7d32,#43a047)",border:"none",borderRadius:8,color:"#fff",padding:"7px 16px",cursor:"pointer",fontSize:13,fontWeight:700}}>✅ 등록</button>
+            </div>
+          </div>
+        ):(
+          <div style={{padding:"8px 16px",borderTop:"1px solid #f0f0f0"}}>
+            <button onClick={()=>{setReplyTarget(q.id);setVideoUrl(q.videoUrl||"");setReplyComment(q.comment||"");}}
+              style={{width:"100%",background:"linear-gradient(135deg,#3f51b5,#7c4dff)",border:"none",borderRadius:8,color:"#fff",padding:"9px 0",cursor:"pointer",fontSize:13,fontWeight:700}}>
+              {q.answered?"✏️ 해설 수정":"🎬 해설 달기"}
+            </button>
+          </div>
+        )
+      )}
+
+      {big&&q.photo&&(
+        <div onClick={()=>setBig(false)} style={{position:"fixed",inset:0,background:"#000000cc",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,cursor:"zoom-out"}}>
+          <img src={q.photo} alt="전체" style={{maxWidth:"95vw",maxHeight:"90vh",borderRadius:12}}/>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Main App
+function App(){
+  const [questions,setQuestions]=useState([]);
+  const [mode,setMode]=useState("student");
+  const [pw,setPw]=useState("");
+  const [pwErr,setPwErr]=useState(false);
+  const [authed,setAuthed]=useState(false);
+  const [emailAlert,setEmailAlert]=useState(true);
+  const emailAlertRef=useRef(true);
+  const [loading,setLoading]=useState(true);
+  const [submitting,setSubmitting]=useState(false);
+  const [done,setDone]=useState(false);
+  const [photo,setPhoto]=useState(null);
+  const [preview,setPreview]=useState(null);
+  const [qText,setQText]=useState("");
+  const [subject,setSubject]=useState("공통수학1");
+  const [replyTarget,setReplyTarget]=useState(null);
+  const [videoUrl,setVideoUrl]=useState("");
+  const [replyComment,setReplyComment]=useState("");
+  const [filter,setFilter]=useState("all");
+  const [subjectFilter,setSubjectFilter]=useState("전체");
+  const fileRef=useRef();
+
+  useEffect(()=>{
+    const unsub=listenQs(qs=>{setQuestions(qs);setLoading(false);});
+    return unsub;
+  },[]);
+
+  const onFile=e=>{
+    const f=e.target.files[0];
+    if(!f) return;
+    compressImage(f,(compressed)=>{setPhoto(compressed);setPreview(compressed);});
+  };
+
+  const submit=async()=>{
+    if(!photo&&!qText.trim()) return;
+    setSubmitting(true);
+    try{
+      const id=Date.now().toString();
+      await pushQ({id,ts:Date.now(),subject,text:qText.trim(),photo:photo||"",answered:false,videoUrl:"",comment:""});
+      // 이메일 알림
+      if(emailAlertRef.current){
+        try{
+          await emailjs.send("service_fl4emqp","template_jsdwyw9",{
+            subject: subject,
+            question_text: qText.trim()||"(사진 첨부)",
+            time: new Date().toLocaleString("ko-KR"),
+          });
+        }catch(e){ console.warn("이메일 오류:",e); }
+      }
+      setPhoto(null);setPreview(null);setQText("");setSubject("공통수학1");
+      setDone(true);setTimeout(()=>setDone(false),3000);
+    }catch(err){
+      alert("전송 실패 😢\n원인: "+err.message);
+    }finally{
+      setSubmitting(false);
+    }
+  };
+
+  const login=()=>{
+    if(pw===TEACHER_PW){setAuthed(true);setPwErr(false);}
+    else{setPwErr(true);setPw("");}
+  };
+
+  const onReply=async(qId)=>{
+    if(!videoUrl.trim()&&!replyComment.trim()) return;
+    await updateQ(qId,{answered:true,videoUrl:videoUrl.trim(),comment:replyComment.trim()});
+    setReplyTarget(null);setVideoUrl("");setReplyComment("");
+  };
+
+  const onDelete=async(qId)=>{
+    if(!window.confirm("삭제할까요?")) return;
+    await deleteQ(qId);
+    if(replyTarget===qId) setReplyTarget(null);
+  };
+
+  const filtered=questions.filter(q=>filter==="all"?true:filter==="pending"?!q.answered:q.answered);
+  const pending=questions.filter(q=>!q.answered).length;
+
+  return(
+    <div style={{minHeight:"100vh",background:"#f8f9fe"}}>
+      <header style={{background:"#1a1a2e",padding:"0 20px",display:"flex",alignItems:"center",justifyContent:"space-between",height:56,position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 16px rgba(0,0,0,0.2)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:18}}>💬</span>
+          <span style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:16,color:"#fff"}}>익명 질문함</span>
+          {pending>0&&mode==="teacher"&&authed&&<span style={{background:"#ff4757",color:"#fff",borderRadius:20,padding:"1px 8px",fontSize:11,fontWeight:700}}>미답변 {pending}</span>}
+        </div>
+        <div style={{display:"flex",gap:6}}>
+          <button onClick={()=>{setMode("student");setAuthed(false);setPw("");}} style={{padding:"5px 14px",borderRadius:6,border:"none",cursor:"pointer",background:mode==="student"?"#e8f4fd":"transparent",color:mode==="student"?"#1565c0":"#94a3b8",fontWeight:600,fontSize:12}}>📷 질문하기</button>
+          <button onClick={()=>setMode("teacher")} style={{padding:"5px 14px",borderRadius:6,border:"none",cursor:"pointer",background:mode==="teacher"?"#fff0f6":"transparent",color:mode==="teacher"?"#c2185b":"#94a3b8",fontWeight:600,fontSize:12}}>🔐 선생님</button>
+        </div>
+      </header>
+
+      <div style={{maxWidth:680,margin:"0 auto",padding:"22px 16px"}}>
+
+        {/* 학생 모드 */}
+        {mode==="student"&&(
+          <>
+            <div style={{background:"#fff",borderRadius:18,border:"2px solid #e8eaf6",padding:22,marginBottom:22,boxShadow:"0 4px 20px rgba(0,0,0,0.06)"}}>
+              <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:20,marginBottom:4}}>모르는 문제 올려봐요</div>
+              <div style={{fontSize:13,color:"#90a4ae",marginBottom:18}}>익명으로 전송돼요. 선생님이 해설 영상을 달아드려요 🎬</div>
+              <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:14}}>
+                {SUBJECTS.map(s=>{const [bg,text]=SC[s];return(
+                  <button key={s} onClick={()=>setSubject(s)} style={{padding:"5px 14px",borderRadius:20,border:"none",cursor:"pointer",background:subject===s?text:bg,color:subject===s?"#fff":text,fontWeight:700,fontSize:12}}>{s}</button>
+                );})}
+              </div>
+              <div onClick={()=>fileRef.current?.click()} style={{border:"2px dashed "+(preview?"#3f51b5":"#c5cae9"),borderRadius:14,padding:preview?8:"26px 20px",textAlign:"center",cursor:"pointer",background:preview?"#e8eaf6":"#f8f9fe",marginBottom:12,overflow:"hidden"}}>
+                <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={onFile}/>
+                {preview?(
+                  <div style={{position:"relative"}}>
+                    <img src={preview} style={{maxWidth:"100%",maxHeight:260,borderRadius:10,display:"block",margin:"0 auto"}}/>
+                    <button onClick={e=>{e.stopPropagation();setPhoto(null);setPreview(null);}} style={{position:"absolute",top:8,right:8,background:"#ff4757",border:"none",borderRadius:"50%",width:28,height:28,color:"#fff",cursor:"pointer",fontWeight:900,fontSize:14}}>✕</button>
+                  </div>
+                ):(
+                  <><div style={{fontSize:32,marginBottom:6}}>📷</div>
+                  <div style={{fontWeight:700,color:"#3f51b5",marginBottom:3}}>문제 사진 업로드</div>
+                  <div style={{fontSize:12,color:"#90a4ae"}}>클릭하거나 사진을 찍어서 올려주세요</div></>
+                )}
+              </div>
+              <textarea value={qText} onChange={e=>setQText(e.target.value)} placeholder="어떤 부분이 모르는지 적어주세요 (선택)" rows={3}
+                style={{width:"100%",border:"2px solid #e8eaf6",borderRadius:10,padding:"10px 14px",fontSize:14,resize:"none",outline:"none",background:"#f8f9fe",marginBottom:14}}/>
+              {done?(
+                <div style={{background:"#e8f5e9",border:"2px solid #a5d6a7",borderRadius:10,padding:"12px 16px",textAlign:"center",color:"#2e7d32",fontWeight:700}}>✅ 질문이 전송됐어요! 선생님이 곧 확인할게요.</div>
+              ):(
+                <button onClick={submit} disabled={submitting||(!photo&&!qText.trim())} style={{width:"100%",background:(!photo&&!qText.trim())?"#e8eaf6":"linear-gradient(135deg,#3f51b5,#7c4dff)",border:"none",borderRadius:10,color:(!photo&&!qText.trim())?"#90a4ae":"#fff",padding:"13px 0",fontSize:15,fontWeight:900,cursor:(!photo&&!qText.trim())?"not-allowed":"pointer",fontFamily:"'Black Han Sans',sans-serif"}}>
+                  {submitting?"전송 중... ⏳":"익명으로 질문 보내기 💌"}
+                </button>
+              )}
+            </div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:8}}>
+              <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:15,color:"#546e7a"}}>✅ 해설 완료된 질문</div>
+            </div>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
+              {["전체",...SUBJECTS].map(s=>(
+                <button key={s} onClick={()=>setSubjectFilter(s)} style={{padding:"5px 12px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,transition:"all 0.15s",
+                  background:subjectFilter===s?"#1a1a2e":"#e8eaf6",
+                  color:subjectFilter===s?"#fff":"#546e7a"
+                }}>{s}</button>
+              ))}
+            </div>
+            {loading?<div style={{textAlign:"center",padding:"40px 0",color:"#90a4ae"}}>불러오는 중...</div>
+              :questions.filter(q=>q.answered&&(subjectFilter==="전체"||q.subject===subjectFilter)).length===0
+                ?<div style={{textAlign:"center",padding:"40px 0",color:"#c5cae9",fontSize:14}}>해당 과목의 해설된 질문이 없어요</div>
+                :questions.filter(q=>q.answered&&(subjectFilter==="전체"||q.subject===subjectFilter)).map(q=><QCard key={q.id} q={q} isTeacher={false}/>)
+            }
+          </>
+        )}
+
+        {/* 선생님 로그인 */}
+        {mode==="teacher"&&!authed&&(
+          <div style={{background:"#fff",borderRadius:18,border:"2px solid #fce4ec",padding:36,maxWidth:320,margin:"60px auto",textAlign:"center",boxShadow:"0 4px 20px rgba(194,24,91,0.08)"}}>
+            <div style={{fontSize:38,marginBottom:10}}>🔐</div>
+            <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:20,marginBottom:6}}>선생님 전용</div>
+            <div style={{fontSize:13,color:"#90a4ae",marginBottom:20}}>비밀번호를 입력해 주세요</div>
+            <input type="password" value={pw} onChange={e=>{setPw(e.target.value);setPwErr(false);}} onKeyDown={e=>e.key==="Enter"&&login()} placeholder="비밀번호"
+              style={{width:"100%",border:"2px solid "+(pwErr?"#f44336":"#fce4ec"),borderRadius:10,padding:"11px 14px",fontSize:16,outline:"none",textAlign:"center",marginBottom:8}}/>
+            {pwErr&&<div style={{color:"#f44336",fontSize:12,marginBottom:8}}>비밀번호가 틀렸어요</div>}
+            <button onClick={login} style={{width:"100%",background:"linear-gradient(135deg,#c2185b,#e91e63)",border:"none",borderRadius:10,color:"#fff",padding:"12px 0",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"'Black Han Sans',sans-serif",marginTop:4}}>입장하기</button>
+          </div>
+        )}
+
+        {/* 선생님 대시보드 */}
+        {mode==="teacher"&&authed&&(
+          <>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,flexWrap:"wrap",gap:8}}>
+              <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:18}}>질문 관리 <span style={{fontSize:13,fontWeight:400,fontFamily:"'Noto Sans KR'",color:"#90a4ae"}}>총 {questions.length}개 · 미답변 {pending}개</span></div>
+              <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                {[["all","전체"],["pending","미답변"],["answered","완료"]].map(([val,label])=>(
+                  <button key={val} onClick={()=>setFilter(val)} style={{padding:"5px 14px",borderRadius:20,border:"none",cursor:"pointer",background:filter===val?"#1a1a2e":"#e8eaf6",color:filter===val?"#fff":"#546e7a",fontWeight:700,fontSize:12}}>{label}</button>
+                ))}
+                <div onClick={()=>{const next=!emailAlert;db.ref('settings/emailAlert').set(next);emailAlertRef.current=next;setEmailAlert(next);}} style={{display:"flex",alignItems:"center",gap:7,cursor:"pointer",background:emailAlert?"#e8f5e9":"#f5f5f5",border:"2px solid "+(emailAlert?"#a5d6a7":"#e0e0e0"),borderRadius:20,padding:"4px 12px 4px 8px",transition:"all 0.2s"}}>
+                  <div style={{width:32,height:18,borderRadius:9,background:emailAlert?"#43a047":"#bdbdbd",position:"relative",transition:"background 0.2s",flexShrink:0}}>
+                    <div style={{position:"absolute",top:2,left:emailAlert?14:2,width:14,height:14,borderRadius:"50%",background:"#fff",transition:"left 0.2s",boxShadow:"0 1px 3px rgba(0,0,0,0.2)"}}/>
+                  </div>
+                  <span style={{fontSize:12,fontWeight:700,color:emailAlert?"#2e7d32":"#9e9e9e",whiteSpace:"nowrap"}}>📧 메일 알림 {emailAlert?"ON":"OFF"}</span>
+                </div>
+              </div>
+            </div>
+            {loading?<div style={{textAlign:"center",padding:"40px 0",color:"#90a4ae"}}>불러오는 중...</div>
+              :filtered.length===0
+                ?<div style={{textAlign:"center",padding:"60px 0",color:"#c5cae9",fontSize:14}}>질문이 없어요</div>
+                :filtered.map(q=>(
+                  <QCard key={q.id} q={q} isTeacher={true}
+                    replyTarget={replyTarget} setReplyTarget={setReplyTarget}
+                    videoUrl={videoUrl} setVideoUrl={setVideoUrl}
+                    replyComment={replyComment} setReplyComment={setReplyComment}
+                    onReply={()=>onReply(q.id)}
+                    onDelete={()=>onDelete(q.id)}/>
+                ))
+            }
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+document.getElementById("loading").style.display="none";
+document.getElementById("root").style.display="block";
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
