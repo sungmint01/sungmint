@@ -107,7 +107,7 @@ function SubjectBadge({subject}){
 }
 
 // 질문 카드
-function QCard({q,isTeacher,replyTarget,setReplyTarget,videoUrl,setVideoUrl,replyComment,setReplyComment,onReply,onDelete}){
+function QCard({q,num,isTeacher,replyTarget,setReplyTarget,videoUrl,setVideoUrl,replyComment,setReplyComment,onReply,onDelete}){
   const [big,setBig]=useState(false);
   const ytId=getYtId(q.videoUrl);
   const timeStr = new Date(q.ts).toLocaleDateString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});
@@ -117,7 +117,9 @@ function QCard({q,isTeacher,replyTarget,setReplyTarget,videoUrl,setVideoUrl,repl
 
       {/* 카드 헤더 */}
       <div style={{padding:"14px 16px",display:"flex",alignItems:"center",gap:10,borderBottom:"1px solid #f1f5f9"}}>
-        <div style={{width:34,height:34,borderRadius:"50%",background:"#f1f5f9",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>🙈</div>
+        <div style={{minWidth:34,height:34,borderRadius:10,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,padding:"0 6px"}}>
+            <span style={{color:"#fff",fontWeight:700,fontSize:num>9999?10:num>999?11:num>99?12:14,letterSpacing:"-0.5px",fontVariantNumeric:"tabular-nums"}}>#{String(num).padStart(1,"0")}</span>
+          </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontSize:13,fontWeight:700,color:"#374151"}}>익명의 학생</div>
           <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{timeStr}</div>
@@ -378,7 +380,7 @@ function App(){
               ? <div style={{textAlign:"center",padding:"40px 0",color:"#94a3b8",fontSize:13}}>불러오는 중...</div>
               : questions.filter(q=>q.answered&&(subjectFilter==="전체"||q.subject===subjectFilter)).length===0
                 ? <div style={{textAlign:"center",padding:"40px 0",color:"#94a3b8",fontSize:13}}>해설된 질문이 없어요</div>
-                : questions.filter(q=>q.answered&&(subjectFilter==="전체"||q.subject===subjectFilter)).map(q=><QCard key={q.id} q={q} isTeacher={false}/>)
+                : questions.filter(q=>q.answered&&(subjectFilter==="전체"||q.subject===subjectFilter)).map(q=><QCard key={q.id} q={q} num={questions.length-questions.indexOf(q)} isTeacher={false}/>)
             }
           </>
         )}
@@ -434,7 +436,7 @@ function App(){
               : filtered.length===0
                 ? <div style={{textAlign:"center",padding:"60px 0",color:"#94a3b8",fontSize:13}}>질문이 없어요</div>
                 : filtered.map(q=>(
-                    <QCard key={q.id} q={q} isTeacher={true}
+                    <QCard key={q.id} q={q} num={questions.length-questions.indexOf(q)} isTeacher={true}
                       replyTarget={replyTarget} setReplyTarget={setReplyTarget}
                       videoUrl={videoUrl} setVideoUrl={setVideoUrl}
                       replyComment={replyComment} setReplyComment={setReplyComment}
