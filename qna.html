@@ -51,13 +51,13 @@ const SUBJECTS = ["공통수학1","공통수학2","대수(수1)","미적분1(수
 
 // 과목별 색상 (배경, 텍스트)
 const SC = {
-  "공통수학1": ["#fff0eb","#e05c2a"],
-  "공통수학2": ["#ffeef3","#d63a6b"],
-  "대수(수1)": ["#eef4ff","#3b6fd4"],
-  "미적분1(수2)": ["#edfbf4","#1e9e63"],
-  "확통":       ["#f5f0ff","#7c4dca"],
-  "기하":       ["#e8f9ff","#0891b2"],
-  "미적분2":    ["#fffbea","#c07c00"],
+  "공통수학1":   ["#f0f4ff","#4f6ef7"],
+  "공통수학2":   ["#f3f0ff","#7c5cfc"],
+  "대수(수1)":   ["#f0fafb","#0ea5aa"],
+  "미적분1(수2)":["#f0fdf6","#0ea872"],
+  "확통":        ["#fdf4ff","#c026d3"],
+  "기하":        ["#fff8f0","#f97316"],
+  "미적분2":     ["#fff0f3","#e11d6a"],
 };
 
 function getYtId(url){
@@ -315,8 +315,9 @@ function App(){
                   const sel = subject===s;
                   return(
                     <button key={s} onClick={()=>setSubject(s)}
-                      style={{padding:"5px 12px",borderRadius:99,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,
-                        background:sel?color:bg, color:sel?"#fff":color, transition:"all 0.15s"}}>
+                      style={{padding:"5px 14px",borderRadius:99,border:`2px solid ${sel?color:"#e8edf5"}`,cursor:"pointer",fontSize:12,fontWeight:700,
+                        background:sel?color:"#fff", color:sel?"#fff":"#64748b", transition:"all 0.15s",
+                        boxShadow:sel?`0 2px 8px ${color}55`:"none"}}>
                       {s}
                     </button>
                   );
