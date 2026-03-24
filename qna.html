@@ -109,6 +109,7 @@ function SubjectBadge({subject}){
 // 질문 카드
 function QCard({q,num,isTeacher,replyTarget,setReplyTarget,videoUrl,setVideoUrl,replyComment,setReplyComment,onReply,onDelete}){
   const [big,setBig]=useState(false);
+  const [editSub,setEditSub]=useState(false);
   const ytId=getYtId(q.videoUrl);
   const timeStr = new Date(q.ts).toLocaleDateString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});
 
@@ -125,7 +126,19 @@ function QCard({q,num,isTeacher,replyTarget,setReplyTarget,videoUrl,setVideoUrl,
           <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{timeStr}</div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
-          <SubjectBadge subject={q.subject}/>
+          {isTeacher&&editSub?(
+              <select value={q.subject} onChange={e=>{updateQ(q.id,{subject:e.target.value});setEditSub(false);}}
+                onBlur={()=>setEditSub(false)}
+                autoFocus
+                style={{border:"1.5px solid #6366f1",borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:700,outline:"none",cursor:"pointer",background:"#fff",color:"#1e2533"}}>
+                {SUBJECTS.map(s=><option key={s} value={s}>{s}</option>)}
+              </select>
+            ):(
+              <span onClick={()=>isTeacher&&setEditSub(true)} title={isTeacher?"클릭해서 과목 수정":""} style={{display:"inline-flex",alignItems:"center",gap:3,cursor:isTeacher?"pointer":"default"}}>
+                <SubjectBadge subject={q.subject}/>
+                {isTeacher&&<span style={{fontSize:10,color:"#c4c9d4"}}>✏️</span>}
+              </span>
+            )}
           {q.answered
             ? <span style={{background:"#f0fdf4",color:"#16a34a",borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:700}}>해설완료</span>
             : <span style={{background:"#fff7ed",color:"#ea580c",borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:700}}>대기중</span>
