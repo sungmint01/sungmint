@@ -231,7 +231,6 @@ function App(){
   const [replyComment,setReplyComment]=useState("");
   const [filter,setFilter]=useState("all");
   const [subjectFilter,setSubjectFilter]=useState("전체");
-  const fileRef=useRef();
 
   useEffect(()=>{
     const unsub=listenQs(qs=>{setQuestions(qs);setLoading(false);});
@@ -340,13 +339,12 @@ function App(){
               </div>
 
               {/* 사진 업로드 */}
-              <div onClick={()=>fileRef.current?.click()}
-                style={{border:"1.5px dashed "+(preview?"#a5b4fc":"#cbd5e1"),borderRadius:12,padding:preview?0:"28px 20px",textAlign:"center",cursor:"pointer",background:preview?"#fafbff":"#f8fafc",marginBottom:12,overflow:"hidden"}}>
-                <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={onFile}/>
+              <label style={{display:"block",border:"1.5px dashed "+(preview?"#a5b4fc":"#cbd5e1"),borderRadius:12,padding:preview?0:"28px 20px",textAlign:"center",cursor:"pointer",background:preview?"#fafbff":"#f8fafc",marginBottom:12,overflow:"hidden"}}>
+                <input type="file" accept="image/*" style={{position:"absolute",opacity:0,width:0,height:0,overflow:"hidden"}} onChange={onFile}/>
                 {preview?(
                   <div style={{position:"relative"}}>
                     <img src={preview} style={{maxWidth:"100%",maxHeight:240,display:"block",margin:"0 auto"}}/>
-                    <button onClick={e=>{e.stopPropagation();setPhoto(null);setPreview(null);}}
+                    <button onClick={e=>{e.preventDefault();e.stopPropagation();setPhoto(null);setPreview(null);}}
                       style={{position:"absolute",top:8,right:8,background:"rgba(0,0,0,0.5)",border:"none",borderRadius:"50%",width:28,height:28,color:"#fff",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
                   </div>
                 ):(
@@ -356,7 +354,7 @@ function App(){
                     <div style={{fontSize:11,color:"#94a3b8"}}>클릭하거나 촬영해서 올려주세요</div>
                   </>
                 )}
-              </div>
+              </label>
 
               {/* 텍스트 */}
               <textarea value={qText} onChange={e=>setQText(e.target.value)} placeholder="어떤 부분이 어려운지 적어주세요 (선택)" rows={3}
