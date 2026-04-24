@@ -1,703 +1,91 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>학생관리 시스템 — 관리자</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Noto Sans KR',sans-serif;background:#f0f4f8;color:#1e293b}
-:root{--blue:#74B3D8;--blue-dark:#5a9ec7;--rose:#ED9499;--yellow:#F5C842;--sidebar:#0f172a;--sidebar2:#1e293b}
-
-/* Login */
-#loginWrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%)}
-.login-box{background:#fff;border-radius:20px;padding:48px 40px;width:340px;box-shadow:0 25px 60px rgba(0,0,0,.35)}
-.login-logo{width:56px;height:56px;background:linear-gradient(135deg,var(--blue),#4a90d9);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;font-size:24px}
-.login-box h1{font-size:22px;font-weight:700;text-align:center;margin-bottom:4px}
-.login-box p{font-size:13px;color:#94a3b8;text-align:center;margin-bottom:32px}
-.form-input{width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:11px 14px;font-size:14px;font-family:inherit;outline:none;transition:.2s;margin-bottom:12px}
-.form-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(116,179,216,.15)}
-.btn-login{width:100%;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:.2s;margin-top:4px}
-.btn-login:hover{background:var(--blue-dark)}
-.err-msg{color:#ef4444;font-size:13px;text-align:center;margin-top:10px;min-height:18px}
-
-/* Main layout */
-#mainApp{display:none;height:100vh;overflow:hidden;flex-direction:row}
-.sidebar{width:260px;min-height:100vh;background:var(--sidebar);display:flex;flex-direction:column;flex-shrink:0}
-.sidebar-head{padding:20px 18px 14px;border-bottom:1px solid rgba(255,255,255,.07)}
-.sidebar-head h1{color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
-.sidebar-head p{color:#64748b;font-size:12px;margin-top:4px}
-.sidebar-actions{padding:12px}
-.btn-add{width:100%;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;transition:.2s}
-.btn-add:hover{background:var(--blue-dark)}
-#studentList{flex:1;overflow-y:auto;padding:4px 0}
-#studentList::-webkit-scrollbar{width:4px}
-#studentList::-webkit-scrollbar-track{background:transparent}
-#studentList::-webkit-scrollbar-thumb{background:#334155;border-radius:2px}
-.stu-item{padding:11px 18px;cursor:pointer;border-left:3px solid transparent;display:flex;align-items:center;justify-content:space-between;transition:.15s}
-.stu-item:hover{background:rgba(116,179,216,.1);border-left-color:rgba(116,179,216,.4)}
-.stu-item.active{background:rgba(116,179,216,.15);border-left-color:var(--blue)}
-.stu-item-name{color:#e2e8f0;font-size:14px;font-weight:500}
-.stu-item-sub{color:#64748b;font-size:11px;margin-top:2px}
-.unread-dot{background:#ef4444;color:#fff;font-size:10px;font-weight:700;border-radius:99px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.sidebar-foot{padding:14px 18px;border-top:1px solid rgba(255,255,255,.07)}
-.btn-logout{background:none;border:none;color:#475569;font-size:12px;cursor:pointer;font-family:inherit;transition:.15s}
-.btn-logout:hover{color:#94a3b8}
-
-/* Main content */
-.main-content{flex:1;overflow-y:auto;background:#f0f4f8}
-.empty-state{height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:#94a3b8}
-.empty-state .icon{font-size:52px;opacity:.4}
-.empty-state h2{font-size:17px;font-weight:600;color:#cbd5e1}
-.empty-state p{font-size:13px;text-align:center;line-height:1.6}
-
-/* Student detail */
-#studentDetail{display:none;padding:28px}
-.card{background:#fff;border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:20px}
-.student-header{padding:22px 24px}
-.student-header-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.stu-name{font-size:22px;font-weight:700;margin-bottom:6px}
-.tag{display:inline-flex;align-items:center;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:500;margin-right:6px}
-.tag-grade{background:#eff6ff;color:#3b82f6}
-.tag-subject{background:#f0fdf4;color:#16a34a}
-.parent-link-row{display:flex;align-items:center;gap:8px;margin-top:10px}
-.parent-link-text{font-size:11px;color:#94a3b8;font-family:monospace;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.header-actions{display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap}
-.btn-sm{border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s;display:flex;align-items:center;gap:5px}
-.btn-outline{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0}
-.btn-outline:hover{background:#e2e8f0}
-.btn-copy{background:var(--blue);color:#fff}
-.btn-copy:hover{background:var(--blue-dark)}
-.btn-del{background:#fff0f0;color:#ef4444;border:1px solid #fecaca}
-.btn-del:hover{background:#fee2e2}
-
-/* Section headers */
-.section-head{display:flex;align-items:center;justify-content:space-between;padding:18px 24px 14px;border-bottom:1px solid #f1f5f9}
-.section-title{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
-.btn-add-record{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:.2s}
-.btn-add-record:hover{background:var(--blue-dark)}
-
-/* Sessions table */
-.table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse}
-th{background:#f8fafc;padding:10px 16px;text-align:left;font-size:12px;font-weight:600;color:#64748b;letter-spacing:.02em;border-bottom:1px solid #e2e8f0;white-space:nowrap}
-td{padding:11px 16px;font-size:13px;color:#334155;border-bottom:1px solid #f8fafc;vertical-align:middle}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:#fafbfc}
-.badge{display:inline-flex;align-items:center;border-radius:99px;padding:2px 9px;font-size:11px;font-weight:600}
-.badge-상{background:#dcfce7;color:#15803d}
-.badge-중{background:#fef9c3;color:#b45309}
-.badge-하{background:#fee2e2;color:#b91c1c}
-.badge-완료{background:#dcfce7;color:#15803d}
-.badge-부분완료{background:#fef3c7;color:#b45309}
-.badge-미완료{background:#fee2e2;color:#b91c1c}
-.badge-없음{background:#f1f5f9;color:#94a3b8}
-.cell-action{display:flex;gap:8px;white-space:nowrap}
-.link-btn{background:none;border:none;font-size:12px;cursor:pointer;font-family:inherit;padding:3px 0;transition:.15s}
-.link-btn-edit{color:var(--blue)}
-.link-btn-edit:hover{color:var(--blue-dark)}
-.link-btn-del{color:#f87171}
-.link-btn-del:hover{color:#ef4444}
-.empty-table{text-align:center;padding:32px;color:#94a3b8;font-size:13px}
-
-/* Consultations */
-.consult-list{divide-y:1px solid #f1f5f9}
-.consult-item{padding:16px 24px;border-bottom:1px solid #f8fafc;display:flex;gap:12px;align-items:flex-start}
-.consult-item.unread{background:#eff9ff}
-.consult-meta{display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap}
-.consult-name{font-size:13px;font-weight:600;color:#1e293b}
-.consult-time{font-size:11px;color:#94a3b8}
-.consult-new{background:var(--blue);color:#fff;font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px}
-.consult-text{font-size:13px;color:#475569;line-height:1.6;white-space:pre-wrap}
-.consult-actions{display:flex;gap:8px;margin-top:8px}
-.consult-left{flex:1}
-.unread-count{background:#ef4444;color:#fff;font-size:10px;font-weight:700;border-radius:99px;padding:1px 8px;margin-left:6px}
-
-/* Modal */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
-.modal-overlay.open{display:flex}
-.modal-box{background:#fff;border-radius:18px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.3)}
-.modal-box.wide{max-width:560px}
-.modal-head{padding:24px 24px 18px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between}
-.modal-head h3{font-size:17px;font-weight:700}
-.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;line-height:1}
-.modal-body{padding:22px 24px}
-.form-group{margin-bottom:16px}
-.form-label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.modal-foot{padding:16px 24px;border-top:1px solid #f1f5f9;display:flex;gap:10px;justify-content:flex-end}
-select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2364748b'%3E%3Cpath d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:16px;padding-right:32px}
-textarea.form-input{resize:vertical;min-height:72px}
-.btn-save{background:var(--blue);color:#fff;border:none;border-radius:9px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:.2s}
-.btn-save:hover{background:var(--blue-dark)}
-.btn-cancel{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:9px;padding:10px 20px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
-.btn-cancel:hover{background:#e2e8f0}
-.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:11px 22px;border-radius:10px;font-size:13px;font-weight:500;z-index:200;opacity:0;transition:opacity .25s;pointer-events:none}
-.toast.show{opacity:1}
-</style>
+  <meta charset="UTF-8"/>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>sungmint</title>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:'Noto Sans KR',sans-serif;
+      background:#f8faff;
+      color:#1a202c;
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding:32px 20px;
+    }
+    body::before{
+      content:'';
+      position:fixed;inset:0;
+      background-image:
+        linear-gradient(rgba(200,210,230,0.5) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(200,210,230,0.5) 1px,transparent 1px);
+      background-size:60px 60px;
+      pointer-events:none;
+    }
+    .wrap{position:relative;z-index:1;width:100%;max-width:520px;display:flex;flex-direction:column;align-items:center;gap:40px}
+    .logo{text-align:center}
+    .logo-text{font-family:'Space Mono',monospace;font-size:46px;font-weight:700;letter-spacing:-2px;line-height:1;margin-bottom:10px}
+    .logo-ab{background:linear-gradient(90deg,#7dd3fc,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .logo-c{background:linear-gradient(135deg,#f87171,#fb923c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:inline-block;padding-bottom:6px;padding-right:6px;margin-bottom:-6px;margin-left:4px}
+    .tagline{font-family:'Space Mono',monospace;font-size:10px;color:#4a5a72;letter-spacing:3px;text-transform:uppercase}
+    .cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%}
+    .card{
+      display:block;text-decoration:none;
+      background:#ffffff;border:1px solid #e2e8f0;border-radius:20px;
+      padding:28px 22px 52px;position:relative;overflow:hidden;
+      transition:transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+    .card:hover{transform:translateY(-4px)}
+    .card-qna:hover{border-color:rgba(0,198,255,0.45);box-shadow:0 8px 40px rgba(0,198,255,0.1)}
+    .card-od4p:hover{border-color:rgba(167,139,250,0.45);box-shadow:0 8px 40px rgba(167,139,250,0.1)}
+    .icon{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px}
+    .icon-qna{background:rgba(0,198,255,0.1);border:1px solid rgba(0,198,255,0.2)}
+    .icon-od4p{background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.2)}
+    .name{font-family:'Black Han Sans',sans-serif;font-size:20px;margin-bottom:4px}
+    .name-qna{background:linear-gradient(135deg,#00c6ff,#4f8fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .name-od4p{background:linear-gradient(135deg,#a78bfa,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .sub{font-family:'Space Mono',monospace;font-size:9px;color:#4a5a72;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+    .desc{font-size:12px;color:#718096;line-height:1.8}
+    .arrow{position:absolute;bottom:18px;right:18px;font-size:16px;color:#2a3a52}
+    .footer{font-family:'Space Mono',monospace;font-size:10px;color:#cbd5e1;letter-spacing:2px}
+    @media(max-width:480px){.logo-text{font-size:11vw;letter-spacing:-1px}}
+  </style>
 </head>
 <body>
+  <div class="wrap">
+    <div class="logo">
+      <div class="logo-text">
+        <span class="logo-ab">sungmin</span><span class="logo-c">T</span>
+      </div>
+      <div class="tagline">Math Learning Tools</div>
+    </div>
 
-<!-- ==================== LOGIN ==================== -->
-<div id="loginWrap">
-  <div class="login-box">
-    <div class="login-logo">📚</div>
-    <h1>학생관리 시스템</h1>
-    <p>관리자 전용 페이지</p>
-    <div id="loginForm">
-      <input class="form-input" type="password" id="pwInput" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')doLogin()">
-      <button class="btn-login" onclick="doLogin()">로그인</button>
-      <div class="err-msg" id="loginErr"></div>
+    <div class="cards">
+      <a class="card card-qna" href="./qna.html">
+        <div class="icon icon-qna">💬</div>
+        <div class="name name-qna">익명 질문함</div>
+        <div class="sub">QnA</div>
+        <div class="desc">모르는 문제를<br/>익명으로 질문해요</div>
+        <div class="arrow">→</div>
+      </a>
+      <a class="card card-od4p" href="./od4p.html">
+        <div class="icon icon-od4p">📚</div>
+        <div class="name name-od4p">오늘의 문제</div>
+        <div class="sub">OD4P</div>
+        <div class="desc">매일 4문제 풀고<br/>즉시 채점 확인</div>
+        <div class="arrow">→</div>
+      </a>
     </div>
-    <div id="setupForm" style="display:none">
-      <p style="font-size:13px;color:#64748b;text-align:center;margin-bottom:20px">첫 접속입니다. 관리자 비밀번호를 설정해주세요.</p>
-      <input class="form-input" type="password" id="pw1" placeholder="새 비밀번호 (4자 이상)">
-      <input class="form-input" type="password" id="pw2" placeholder="비밀번호 확인">
-      <button class="btn-login" onclick="doSetup()">비밀번호 설정</button>
-      <div class="err-msg" id="setupErr"></div>
-    </div>
+
+    <div class="footer">SUNGMINT · MATH TOOLS</div>
   </div>
-</div>
-
-<!-- ==================== MAIN APP ==================== -->
-<div id="mainApp" style="display:none;flex-direction:row;height:100vh;overflow:hidden">
-
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="sidebar-head">
-      <h1>📚 학생관리</h1>
-      <p id="stuCount">학생 0명</p>
-    </div>
-    <div class="sidebar-actions">
-      <button class="btn-add" onclick="openStudentModal()">＋ 학생 추가</button>
-    </div>
-    <div id="studentList"></div>
-    <div class="sidebar-foot">
-      <button class="btn-logout" onclick="doLogout()">로그아웃</button>
-    </div>
-  </aside>
-
-  <!-- Main -->
-  <div class="main-content" id="mainContent">
-    <div class="empty-state" id="emptyState" style="height:100%">
-      <div class="icon">👆</div>
-      <h2>학생을 선택하세요</h2>
-      <p>왼쪽 목록에서 학생을 선택하면<br>수업 기록과 상담 내용이 표시됩니다</p>
-    </div>
-
-    <div id="studentDetail" style="display:none;padding:28px">
-      <!-- Student Header Card -->
-      <div class="card">
-        <div class="student-header">
-          <div class="student-header-row">
-            <div>
-              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-                <span class="stu-name" id="dName"></span>
-                <span class="tag tag-grade" id="dGrade"></span>
-                <span class="tag tag-subject" id="dSubject"></span>
-              </div>
-              <div class="parent-link-row">
-                <span style="font-size:12px;color:#94a3b8">학부모 링크:</span>
-                <span class="parent-link-text" id="dLink"></span>
-              </div>
-            </div>
-            <div class="header-actions">
-              <button class="btn-sm btn-copy" onclick="copyLink()">🔗 링크 복사</button>
-              <button class="btn-sm btn-outline" onclick="openStudentModal(true)">✏️ 수정</button>
-              <button class="btn-sm btn-del" onclick="deleteCurrentStudent()">🗑 삭제</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Sessions Card -->
-      <div class="card">
-        <div class="section-head">
-          <span class="section-title">📋 수업 기록</span>
-          <button class="btn-add-record" onclick="openSessionModal()">＋ 기록 추가</button>
-        </div>
-        <div class="table-wrap" id="sessionsWrap">
-          <p class="empty-table">아직 수업 기록이 없습니다</p>
-        </div>
-      </div>
-
-      <!-- Consultations Card -->
-      <div class="card">
-        <div class="section-head">
-          <span class="section-title">
-            💬 상담 요청
-            <span class="unread-count" id="unreadCount" style="display:none"></span>
-          </span>
-        </div>
-        <div id="consultWrap">
-          <p class="empty-table">상담 요청이 없습니다</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ==================== STUDENT MODAL ==================== -->
-<div class="modal-overlay" id="studentModal">
-  <div class="modal-box">
-    <div class="modal-head">
-      <h3 id="studentModalTitle">학생 추가</h3>
-      <button class="modal-close" onclick="closeStudentModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="editStudentId">
-      <div class="form-group">
-        <label class="form-label">이름 *</label>
-        <input class="form-input" id="sName" type="text" placeholder="홍길동">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">학년</label>
-          <select class="form-input" id="sGrade">
-            <option>고1</option><option>고2</option><option>고3</option>
-            <option>중1</option><option>중2</option><option>중3</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">과목</label>
-          <input class="form-input" id="sSubject" type="text" placeholder="수학" value="수학">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">학부모 연락처</label>
-        <input class="form-input" id="sPhone" type="text" placeholder="010-0000-0000">
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn-cancel" onclick="closeStudentModal()">취소</button>
-      <button class="btn-save" onclick="saveStudent()">저장</button>
-    </div>
-  </div>
-</div>
-
-<!-- ==================== SESSION MODAL ==================== -->
-<div class="modal-overlay" id="sessionModal">
-  <div class="modal-box wide">
-    <div class="modal-head">
-      <h3 id="sessionModalTitle">수업 기록 추가</h3>
-      <button class="modal-close" onclick="closeSessionModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="editSessionId">
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">날짜 *</label>
-          <input class="form-input" id="sesDate" type="date">
-        </div>
-        <div class="form-group">
-          <label class="form-label">회차</label>
-          <input class="form-input" id="sesNum" type="number" placeholder="1" min="1">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">진도</label>
-        <input class="form-input" id="sesProgress" type="text" placeholder="예: 수I — 삼각함수 3단원 (p.125~140)">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">숙제 제출 여부</label>
-          <select class="form-input" id="sesHwStatus">
-            <option value="완료">✅ 완료</option>
-            <option value="부분완료">△ 부분완료</option>
-            <option value="미완료">❌ 미완료</option>
-            <option value="없음">— 해당 없음</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">성취도</label>
-          <select class="form-input" id="sesAchieve">
-            <option value="상">⭐ 상</option>
-            <option value="중" selected>✅ 중</option>
-            <option value="하">📌 하</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">숙제 내용</label>
-        <input class="form-input" id="sesHwContent" type="text" placeholder="예: 교재 p.130~145 연습문제 전체">
-      </div>
-      <div class="form-group">
-        <label class="form-label">클리닉 내용</label>
-        <textarea class="form-input" id="sesClinic" placeholder="클리닉 시간에 다룬 내용을 입력하세요"></textarea>
-      </div>
-      <div class="form-group">
-        <label class="form-label">학부모 전달 메모</label>
-        <textarea class="form-input" id="sesNotes" placeholder="학부모에게 전달할 특이사항이나 안내사항"></textarea>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn-cancel" onclick="closeSessionModal()">취소</button>
-      <button class="btn-save" onclick="saveSession()">저장</button>
-    </div>
-  </div>
-</div>
-
-<!-- Toast -->
-<div class="toast" id="toast"></div>
-
-<script>
-// ============================================================
-// ⚠️ Firebase 설정 — 기존 sungmint 프로젝트 설정을 붙여넣으세요
-// ============================================================
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-// ============================================================
-// State
-// ============================================================
-let ST = { uid: null, students: {}, sessions: {}, consults: {} };
-let listeners = { sessions: null, consults: null };
-
-// ============================================================
-// Utils
-// ============================================================
-async function sha256(msg) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
-  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-function uid() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-}
-function fmtDate(d) {
-  if (!d) return '-';
-  const [y,m,dd] = d.split('-');
-  return `${y}.${m}.${dd}`;
-}
-function getParentUrl(token) {
-  const base = location.origin + location.pathname.replace(/student-admin\/?.*/, '');
-  return `${base}student-view/?token=${token}`;
-}
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2200);
-}
-
-// ============================================================
-// Auth
-// ============================================================
-async function init() {
-  if (sessionStorage.getItem('smgmt_ok') === '1') { showMain(); return; }
-  const snap = await db.ref('studentMgmt/config/pwHash').get();
-  if (snap.exists()) {
-    document.getElementById('loginForm').style.display = '';
-    document.getElementById('setupForm').style.display = 'none';
-  } else {
-    document.getElementById('loginForm').style.display = 'none';
-    document.getElementById('setupForm').style.display = '';
-  }
-}
-
-async function doLogin() {
-  const pw = document.getElementById('pwInput').value;
-  if (!pw) return;
-  const hash = await sha256(pw);
-  const snap = await db.ref('studentMgmt/config/pwHash').get();
-  if (snap.exists() && snap.val() === hash) {
-    sessionStorage.setItem('smgmt_ok','1');
-    showMain();
-  } else {
-    document.getElementById('loginErr').textContent = '비밀번호가 올바르지 않습니다';
-  }
-}
-
-async function doSetup() {
-  const p1 = document.getElementById('pw1').value;
-  const p2 = document.getElementById('pw2').value;
-  const err = document.getElementById('setupErr');
-  if (!p1 || p1.length < 4) { err.textContent = '4자 이상 입력하세요'; return; }
-  if (p1 !== p2) { err.textContent = '비밀번호가 일치하지 않습니다'; return; }
-  await db.ref('studentMgmt/config/pwHash').set(await sha256(p1));
-  sessionStorage.setItem('smgmt_ok','1');
-  showMain();
-}
-
-function doLogout() {
-  sessionStorage.removeItem('smgmt_ok');
-  location.reload();
-}
-
-// ============================================================
-// Main
-// ============================================================
-function showMain() {
-  document.getElementById('loginWrap').style.display = 'none';
-  const app = document.getElementById('mainApp');
-  app.style.display = 'flex';
-  // Listen to all students
-  db.ref('studentMgmt/students').on('value', snap => {
-    ST.students = snap.val() || {};
-    renderSidebar();
-    if (ST.uid && ST.students[ST.uid]) renderHeader(ST.uid);
-  });
-  // Load consultations for badge counts
-  db.ref('studentMgmt/consultations').on('value', snap => {
-    ST.consults = snap.val() || {};
-    renderSidebar();
-    if (ST.uid) renderConsults(ST.uid);
-  });
-}
-
-function renderSidebar() {
-  const s = ST.students;
-  document.getElementById('stuCount').textContent = `학생 ${Object.keys(s).length}명`;
-  const list = document.getElementById('studentList');
-  const sorted = Object.entries(s).sort(([,a],[,b])=>(a.name||'').localeCompare(b.name||'','ko'));
-  if (!sorted.length) {
-    list.innerHTML = '<p style="color:#475569;font-size:12px;text-align:center;padding:20px 16px">등록된 학생이 없습니다</p>';
-    return;
-  }
-  list.innerHTML = sorted.map(([id,stu])=>{
-    const c = ST.consults[id] || {};
-    const unread = Object.values(c).filter(x=>!x.isRead).length;
-    return `<div class="stu-item ${id===ST.uid?'active':''}" onclick="selectStudent('${id}')">
-      <div>
-        <div class="stu-item-name">${stu.name||'이름없음'}</div>
-        <div class="stu-item-sub">${stu.grade||''} · ${stu.subject||''}</div>
-      </div>
-      ${unread>0?`<div class="unread-dot">${unread}</div>`:''}
-    </div>`;
-  }).join('');
-}
-
-function selectStudent(id) {
-  ST.uid = id;
-  document.getElementById('emptyState').style.display = 'none';
-  document.getElementById('studentDetail').style.display = '';
-  renderHeader(id);
-  renderSidebar();
-  // Sessions listener
-  if (listeners.sessions) { listeners.sessions(); listeners.sessions = null; }
-  db.ref(`studentMgmt/sessions/${id}`).on('value', snap => {
-    ST.sessions[id] = snap.val() || {};
-    renderSessions(id);
-  });
-  renderConsults(id);
-}
-
-function renderHeader(id) {
-  const s = ST.students[id];
-  if (!s) return;
-  document.getElementById('dName').textContent = s.name||'';
-  document.getElementById('dGrade').textContent = s.grade||'';
-  document.getElementById('dSubject').textContent = s.subject||'';
-  const url = getParentUrl(s.token);
-  document.getElementById('dLink').textContent = url;
-  document.getElementById('dLink').title = url;
-}
-
-function renderSessions(id) {
-  const data = ST.sessions[id] || {};
-  const wrap = document.getElementById('sessionsWrap');
-  const entries = Object.entries(data).sort(([,a],[,b])=>{
-    if (a.date!==b.date) return (b.date||'').localeCompare(a.date||'');
-    return (b.num||0)-(a.num||0);
-  });
-  if (!entries.length) { wrap.innerHTML='<p class="empty-table">아직 수업 기록이 없습니다</p>'; return; }
-  wrap.innerHTML = `<table>
-    <thead><tr>
-      <th>날짜</th><th>회차</th><th>진도</th><th>숙제</th><th>성취도</th><th>클리닉</th><th>액션</th>
-    </tr></thead>
-    <tbody>${entries.map(([sid,s])=>`
-      <tr>
-        <td style="white-space:nowrap">${fmtDate(s.date)}</td>
-        <td style="text-align:center;font-weight:600">${s.num||'-'}회</td>
-        <td style="max-width:180px" title="${s.progress||''}">${s.progress||'-'}</td>
-        <td><span class="badge badge-${s.hwStatus||'없음'}">${s.hwStatus||'-'}</span></td>
-        <td><span class="badge badge-${s.achieve||'-'}">${s.achieve||'-'}</span></td>
-        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${s.clinic||''}">${s.clinic||'-'}</td>
-        <td><div class="cell-action">
-          <button class="link-btn link-btn-edit" onclick="openSessionModal('${sid}')">수정</button>
-          <button class="link-btn link-btn-del" onclick="delSession('${id}','${sid}')">삭제</button>
-        </div></td>
-      </tr>`).join('')}
-    </tbody>
-  </table>`;
-}
-
-function renderConsults(id) {
-  const data = ST.consults[id] || {};
-  const wrap = document.getElementById('consultWrap');
-  const badge = document.getElementById('unreadCount');
-  const entries = Object.entries(data).sort(([,a],[,b])=>(b.ts||0)-(a.ts||0));
-  const unread = entries.filter(([,c])=>!c.isRead).length;
-  if (unread > 0) { badge.textContent=`미읽음 ${unread}건`; badge.style.display=''; }
-  else badge.style.display='none';
-  if (!entries.length) { wrap.innerHTML='<p class="empty-table">상담 요청이 없습니다</p>'; return; }
-  wrap.innerHTML = entries.map(([cid,c])=>`
-    <div class="consult-item ${c.isRead?'':'unread'}">
-      <div class="consult-left">
-        <div class="consult-meta">
-          <span class="consult-name">${c.name||'학부모'}</span>
-          <span class="consult-time">${new Date(c.ts||0).toLocaleString('ko-KR')}</span>
-          ${!c.isRead?'<span class="consult-new">NEW</span>':''}
-        </div>
-        <div class="consult-text">${c.content||''}</div>
-        <div class="consult-actions">
-          ${!c.isRead?`<button class="link-btn link-btn-edit" onclick="markRead('${id}','${cid}')">읽음 처리</button>`:''}
-          <button class="link-btn link-btn-del" onclick="delConsult('${id}','${cid}')">삭제</button>
-        </div>
-      </div>
-    </div>`).join('');
-}
-
-// ============================================================
-// Student CRUD
-// ============================================================
-function openStudentModal(edit=false) {
-  if (edit && ST.uid) {
-    const s = ST.students[ST.uid];
-    document.getElementById('studentModalTitle').textContent = '학생 정보 수정';
-    document.getElementById('editStudentId').value = ST.uid;
-    document.getElementById('sName').value = s.name||'';
-    document.getElementById('sGrade').value = s.grade||'고2';
-    document.getElementById('sSubject').value = s.subject||'수학';
-    document.getElementById('sPhone').value = s.phone||'';
-  } else {
-    document.getElementById('studentModalTitle').textContent = '학생 추가';
-    document.getElementById('editStudentId').value = '';
-    document.getElementById('sName').value = '';
-    document.getElementById('sGrade').value = '고2';
-    document.getElementById('sSubject').value = '수학';
-    document.getElementById('sPhone').value = '';
-  }
-  document.getElementById('studentModal').classList.add('open');
-  document.getElementById('sName').focus();
-}
-function closeStudentModal() { document.getElementById('studentModal').classList.remove('open'); }
-
-async function saveStudent() {
-  const name = document.getElementById('sName').value.trim();
-  if (!name) { alert('이름을 입력하세요'); return; }
-  const eid = document.getElementById('editStudentId').value;
-  const data = { name, grade: document.getElementById('sGrade').value, subject: document.getElementById('sSubject').value, phone: document.getElementById('sPhone').value };
-  if (eid) {
-    await db.ref(`studentMgmt/students/${eid}`).update(data);
-    showToast('학생 정보가 수정되었습니다');
-  } else {
-    data.token = uid();
-    data.createdAt = Date.now();
-    await db.ref('studentMgmt/students').push(data);
-    showToast('학생이 추가되었습니다');
-  }
-  closeStudentModal();
-}
-
-async function deleteCurrentStudent() {
-  const id = ST.uid;
-  const s = ST.students[id];
-  if (!confirm(`${s?.name} 학생을 삭제하시겠습니까?\n모든 수업 기록과 상담 내용이 삭제됩니다.`)) return;
-  await db.ref(`studentMgmt/students/${id}`).remove();
-  await db.ref(`studentMgmt/sessions/${id}`).remove();
-  await db.ref(`studentMgmt/consultations/${id}`).remove();
-  ST.uid = null;
-  document.getElementById('emptyState').style.display = '';
-  document.getElementById('studentDetail').style.display = 'none';
-  showToast('삭제되었습니다');
-}
-
-// ============================================================
-// Session CRUD
-// ============================================================
-function openSessionModal(sid=null) {
-  const id = ST.uid;
-  document.getElementById('editSessionId').value = sid||'';
-  if (sid) {
-    const s = (ST.sessions[id]||{})[sid];
-    document.getElementById('sessionModalTitle').textContent = '수업 기록 수정';
-    document.getElementById('sesDate').value = s.date||'';
-    document.getElementById('sesNum').value = s.num||'';
-    document.getElementById('sesProgress').value = s.progress||'';
-    document.getElementById('sesHwStatus').value = s.hwStatus||'완료';
-    document.getElementById('sesAchieve').value = s.achieve||'중';
-    document.getElementById('sesHwContent').value = s.hwContent||'';
-    document.getElementById('sesClinic').value = s.clinic||'';
-    document.getElementById('sesNotes').value = s.notes||'';
-  } else {
-    document.getElementById('sessionModalTitle').textContent = '수업 기록 추가';
-    document.getElementById('sesDate').value = new Date().toISOString().split('T')[0];
-    document.getElementById('sesNum').value = Object.keys(ST.sessions[id]||{}).length+1;
-    ['sesProgress','sesHwContent','sesClinic','sesNotes'].forEach(f=>document.getElementById(f).value='');
-    document.getElementById('sesHwStatus').value = '완료';
-    document.getElementById('sesAchieve').value = '중';
-  }
-  document.getElementById('sessionModal').classList.add('open');
-}
-function closeSessionModal() { document.getElementById('sessionModal').classList.remove('open'); }
-
-async function saveSession() {
-  const id = ST.uid;
-  const sid = document.getElementById('editSessionId').value;
-  const date = document.getElementById('sesDate').value;
-  if (!date) { alert('날짜를 입력하세요'); return; }
-  const data = {
-    date,
-    num: parseInt(document.getElementById('sesNum').value)||1,
-    progress: document.getElementById('sesProgress').value,
-    hwStatus: document.getElementById('sesHwStatus').value,
-    achieve: document.getElementById('sesAchieve').value,
-    hwContent: document.getElementById('sesHwContent').value,
-    clinic: document.getElementById('sesClinic').value,
-    notes: document.getElementById('sesNotes').value,
-    updatedAt: Date.now()
-  };
-  const ref = db.ref(`studentMgmt/sessions/${id}`);
-  if (sid) { await ref.child(sid).update(data); showToast('수정되었습니다'); }
-  else { data.createdAt = Date.now(); await ref.push(data); showToast('기록이 추가되었습니다'); }
-  closeSessionModal();
-}
-
-async function delSession(studentId, sid) {
-  if (!confirm('이 기록을 삭제하시겠습니까?')) return;
-  await db.ref(`studentMgmt/sessions/${studentId}/${sid}`).remove();
-  showToast('삭제되었습니다');
-}
-
-// ============================================================
-// Consultations
-// ============================================================
-async function markRead(sid, cid) {
-  await db.ref(`studentMgmt/consultations/${sid}/${cid}/isRead`).set(true);
-}
-async function delConsult(sid, cid) {
-  if (!confirm('삭제하시겠습니까?')) return;
-  await db.ref(`studentMgmt/consultations/${sid}/${cid}`).remove();
-}
-
-function copyLink() {
-  const s = ST.students[ST.uid];
-  if (!s) return;
-  const url = getParentUrl(s.token);
-  navigator.clipboard.writeText(url).then(()=>showToast('링크가 복사되었습니다'));
-}
-
-// Keyboard
-document.addEventListener('keydown', e=>{
-  if (e.key==='Escape'){closeStudentModal();closeSessionModal();}
-});
-document.getElementById('studentModal').addEventListener('click',e=>{if(e.target.id==='studentModal')closeStudentModal()});
-document.getElementById('sessionModal').addEventListener('click',e=>{if(e.target.id==='sessionModal')closeSessionModal()});
-
-init();
-</script>
 </body>
 </html>
