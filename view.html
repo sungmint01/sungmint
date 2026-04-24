@@ -84,8 +84,14 @@ textarea.inp{resize:vertical;min-height:90px}
 .succ{background:#dcfce7;border:1px solid #86efac;border-radius:8px;padding:11px;font-size:13px;color:#15803d;text-align:center;display:none;margin-top:8px}
 .cerr{color:#ef4444;font-size:12px;margin-top:5px;min-height:16px}
 .sent-hd{font-size:12px;color:#94a3b8;margin:14px 0 6px}
-.sent-i{background:#f8fafc;border-radius:8px;padding:10px 13px;margin-bottom:7px;font-size:13px;color:#475569;border-left:3px solid var(--bl);line-height:1.6}
-.sent-t{font-size:11px;color:#94a3b8;margin-bottom:3px}
+.sent-i{background:#f8fafc;border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:13px;color:#475569;border:1px solid #e2e8f0;line-height:1.6}
+.sent-t{font-size:11px;color:#94a3b8;margin-bottom:5px;display:flex;align-items:center;justify-content:space-between}
+.sent-body{white-space:pre-wrap;margin-bottom:8px}
+.sent-reply{background:#f0fdf4;border-left:3px solid #86efac;border-radius:0 8px 8px 0;padding:9px 12px;margin-top:8px;font-size:12px;color:#166534;line-height:1.6;white-space:pre-wrap}
+.sent-reply-head{font-size:11px;font-weight:600;color:#15803d;margin-bottom:4px}
+.sent-no-reply{font-size:11px;color:#94a3b8;margin-top:6px;font-style:italic}
+.btn-del-sent{background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;font-family:inherit;padding:0;transition:.15s}
+.btn-del-sent:hover{color:#ef4444}
 footer{text-align:center;padding:24px 0 12px;color:#cbd5e1;font-size:12px}
 </style>
 </head>
@@ -138,7 +144,7 @@ footer{text-align:center;padding:24px 0 12px;color:#cbd5e1;font-size:12px}
   </div>
 </div>
 <script>
-let db,sid_=null,recData={},sent=[],calYear,calMonth;
+let db,sid_=null,recData={},sent=[],consultData={},calYear,calMonth;
 
 window.addEventListener('DOMContentLoaded',()=>{
   const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();
@@ -170,7 +176,11 @@ async function loadPage(){
     db.ref(`smSessions/${sid_}`).on('value',s=>{recData=s.val()||{};renderStats();renderCal();});
     const stored=localStorage.getItem(`smSent_${sid_}`);
     if(stored)try{sent=JSON.parse(stored);}catch(e){}
-    renderSent();
+    // Firebase 상담 실시간 리스닝
+    db.ref(`smConsultations/${sid_}`).on('value',s=>{
+      consultData=s.val()||{};
+      renderSent();
+    });
   }catch(e){showErr('오류 발생',''+e.message);}
 }
 function showErr(title,msg){document.getElementById('load').innerHTML=`<div class="err"><div class="ei">😔</div><h2>${title}</h2><p>${msg}</p></div>`;}
@@ -282,20 +292,34 @@ async function submitC(){
   btn.disabled=true;btn.textContent='전송 중...';
   try{
     await db.ref(`smConsultations/${sid_}`).push({name,content,ts:Date.now(),isRead:false});
-    sent.unshift({name,content,ts:Date.now()});
-    localStorage.setItem(`smSent_${sid_}`,JSON.stringify(sent.slice(0,10)));
-    renderSent();
     document.getElementById('cName').value='';
     document.getElementById('cContent').value='';
     const s=document.getElementById('cSucc');s.style.display='block';setTimeout(()=>s.style.display='none',4000);
   }catch(e){err.textContent='전송 실패: '+e.message;}
   btn.disabled=false;btn.textContent='상담 요청 보내기';
 }
+
+async function delConsult(cid){
+  if(!confirm('이 상담 요청을 삭제하시겠습니까?'))return;
+  await db.ref(`smConsultations/${sid_}/${cid}`).remove();
+}
+
 function renderSent(){
   const el=document.getElementById('sentList');
-  if(!sent.length){el.innerHTML='';return;}
-  el.innerHTML='<p class="sent-hd">내가 보낸 요청</p>'+sent.slice(0,5).map(c=>`
-    <div class="sent-i"><div class="sent-t">${new Date(c.ts).toLocaleString('ko-KR')} · ${c.name}</div>${c.content}</div>`).join('');
+  const arr=Object.entries(consultData).sort(([,a],[,b])=>(b.ts||0)-(a.ts||0));
+  if(!arr.length){el.innerHTML='';return;}
+  el.innerHTML='<p class="sent-hd">상담 내역</p>'+arr.map(([cid,c])=>`
+    <div class="sent-i">
+      <div class="sent-t">
+        <span>${new Date(c.ts||0).toLocaleString('ko-KR')} · ${c.name||''}</span>
+        <button class="btn-del-sent" onclick="delConsult('${cid}')">삭제</button>
+      </div>
+      <div class="sent-body">${c.content||''}</div>
+      ${c.reply
+        ?`<div class="sent-reply"><div class="sent-reply-head">✏️ 선생님 답변 · ${c.replyAt?new Date(c.replyAt).toLocaleString('ko-KR'):''}</div>${c.reply.replace(/\n/g,'<br>')}</div>`
+        :`<div class="sent-no-reply">⏳ 아직 답변이 없습니다</div>`
+      }
+    </div>`).join('');
 }
 </script>
 </body>

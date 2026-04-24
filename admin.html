@@ -103,6 +103,15 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f0f4f8;color:#1e293b}
 .ci-new{background:var(--bl);color:#fff;font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px}
 .ci-body{font-size:13px;color:#475569;line-height:1.6;white-space:pre-wrap}
 .ci-acts{display:flex;gap:8px;margin-top:5px}
+.ci-reply{background:#f0fdf4;border-left:3px solid #86efac;border-radius:0 8px 8px 0;padding:10px 12px;margin-top:8px;font-size:13px;color:#166534;line-height:1.6;white-space:pre-wrap}
+.ci-reply-head{font-size:11px;font-weight:600;color:#15803d;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between}
+.ci-reply-form{margin-top:8px;display:none}
+.ci-reply-form.open{display:block}
+.ci-reply-form textarea{width:100%;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none;resize:vertical;min-height:68px;transition:.2s;background:#fff}
+.ci-reply-form textarea:focus{border-color:var(--bl);box-shadow:0 0 0 3px rgba(116,179,216,.12)}
+.ci-reply-form-row{display:flex;gap:7px;margin-top:7px}
+.btn-reply-save{background:var(--bl);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-reply-cancel{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit}
 .ub{background:#ef4444;color:#fff;font-size:10px;font-weight:700;border-radius:99px;padding:1px 7px;margin-left:5px}
 .etbl{text-align:center;padding:28px;color:#94a3b8;font-size:13px}
 .lnk{background:none;border:none;font-size:12px;cursor:pointer;font-family:inherit;padding:2px 0;transition:.15s}
@@ -337,10 +346,29 @@ function renderConsultView(){
     html+=`<div class="cv-card">
       <div class="cv-stu-head">${stu.name||'?'}<span class="cv-stu-sub">${stu.grade||''}</span>${u?`<span class="ub">${u}건 미읽음</span>`:''}</div>
       ${ca.map(([cid,c])=>`
-        <div class="ci-item ${c.isRead?'':'unread'}">
+        <div class="ci-item ${c.isRead?'':'unread'}" id="ci_${sid}_${cid}">
           <div class="ci-meta"><span class="ci-name">${c.name||'학부모'}</span><span class="ci-time">${new Date(c.ts||0).toLocaleString('ko-KR')}</span>${!c.isRead?'<span class="ci-new">NEW</span>':''}</div>
           <div class="ci-body">${c.content||''}</div>
-          <div class="ci-acts">${!c.isRead?`<button class="lnk le" onclick="markRead('${sid}','${cid}')">읽음</button>`:''}<button class="lnk ld" onclick="delConsult('${sid}','${cid}')">삭제</button></div>
+          ${c.reply?`
+            <div class="ci-reply">
+              <div class="ci-reply-head">
+                <span>✏️ 선생님 답변 · ${c.replyAt?new Date(c.replyAt).toLocaleString('ko-KR'):''}</span>
+              </div>
+              ${c.reply.replace(/\n/g,'<br>')}
+            </div>`:''
+          }
+          <div class="ci-reply-form" id="rf_${sid}_${cid}">
+            <textarea id="rt_${sid}_${cid}" placeholder="답변을 입력하세요">${c.reply||''}</textarea>
+            <div class="ci-reply-form-row">
+              <button class="btn-reply-save" onclick="saveReply('${sid}','${cid}')">저장</button>
+              <button class="btn-reply-cancel" onclick="toggleReplyForm('${sid}','${cid}')">취소</button>
+            </div>
+          </div>
+          <div class="ci-acts">
+            ${!c.isRead?`<button class="lnk le" onclick="markRead('${sid}','${cid}')">읽음</button>`:''}
+            <button class="lnk le" onclick="toggleReplyForm('${sid}','${cid}')">${c.reply?'답변 수정':'답변 달기'}</button>
+            <button class="lnk ld" onclick="delConsult('${sid}','${cid}')">삭제</button>
+          </div>
         </div>`).join('')}
     </div>`;
   });
@@ -516,6 +544,23 @@ async function delCurrentRec(){
 }
 async function markRead(sid,cid){await db.ref(`smConsultations/${sid}/${cid}/isRead`).set(true);}
 async function delConsult(sid,cid){if(!confirm('삭제하시겠습니까?'))return;await db.ref(`smConsultations/${sid}/${cid}`).remove();}
+
+function toggleReplyForm(sid,cid){
+  const form=document.getElementById(`rf_${sid}_${cid}`);
+  if(!form)return;
+  form.classList.toggle('open');
+  if(form.classList.contains('open')){
+    const ta=document.getElementById(`rt_${sid}_${cid}`);
+    if(ta)setTimeout(()=>ta.focus(),50);
+  }
+}
+async function saveReply(sid,cid){
+  const ta=document.getElementById(`rt_${sid}_${cid}`);
+  if(!ta)return;
+  const reply=ta.value.trim();
+  await db.ref(`smConsultations/${sid}/${cid}`).update({reply,replyAt:Date.now(),isRead:true});
+  toast('답변이 저장되었습니다');
+}
 function today(){return new Date().toISOString().split('T')[0];}
 function tuid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
