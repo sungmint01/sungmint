@@ -176,12 +176,11 @@ textarea.inp{resize:vertical;min-height:70px}
                   <span class="tag ts" id="dSubj"></span>
                 </div>
                 <div class="link-row">
-                  <span style="font-size:12px;color:#94a3b8">학부모 링크:</span>
-                  <span class="link-txt" id="dLink"></span>
+                  <span style="font-size:12px;color:#94a3b8">학부모 비밀번호:</span>
+                  <span class="link-txt" id="dPwStatus"></span>
                 </div>
               </div>
               <div class="hbtns">
-                <button class="btn-sm bc" onclick="copyLink()">🔗 링크 복사</button>
                 <button class="btn-sm bo" onclick="openSM(true)">✏️ 수정</button>
                 <button class="btn-sm bd" onclick="delStudent()">🗑 삭제</button>
               </div>
@@ -222,6 +221,7 @@ textarea.inp{resize:vertical;min-height:70px}
         <div class="fg"><label class="fl">과목</label><input class="inp" id="smSubj" type="text" value="수학"></div>
       </div>
       <div class="fg"><label class="fl">학부모 연락처</label><input class="inp" id="smPhone" type="text" placeholder="010-0000-0000"></div>
+      <div class="fg"><label class="fl">학부모 비밀번호</label><input class="inp" id="smParentPw" type="text" placeholder="학부모가 메인에서 사용할 비밀번호"><div style="font-size:11px;color:#94a3b8;margin-top:3px">수정 시 비워두면 기존 비밀번호 유지</div></div>
     </div>
     <div class="mf"><button class="btn-cn" onclick="closeSM()">취소</button><button class="btn-sv" onclick="saveStudent()">저장</button></div>
   </div>
@@ -324,9 +324,9 @@ function renderHeader(){
   document.getElementById('dName').textContent=s.name||'';
   document.getElementById('dGrade').textContent=s.grade||'';
   document.getElementById('dSubj').textContent=s.subj||'';
-  const url=location.origin+location.pathname.replace(/admin\.html$/,'')+'view.html?token='+(s.token||'');
-  document.getElementById('dLink').textContent=url;
-  document.getElementById('dLink').title=url;
+  const pwEl=document.getElementById('dPwStatus');
+  if(s.parentPwHash){pwEl.textContent='설정됨 ✓';pwEl.style.color='#15803d';}
+  else{pwEl.textContent='미설정 — 학생 수정에서 설정하세요';pwEl.style.color='#f87171';}
 }
 
 // ── Sessions ──
@@ -384,10 +384,11 @@ function openSM(edit=false){
     document.getElementById('smGrade').value=s.grade||'고3';
     document.getElementById('smSubj').value=s.subj||'수학';
     document.getElementById('smPhone').value=s.phone||'';
+    document.getElementById('smParentPw').value='';
   }else{
     document.getElementById('smTitle').textContent='학생 추가';
     document.getElementById('smId').value='';
-    ['smName','smPhone'].forEach(f=>document.getElementById(f).value='');
+    ['smName','smPhone','smParentPw'].forEach(f=>document.getElementById(f).value='');
     document.getElementById('smGrade').value='고3';
     document.getElementById('smSubj').value='수학';
   }
@@ -400,6 +401,11 @@ async function saveStudent(){
   if(!name){alert('이름을 입력하세요');return;}
   const eid=document.getElementById('smId').value;
   const data={name,grade:document.getElementById('smGrade').value,subj:document.getElementById('smSubj').value,phone:document.getElementById('smPhone').value};
+  const parentPw=document.getElementById('smParentPw').value.trim();
+  if(parentPw){
+    const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(parentPw));
+    data.parentPwHash=[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
   if(eid){await db.ref(`smStudents/${eid}`).update(data);toast('수정되었습니다');}
   else{data.token=tuid();data.at=Date.now();await db.ref('smStudents').push(data);toast('학생이 추가되었습니다');}
   closeSM();
