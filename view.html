@@ -166,7 +166,7 @@ async function loadPage(){
     document.getElementById('hGrade').textContent=stu.grade||'';
     document.getElementById('hSubj').textContent=stu.subj||'';
     document.getElementById('load').style.display='none';
-    document.getElementById('wrap').style.display='';
+    document.getElementById('wrap').style.display='block';
     db.ref(`smSessions/${sid_}`).on('value',s=>{recData=s.val()||{};renderStats();renderCal();});
     const stored=localStorage.getItem(`smSent_${sid_}`);
     if(stored)try{sent=JSON.parse(stored);}catch(e){}
