@@ -1,7 +1,3 @@
-// ════════════════════════════════════════════════════
-//  🔧 Firebase 설정
-// ════════════════════════════════════════════════════
-
 var SM_CONFIG = {
   apiKey:            "AIzaSyAN7K0-V9PPepqmcNq0qA1xg_Sr8n-xiu0",
   authDomain:        "qna-sungmint.firebaseapp.com",
