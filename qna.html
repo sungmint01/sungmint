@@ -1,470 +1,236 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8"/>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-  <meta http-equiv="Pragma" content="no-cache"/>
-  <meta http-equiv="Expires" content="0"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>익명 질문함</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Noto Sans KR',sans-serif;background:#f4f6fb;color:#1e2533}
-    input,textarea,button,select{font-family:'Noto Sans KR',sans-serif}
-    #loading{display:flex;align-items:center;justify-content:center;height:100vh;font-size:15px;color:#94a3b8}
-    ::-webkit-scrollbar{width:6px}
-    ::-webkit-scrollbar-track{background:transparent}
-    ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QnA 게시판 — 성민T</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="_config.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR',sans-serif;background:#f0f4f8;color:#1e293b;min-height:100vh}
+:root{--ro:#ED9499;--rod:#e08085;--bl:#74B3D8}
+.hdr{background:linear-gradient(135deg,#2d1b3d,#6b3a5e,#8b4d6b);padding:36px 20px 28px;text-align:center}
+.hdr h1{font-size:24px;font-weight:700;color:#fff;margin-bottom:6px}
+.hdr p{font-size:13px;color:rgba(255,255,255,.6)}
+.wrap{max-width:700px;margin:0 auto;padding:24px 16px 60px}
+
+/* Tabs */
+.tabs{display:flex;gap:0;background:#fff;border-radius:12px;padding:4px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:20px}
+.tab{flex:1;padding:9px;font-size:13px;font-weight:600;border:none;background:none;border-radius:9px;cursor:pointer;font-family:inherit;color:#64748b;transition:.15s}
+.tab.on{background:var(--ro);color:#fff}
+
+/* Write form */
+.wbox{background:#fff;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.07);padding:20px;margin-bottom:20px}
+.wbox h2{font-size:14px;font-weight:700;margin-bottom:14px;color:#1e293b}
+.inp{width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 13px;font-size:14px;font-family:inherit;outline:none;transition:.2s;margin-bottom:10px}
+.inp:focus{border-color:var(--ro);box-shadow:0 0 0 3px rgba(237,148,153,.14)}
+textarea.inp{resize:vertical;min-height:80px}
+select.inp{-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2364748b'%3E%3Cpath d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:15px;padding-right:30px}
+.wrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sbtn{background:var(--ro);color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;width:100%;transition:.2s}
+.sbtn:hover{background:var(--rod)}
+.cerr{color:#ef4444;font-size:12px;margin-bottom:6px;min-height:16px}
+
+/* Post list */
+.pcard{background:#fff;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:12px;overflow:hidden}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 18px 12px;cursor:pointer}
+.ph-left{flex:1;min-width:0}
+.ph-cat{display:inline-flex;align-items:center;border-radius:5px;padding:2px 8px;font-size:11px;font-weight:600;margin-bottom:6px}
+.cat-교재{background:#eff6ff;color:#3b82f6}.cat-수업{background:#f0fdf4;color:#16a34a}.cat-기타{background:#f5f3ff;color:#7c3aed}
+.ph-title{font-size:14px;font-weight:600;color:#1e293b;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ph-meta{font-size:11px;color:#94a3b8}
+.ph-right{display:flex;align-items:center;gap:7px;flex-shrink:0;margin-left:12px}
+.ans-badge{font-size:11px;font-weight:600;border-radius:99px;padding:2px 9px;white-space:nowrap}
+.ans-y{background:#dcfce7;color:#15803d}.ans-n{background:#fee2e2;color:#b91c1c}
+.chev{color:#94a3b8;font-size:15px;transition:transform .2s}
+.chev.op{transform:rotate(180deg)}
+.pb{display:none;border-top:1px solid #f1f5f9;padding:14px 18px}
+.pb.op{display:block;animation:fi .2s}
+@keyframes fi{from{opacity:0;transform:translateY(-3px)}to{opacity:1}}
+.pq{font-size:13px;color:#334155;line-height:1.7;white-space:pre-wrap;margin-bottom:12px}
+.pans{background:#f0fdf4;border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.pans-hd{font-size:12px;font-weight:700;color:#15803d;margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.pans-body{font-size:13px;color:#166534;line-height:1.7;white-space:pre-wrap}
+.pacts{display:flex;gap:10px}
+.lnk{background:none;border:none;font-size:12px;cursor:pointer;font-family:inherit;padding:0;transition:.15s}
+.lnk-r{color:var(--ro)}.lnk-r:hover{color:var(--rod)}
+.lnk-d{color:#f87171}.lnk-d:hover{color:#ef4444}
+.lnk-g{color:#64748b}.lnk-g:hover{color:#334155}
+
+/* Answer form */
+.aform{border-top:1px solid #f1f5f9;padding:12px 18px;background:#f8fafc;display:none}
+.aform.op{display:block}
+.aform textarea{width:100%;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;resize:vertical;min-height:70px;transition:.2s;background:#fff}
+.aform textarea:focus{border-color:var(--ro);box-shadow:0 0 0 3px rgba(237,148,153,.12)}
+.aform-row{display:flex;gap:8px;margin-top:8px;align-items:center}
+.aform input{flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 11px;font-size:13px;font-family:inherit;outline:none;transition:.2s}
+.aform input:focus{border-color:var(--ro)}
+.btn-ans{background:var(--ro);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+.btn-ans:hover{background:var(--rod)}
+.aform-err{font-size:12px;color:#ef4444;margin-top:4px;min-height:16px}
+
+/* Empty & loading */
+.empty{text-align:center;padding:40px;color:#94a3b8;font-size:13px}
+.sp{width:32px;height:32px;border:3px solid #e2e8f0;border-top-color:var(--ro);border-radius:50%;animation:spin .7s linear infinite;margin:30px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:500;z-index:200;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+nav a{color:rgba(255,255,255,.6);font-size:12px;text-decoration:none;position:absolute;top:14px;left:16px;display:flex;align-items:center;gap:4px}
+nav a:hover{color:#fff}
+</style>
 </head>
 <body>
-<div id="loading">로딩 중...</div>
-<div id="root" style="display:none"></div>
-
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-<script>emailjs.init("9834V_7luPj7hfNIz");</script>
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone@7.23.6/babel.min.js"></script>
+<div class="hdr" style="position:relative">
+  <nav><a href="main.html">← 홈</a></nav>
+  <h1>💬 QnA 게시판</h1>
+  <p>수업 관련 질문을 남겨주세요</p>
+</div>
+<div class="wrap">
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab on" onclick="setTab('all',this)">전체</button>
+    <button class="tab" onclick="setTab('unanswered',this)">미답변</button>
+    <button class="tab" onclick="setTab('answered',this)">답변완료</button>
+  </div>
+  <!-- Write form -->
+  <div class="wbox">
+    <h2>✏️ 질문 남기기</h2>
+    <div class="wrow">
+      <input class="inp" id="wName" type="text" placeholder="이름 *">
+      <select class="inp" id="wCat"><option value="교재">교재 질문</option><option value="수업">수업 내용</option><option value="기타">기타</option></select>
+    </div>
+    <input class="inp" id="wTitle" type="text" placeholder="제목 *">
+    <textarea class="inp" id="wContent" placeholder="질문 내용을 자세히 적어주세요 *"></textarea>
+    <div class="cerr" id="werr"></div>
+    <button class="sbtn" onclick="submitPost()">질문 올리기</button>
+  </div>
+  <!-- Post list -->
+  <div id="postList"><div class="sp"></div></div>
+</div>
+<div class="toast" id="toast"></div>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyAN7K0-V9PPepqmcNq0qA1xg_Sr8n-xiu0",
-  authDomain: "qna-sungmint.firebaseapp.com",
-  databaseURL: "https://qna-sungmint-default-rtdb.firebaseio.com",
-  projectId: "qna-sungmint",
-  storageBucket: "qna-sungmint.firebasestorage.app",
-  messagingSenderId: "1050653821753",
-  appId: "1:1050653821753:web:eb604160345bea4fd5b6e8"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-</script>
+const HASH='9e0bc0a9aa374eab9ae10383ab67c9fadb1e2aa69a1d54555a7dff0670678bda';
+let db,posts={},filter='all',adminOk=sessionStorage.getItem('smAdmin')==='1';
 
-<script type="text/babel" data-presets="react">
-const { useState, useEffect, useRef } = React;
-const TEACHER_PW = "1340";
-const SUBJECTS = ["공통수학1","공통수학2","대수(수1)","미적분1(수2)","확통","기하","미적분2"];
+window.addEventListener('DOMContentLoaded',()=>{
+  if(typeof SM_CONFIG==='undefined'||!SM_CONFIG.apiKey||SM_CONFIG.apiKey.includes('여기에')){
+    document.getElementById('postList').innerHTML='<p class="empty">_config.js 설정이 필요합니다</p>';return;
+  }
+  try{
+    if(!firebase.apps.length)firebase.initializeApp(SM_CONFIG);
+    db=firebase.database();
+  }catch(e){document.getElementById('postList').innerHTML=`<p class="empty">오류: ${e.message}</p>`;return;}
+  db.ref('smQna').on('value',s=>{posts=s.val()||{};renderPosts();});
+});
 
-// 과목별 색상 (배경, 텍스트)
-const SC = {
-  "공통수학1":   ["#f0f4ff","#4f6ef7"],
-  "공통수학2":   ["#f3f0ff","#7c5cfc"],
-  "대수(수1)":   ["#f0fafb","#0ea5aa"],
-  "미적분1(수2)":["#f0fdf6","#0ea872"],
-  "확통":        ["#fdf4ff","#c026d3"],
-  "기하":        ["#fff8f0","#f97316"],
-  "미적분2":     ["#fff0f3","#e11d6a"],
-};
-
-function getYtId(url){
-  if(!url) return null;
-  const m = url.match(/(?:youtu\.be\/|v=|\/embed\/)([A-Za-z0-9_-]{11})/);
-  return m?m[1]:null;
+function setTab(t,el){
+  filter=t;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  renderPosts();
 }
 
-function compressImage(file, cb){
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const img = new Image();
-    img.onload = () => {
-      const MAX=800; let w=img.width, h=img.height;
-      if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
-      if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
-      const c=document.createElement("canvas");
-      c.width=w; c.height=h;
-      c.getContext("2d").drawImage(img,0,0,w,h);
-      cb(c.toDataURL("image/jpeg",0.6));
-    };
-    img.src=ev.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
-function listenQs(cb){
-  const ref=db.ref("questions");
-  ref.on("value", snap=>{
-    const val=snap.val()||{};
-    cb(Object.values(val).sort((a,b)=>b.ts-a.ts));
-  });
-  return ()=>ref.off();
-}
-function pushQ(q){ return db.ref("questions/"+q.id).set(q); }
-function updateQ(id,data){ return db.ref("questions/"+id).update(data); }
-function deleteQ(id){ return db.ref("questions/"+id).remove(); }
-
-// 과목 뱃지
-function SubjectBadge({subject}){
-  const [bg, color] = SC[subject] || ["#f1f5f9","#64748b"];
-  return (
-    <span style={{background:bg,color,borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:700,letterSpacing:"0.02em",whiteSpace:"nowrap"}}>
-      {subject}
-    </span>
-  );
-}
-
-// 질문 카드
-function QCard({q,num,isTeacher,replyTarget,setReplyTarget,videoUrl,setVideoUrl,replyComment,setReplyComment,onReply,onDelete}){
-  const [big,setBig]=useState(false);
-  const [editSub,setEditSub]=useState(false);
-  const ytId=getYtId(q.videoUrl);
-  const timeStr = new Date(q.ts).toLocaleDateString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});
-
-  return(
-    <div style={{background:"#fff",borderRadius:16,marginBottom:12,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,0.07)",border:"1px solid #e8edf5"}}>
-
-      {/* 카드 헤더 */}
-      <div style={{padding:"14px 16px",display:"flex",alignItems:"center",gap:10,borderBottom:"1px solid #f1f5f9"}}>
-        <div style={{minWidth:34,height:34,borderRadius:10,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,padding:"0 6px"}}>
-            <span style={{color:"#fff",fontWeight:700,fontSize:num>9999?10:num>999?11:num>99?12:14,letterSpacing:"-0.5px",fontVariantNumeric:"tabular-nums"}}>#{String(num).padStart(1,"0")}</span>
-          </div>
-        <div style={{flex:1,minWidth:0}}>
-          <div style={{fontSize:13,fontWeight:700,color:"#374151"}}>익명의 학생</div>
-          <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{timeStr}</div>
+function renderPosts(){
+  const el=document.getElementById('postList');
+  let arr=Object.entries(posts).sort(([,a],[,b])=>(b.ts||0)-(a.ts||0));
+  if(filter==='unanswered')arr=arr.filter(([,p])=>!p.answered);
+  if(filter==='answered')arr=arr.filter(([,p])=>p.answered);
+  if(!arr.length){el.innerHTML='<p class="empty">게시물이 없습니다</p>';return;}
+  el.innerHTML=arr.map(([pid,p])=>`
+    <div class="pcard">
+      <div class="ph" onclick="togP('${pid}')">
+        <div class="ph-left">
+          <div><span class="ph-cat cat-${p.cat}">${p.cat||'기타'}</span></div>
+          <div class="ph-title">${esc(p.title||'')}</div>
+          <div class="ph-meta">${esc(p.name||'')} · ${relTime(p.ts)}</div>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
-          {isTeacher&&editSub?(
-              <select value={q.subject} onChange={e=>{updateQ(q.id,{subject:e.target.value});setEditSub(false);}}
-                onBlur={()=>setEditSub(false)}
-                autoFocus
-                style={{border:"1.5px solid #6366f1",borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:700,outline:"none",cursor:"pointer",background:"#fff",color:"#1e2533"}}>
-                {SUBJECTS.map(s=><option key={s} value={s}>{s}</option>)}
-              </select>
-            ):(
-              <span onClick={()=>isTeacher&&setEditSub(true)} title={isTeacher?"클릭해서 과목 수정":""} style={{display:"inline-flex",alignItems:"center",gap:3,cursor:isTeacher?"pointer":"default"}}>
-                <SubjectBadge subject={q.subject}/>
-                {isTeacher&&<span style={{fontSize:10,color:"#c4c9d4"}}>✏️</span>}
-              </span>
-            )}
-          {q.answered
-            ? <span style={{background:"#f0fdf4",color:"#16a34a",borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:700}}>해설완료</span>
-            : <span style={{background:"#fff7ed",color:"#ea580c",borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:700}}>대기중</span>
-          }
-          {isTeacher&&<button onClick={onDelete} style={{background:"none",border:"none",color:"#cbd5e1",cursor:"pointer",fontSize:16,lineHeight:1,padding:"2px 4px"}}>✕</button>}
+        <div class="ph-right">
+          <span class="ans-badge ${p.answered?'ans-y':'ans-n'}">${p.answered?'답변완료':'미답변'}</span>
+          <span class="chev" id="chev_${pid}">▾</span>
         </div>
       </div>
-
-      {/* 사진 */}
-      {q.photo&&(
-        <div style={{background:"#f8fafc",cursor:"pointer"}} onClick={()=>setBig(!big)}>
-          <img src={q.photo} alt="질문" style={{width:"100%",maxHeight:big?9999:220,objectFit:big?"contain":"cover",display:"block"}}/>
-          <div style={{textAlign:"center",fontSize:11,color:"#94a3b8",padding:"6px 0"}}>{big?"▲ 접기":"▼ 전체보기"}</div>
+      <div class="pb" id="pb_${pid}">
+        <div class="pq">${esc(p.content||'')}</div>
+        ${p.answered?`<div class="pans"><div class="pans-hd">✅ 선생님 답변</div><div class="pans-body">${esc(p.answer||'')}</div></div>`:''}
+        <div class="pacts">
+          ${adminOk?`<button class="lnk lnk-r" onclick="toggleAForm('${pid}')">답변 ${p.answered?'수정':'달기'}</button>`:''}
+          ${adminOk?`<button class="lnk lnk-d" onclick="delPost('${pid}')">삭제</button>`:''}
+          ${!adminOk&&!p.answered?`<button class="lnk lnk-r" onclick="askAdmin('${pid}')">답변 요청 (선생님)</button>`:''}
         </div>
-      )}
-
-      {/* 텍스트 */}
-      {q.text&&<div style={{padding:"12px 16px",fontSize:14,color:"#374151",lineHeight:1.75}}>{q.text}</div>}
-
-      {/* 해설 영역 */}
-      {q.answered&&(
-        <div style={{borderTop:"1px solid #f1f5f9",background:"#f8fffe",padding:"14px 16px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}>
-            <span style={{fontSize:13}}>✏️</span>
-            <span style={{fontSize:13,fontWeight:700,color:"#0d9488"}}>선생님 해설</span>
-          </div>
-          {q.comment&&(
-            <div style={{fontSize:13,color:"#374151",lineHeight:1.75,background:"#fff",border:"1px solid #ccfbf1",borderRadius:10,padding:"10px 14px",marginBottom:10}}>{q.comment}</div>
-          )}
-          {q.videoUrl&&(ytId
-            ? <div style={{borderRadius:12,overflow:"hidden"}}><iframe width="100%" height="210" src={"https://www.youtube.com/embed/"+ytId} frameBorder="0" allowFullScreen style={{display:"block"}}/></div>
-            : <a href={q.videoUrl} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:8,background:"#fff",border:"1px solid #99f6e4",borderRadius:10,padding:"9px 14px",color:"#0d9488",fontWeight:700,fontSize:13,textDecoration:"none"}}>🔗 해설 영상 보러가기</a>
-          )}
-        </div>
-      )}
-
-      {/* 선생님 해설 달기 */}
-      {isTeacher&&(
-        replyTarget===q.id?(
-          <div style={{borderTop:"1px solid #f1f5f9",padding:"14px 16px",background:"#fafbff"}}>
-            <div style={{fontSize:13,fontWeight:700,color:"#64748b",marginBottom:10}}>해설 달기</div>
-            <textarea value={replyComment} onChange={e=>setReplyComment(e.target.value)} placeholder="코멘트 (선택)" rows={2}
-              style={{width:"100%",border:"1px solid #e2e8f0",borderRadius:10,padding:"9px 12px",fontSize:13,resize:"none",outline:"none",marginBottom:8,background:"#fff"}}/>
-            <input value={videoUrl} onChange={e=>setVideoUrl(e.target.value)} placeholder="YouTube 링크"
-              style={{width:"100%",border:"1px solid #e2e8f0",borderRadius:10,padding:"9px 12px",fontSize:13,outline:"none",marginBottom:10,background:"#fff"}}/>
-            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
-              <button onClick={()=>{setReplyTarget(null);setVideoUrl("");setReplyComment("");}}
-                style={{background:"#f1f5f9",border:"none",borderRadius:8,color:"#64748b",padding:"8px 18px",cursor:"pointer",fontSize:13}}>취소</button>
-              <button onClick={onReply}
-                style={{background:"linear-gradient(135deg,#0d9488,#0891b2)",border:"none",borderRadius:8,color:"#fff",padding:"8px 18px",cursor:"pointer",fontSize:13,fontWeight:700}}>등록</button>
-            </div>
-          </div>
-        ):(
-          <div style={{borderTop:"1px solid #f1f5f9",padding:"10px 16px"}}>
-            <button onClick={()=>{setReplyTarget(q.id);setVideoUrl(q.videoUrl||"");setReplyComment(q.comment||"");}}
-              style={{width:"100%",background:q.answered?"#f8fffe":"linear-gradient(135deg,#6366f1,#8b5cf6)",border:q.answered?"1px solid #ccfbf1":"none",borderRadius:10,color:q.answered?"#0d9488":"#fff",padding:"10px 0",cursor:"pointer",fontSize:13,fontWeight:700}}>
-              {q.answered?"✏️ 해설 수정":"해설 달기"}
-            </button>
-          </div>
-        )
-      )}
-
-      {/* 사진 전체보기 모달 */}
-      {big&&q.photo&&(
-        <div onClick={()=>setBig(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,cursor:"zoom-out"}}>
-          <img src={q.photo} alt="전체" style={{maxWidth:"95vw",maxHeight:"90vh",borderRadius:12}}/>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function App(){
-  const [questions,setQuestions]=useState([]);
-  const [mode,setMode]=useState("student");
-  const [pw,setPw]=useState("");
-  const [pwErr,setPwErr]=useState(false);
-  const [authed,setAuthed]=useState(false);
-  const [emailAlert,setEmailAlert]=useState(true);
-  const emailAlertRef=useRef(true);
-  const [loading,setLoading]=useState(true);
-  const [submitting,setSubmitting]=useState(false);
-  const [done,setDone]=useState(false);
-  const [photo,setPhoto]=useState(null);
-  const [preview,setPreview]=useState(null);
-  const [qText,setQText]=useState("");
-  const [subject,setSubject]=useState("공통수학1");
-  const [replyTarget,setReplyTarget]=useState(null);
-  const [videoUrl,setVideoUrl]=useState("");
-  const [replyComment,setReplyComment]=useState("");
-  const [filter,setFilter]=useState("all");
-  const [subjectFilter,setSubjectFilter]=useState("전체");
-
-  useEffect(()=>{
-    const unsub=listenQs(qs=>{setQuestions(qs);setLoading(false);});
-    db.ref('settings/emailAlert').on('value', snap=>{
-      const val = snap.val();
-      if(val !== null){ setEmailAlert(val); emailAlertRef.current = val; }
-    });
-    return unsub;
-  },[]);
-
-  const onFile=e=>{
-    const f=e.target.files[0];
-    if(!f) return;
-    compressImage(f,(compressed)=>{setPhoto(compressed);setPreview(compressed);});
-  };
-
-  const submit=async()=>{
-    if(!photo&&!qText.trim()) return;
-    setSubmitting(true);
-    try{
-      const id=Date.now().toString();
-      await pushQ({id,ts:Date.now(),subject,text:qText.trim(),photo:photo||"",answered:false,videoUrl:"",comment:""});
-      if(emailAlertRef.current){
-        try{
-          await emailjs.send("service_fl4emqp","template_jsdwyw9",{
-            subject: subject,
-            question_text: qText.trim()||"(사진 첨부)",
-            time: new Date().toLocaleString("ko-KR"),
-          });
-        }catch(e){ console.warn("이메일 오류:",e); }
-      }
-      setPhoto(null);setPreview(null);setQText("");setSubject("공통수학1");
-      setDone(true);setTimeout(()=>setDone(false),3000);
-    }catch(err){
-      alert("전송 실패 😢\n원인: "+err.message);
-    }finally{
-      setSubmitting(false);
-    }
-  };
-
-  const login=()=>{
-    if(pw===TEACHER_PW){setAuthed(true);setPwErr(false);}
-    else{setPwErr(true);setPw("");}
-  };
-
-  const onReply=async(qId)=>{
-    if(!videoUrl.trim()&&!replyComment.trim()) return;
-    await updateQ(qId,{answered:true,videoUrl:videoUrl.trim(),comment:replyComment.trim()});
-    setReplyTarget(null);setVideoUrl("");setReplyComment("");
-  };
-
-  const onDelete=async(qId)=>{
-    if(!window.confirm("삭제할까요?")) return;
-    await deleteQ(qId);
-    if(replyTarget===qId) setReplyTarget(null);
-  };
-
-  const filtered=questions.filter(q=>filter==="all"?true:filter==="pending"?!q.answered:q.answered);
-  const pending=questions.filter(q=>!q.answered).length;
-  const canSubmit = !submitting && (!!photo || !!qText.trim());
-
-  return(
-    <div style={{minHeight:"100vh",background:"#f4f6fb"}}>
-
-      {/* 헤더 */}
-      <header style={{background:"#fff",padding:"0 20px",display:"flex",alignItems:"center",justifyContent:"space-between",height:54,position:"sticky",top:0,zIndex:100,borderBottom:"1px solid #e8edf5"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <a href="./index.html" style={{color:"#94a3b8",fontSize:18,textDecoration:"none",fontWeight:700,lineHeight:1}}>←</a>
-          <span style={{fontSize:15,fontWeight:700,color:"#1e2533"}}>익명 질문함</span>
-          {pending>0&&mode==="teacher"&&authed&&(
-            <span style={{background:"#ef4444",color:"#fff",borderRadius:99,padding:"1px 8px",fontSize:11,fontWeight:700}}>{pending}</span>
-          )}
-        </div>
-        <button onClick={()=>setMode(mode==="teacher"?"student":"teacher")}
-          style={{padding:"6px 14px",borderRadius:99,border:"1px solid #e2e8f0",cursor:"pointer",background:mode==="teacher"?"#f1f5f9":"transparent",color:mode==="teacher"?"#6366f1":"#94a3b8",fontWeight:700,fontSize:12}}>
-          🔐 선생님
-        </button>
-      </header>
-
-      <div style={{maxWidth:640,margin:"0 auto",padding:"20px 16px"}}>
-
-        {/* 학생 모드 */}
-        {mode==="student"&&(
-          <>
-            {/* 질문 작성 카드 */}
-            <div style={{background:"#fff",borderRadius:16,border:"1px solid #e8edf5",padding:20,marginBottom:16,boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
-              <div style={{marginBottom:16}}>
-                <div style={{fontSize:16,fontWeight:700,color:"#1e2533",marginBottom:4}}>모르는 문제를 올려보세요</div>
-                <div style={{fontSize:12,color:"#94a3b8"}}>선생님이 해설을 달아드려요 🎬</div>
-              </div>
-
-              {/* 과목 선택 */}
-              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
-                {SUBJECTS.map(s=>{
-                  const [bg,color]=SC[s];
-                  const sel = subject===s;
-                  return(
-                    <button key={s} onClick={()=>setSubject(s)}
-                      style={{padding:"5px 14px",borderRadius:99,border:`2px solid ${sel?color:"#e8edf5"}`,cursor:"pointer",fontSize:12,fontWeight:700,
-                        background:sel?color:"#fff", color:sel?"#fff":"#64748b", transition:"all 0.15s",
-                        boxShadow:sel?`0 2px 8px ${color}55`:"none"}}>
-                      {s}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* 사진 업로드 */}
-              <label style={{display:"block",border:"1.5px dashed "+(preview?"#a5b4fc":"#cbd5e1"),borderRadius:12,padding:preview?0:"28px 20px",textAlign:"center",cursor:"pointer",background:preview?"#fafbff":"#f8fafc",marginBottom:12,overflow:"hidden"}}>
-                <input type="file" accept="image/*" style={{position:"absolute",opacity:0,width:0,height:0,overflow:"hidden"}} onChange={onFile}/>
-                {preview?(
-                  <div style={{position:"relative"}}>
-                    <img src={preview} style={{maxWidth:"100%",maxHeight:240,display:"block",margin:"0 auto"}}/>
-                    <button onClick={e=>{e.preventDefault();e.stopPropagation();setPhoto(null);setPreview(null);}}
-                      style={{position:"absolute",top:8,right:8,background:"rgba(0,0,0,0.5)",border:"none",borderRadius:"50%",width:28,height:28,color:"#fff",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
-                  </div>
-                ):(
-                  <>
-                    <div style={{fontSize:28,marginBottom:6}}>📷</div>
-                    <div style={{fontWeight:700,fontSize:13,color:"#6366f1",marginBottom:2}}>사진 업로드</div>
-                    <div style={{fontSize:11,color:"#94a3b8"}}>클릭하거나 촬영해서 올려주세요</div>
-                  </>
-                )}
-              </label>
-
-              {/* 텍스트 */}
-              <textarea value={qText} onChange={e=>setQText(e.target.value)} placeholder="어떤 부분이 어려운지 적어주세요 (선택)" rows={3}
-                style={{width:"100%",border:"1px solid #e2e8f0",borderRadius:10,padding:"10px 14px",fontSize:14,resize:"none",outline:"none",background:"#f8fafc",marginBottom:14,lineHeight:1.6}}/>
-
-              {done?(
-                <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:10,padding:"13px 16px",textAlign:"center",color:"#16a34a",fontWeight:700,fontSize:14}}>
-                  ✅ 질문이 전송됐어요!
-                </div>
-              ):(
-                <button onClick={submit} disabled={!canSubmit}
-                  style={{width:"100%",background:canSubmit?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#e8edf5",border:"none",borderRadius:10,color:canSubmit?"#fff":"#94a3b8",padding:"13px 0",fontSize:14,fontWeight:700,cursor:canSubmit?"pointer":"not-allowed",transition:"all 0.2s"}}>
-                  {submitting?"전송 중...":"익명으로 질문 보내기"}
-                </button>
-              )}
-            </div>
-
-            {/* 해설 완료된 질문 목록 */}
-            <div style={{marginBottom:12}}>
-              <div style={{fontSize:13,fontWeight:700,color:"#64748b",marginBottom:10}}>해설 완료된 질문</div>
-              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                {["전체",...SUBJECTS].map(s=>(
-                  <button key={s} onClick={()=>setSubjectFilter(s)}
-                    style={{padding:"5px 12px",borderRadius:99,border:"none",cursor:"pointer",fontSize:12,fontWeight:600,
-                      background:subjectFilter===s?"#1e2533":"#e8edf5",
-                      color:subjectFilter===s?"#fff":"#64748b",transition:"all 0.15s"}}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {loading
-              ? <div style={{textAlign:"center",padding:"40px 0",color:"#94a3b8",fontSize:13}}>불러오는 중...</div>
-              : questions.filter(q=>q.answered&&(subjectFilter==="전체"||q.subject===subjectFilter)).length===0
-                ? <div style={{textAlign:"center",padding:"40px 0",color:"#94a3b8",fontSize:13}}>해설된 질문이 없어요</div>
-                : questions.filter(q=>q.answered&&(subjectFilter==="전체"||q.subject===subjectFilter)).map(q=><QCard key={q.id} q={q} num={questions.length-questions.indexOf(q)} isTeacher={false}/>)
-            }
-          </>
-        )}
-
-        {/* 선생님 로그인 */}
-        {mode==="teacher"&&!authed&&(
-          <div style={{background:"#fff",borderRadius:16,border:"1px solid #e8edf5",padding:36,maxWidth:320,margin:"60px auto",textAlign:"center",boxShadow:"0 1px 4px rgba(0,0,0,0.07)"}}>
-            <div style={{fontSize:36,marginBottom:12}}>🔐</div>
-            <div style={{fontSize:17,fontWeight:700,marginBottom:6}}>선생님 전용</div>
-            <div style={{fontSize:13,color:"#94a3b8",marginBottom:20}}>비밀번호를 입력해 주세요</div>
-            <input type="password" value={pw} onChange={e=>{setPw(e.target.value);setPwErr(false);}}
-              onKeyDown={e=>e.key==="Enter"&&login()} placeholder="비밀번호"
-              style={{width:"100%",border:"1px solid "+(pwErr?"#ef4444":"#e2e8f0"),borderRadius:10,padding:"11px 14px",fontSize:15,outline:"none",textAlign:"center",marginBottom:8,background:"#f8fafc"}}/>
-            {pwErr&&<div style={{color:"#ef4444",fontSize:12,marginBottom:8}}>비밀번호가 틀렸어요</div>}
-            <button onClick={login}
-              style={{width:"100%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",borderRadius:10,color:"#fff",padding:"12px 0",fontSize:14,fontWeight:700,cursor:"pointer",marginTop:4}}>
-              입장하기
-            </button>
-          </div>
-        )}
-
-        {/* 선생님 대시보드 */}
-        {mode==="teacher"&&authed&&(
-          <>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,flexWrap:"wrap",gap:8}}>
-              <div>
-                <span style={{fontSize:15,fontWeight:700}}>질문 관리</span>
-                <span style={{fontSize:12,color:"#94a3b8",marginLeft:8}}>총 {questions.length}개 · 미답변 {pending}개</span>
-              </div>
-              <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-                {[["all","전체"],["pending","미답변"],["answered","완료"]].map(([val,label])=>(
-                  <button key={val} onClick={()=>setFilter(val)}
-                    style={{padding:"5px 12px",borderRadius:99,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,
-                      background:filter===val?"#1e2533":"#e8edf5",
-                      color:filter===val?"#fff":"#64748b"}}>
-                    {label}
-                  </button>
-                ))}
-
-                {/* 이메일 알림 토글 */}
-                <div onClick={()=>{const next=!emailAlert;db.ref('settings/emailAlert').set(next);emailAlertRef.current=next;setEmailAlert(next);}}
-                  style={{display:"flex",alignItems:"center",gap:7,cursor:"pointer",background:emailAlert?"#f0fdf4":"#f8fafc",border:"1px solid "+(emailAlert?"#bbf7d0":"#e2e8f0"),borderRadius:99,padding:"5px 12px 5px 8px"}}>
-                  <div style={{width:28,height:16,borderRadius:8,background:emailAlert?"#22c55e":"#cbd5e1",position:"relative",transition:"background 0.2s",flexShrink:0}}>
-                    <div style={{position:"absolute",top:2,left:emailAlert?12:2,width:12,height:12,borderRadius:"50%",background:"#fff",transition:"left 0.2s",boxShadow:"0 1px 2px rgba(0,0,0,0.2)"}}/>
-                  </div>
-                  <span style={{fontSize:12,fontWeight:700,color:emailAlert?"#16a34a":"#94a3b8",whiteSpace:"nowrap"}}>메일 {emailAlert?"ON":"OFF"}</span>
-                </div>
-              </div>
-            </div>
-
-            {loading
-              ? <div style={{textAlign:"center",padding:"40px 0",color:"#94a3b8",fontSize:13}}>불러오는 중...</div>
-              : filtered.length===0
-                ? <div style={{textAlign:"center",padding:"60px 0",color:"#94a3b8",fontSize:13}}>질문이 없어요</div>
-                : filtered.map(q=>(
-                    <QCard key={q.id} q={q} num={questions.length-questions.indexOf(q)} isTeacher={true}
-                      replyTarget={replyTarget} setReplyTarget={setReplyTarget}
-                      videoUrl={videoUrl} setVideoUrl={setVideoUrl}
-                      replyComment={replyComment} setReplyComment={setReplyComment}
-                      onReply={()=>onReply(q.id)}
-                      onDelete={()=>onDelete(q.id)}/>
-                  ))
-            }
-          </>
-        )}
       </div>
-    </div>
-  );
+      <div class="aform" id="af_${pid}">
+        <textarea id="at_${pid}" placeholder="답변을 입력하세요">${esc(p.answer||'')}</textarea>
+        <div class="aform-row">
+          <input type="password" id="apw_${pid}" placeholder="관리자 비밀번호">
+          <button class="btn-ans" onclick="saveAnswer('${pid}')">답변 저장</button>
+        </div>
+        <div class="aform-err" id="aerr_${pid}"></div>
+      </div>
+    </div>`).join('');
 }
 
-document.getElementById("loading").style.display="none";
-document.getElementById("root").style.display="block";
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+function togP(pid){
+  const pb=document.getElementById('pb_'+pid);
+  const cv=document.getElementById('chev_'+pid);
+  pb.classList.toggle('op');cv.classList.toggle('op');
+}
+function toggleAForm(pid){
+  const f=document.getElementById('af_'+pid);
+  f.classList.toggle('op');
+  if(f.classList.contains('op')&&!document.getElementById('pb_'+pid).classList.contains('op'))togP(pid);
+}
+function askAdmin(pid){
+  if(!document.getElementById('pb_'+pid).classList.contains('op'))togP(pid);
+  document.getElementById('af_'+pid).classList.add('op');
+}
+
+async function saveAnswer(pid){
+  const txt=document.getElementById('at_'+pid).value.trim();
+  const pw=document.getElementById('apw_'+pid).value;
+  const err=document.getElementById('aerr_'+pid);
+  if(!txt){err.textContent='답변을 입력하세요';return;}
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pw));
+  const h=[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  if(h!==HASH){err.textContent='비밀번호가 올바르지 않습니다';return;}
+  err.textContent='';
+  sessionStorage.setItem('smAdmin','1');adminOk=true;
+  await db.ref(`smQna/${pid}`).update({answer:txt,answered:true,answeredAt:Date.now()});
+  document.getElementById('af_'+pid).classList.remove('op');
+  toast('답변이 저장되었습니다');
+}
+
+async function delPost(pid){
+  if(!confirm('게시물을 삭제하시겠습니까?'))return;
+  await db.ref(`smQna/${pid}`).remove();toast('삭제되었습니다');
+}
+
+async function submitPost(){
+  const name=document.getElementById('wName').value.trim();
+  const title=document.getElementById('wTitle').value.trim();
+  const content=document.getElementById('wContent').value.trim();
+  const cat=document.getElementById('wCat').value;
+  const err=document.getElementById('werr');
+  if(!name){err.textContent='이름을 입력하세요';return;}
+  if(!title){err.textContent='제목을 입력하세요';return;}
+  if(!content){err.textContent='내용을 입력하세요';return;}
+  err.textContent='';
+  await db.ref('smQna').push({name,title,content,cat,ts:Date.now(),answered:false});
+  document.getElementById('wName').value='';document.getElementById('wTitle').value='';document.getElementById('wContent').value='';
+  toast('질문이 등록되었습니다');
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g,'<br>');}
+function relTime(ts){
+  if(!ts)return'';const d=Date.now()-ts;
+  if(d<60000)return'방금 전';if(d<3600000)return`${Math.floor(d/60000)}분 전`;
+  if(d<86400000)return`${Math.floor(d/3600000)}시간 전`;
+  return new Date(ts).toLocaleDateString('ko-KR');
+}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
 </script>
 </body>
 </html>
