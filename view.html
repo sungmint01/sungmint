@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-<script src="_config.js"></script>
+<script src="config.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Noto Sans KR',sans-serif;background:#f0f4f8;color:#1e293b;min-height:100vh}
@@ -107,7 +107,7 @@ let db,sid_=null,sent=[];
 
 window.addEventListener('DOMContentLoaded',()=>{
   if(typeof SM_CONFIG==='undefined'||!SM_CONFIG.apiKey||SM_CONFIG.apiKey.includes('여기에')){
-    document.getElementById('load').innerHTML='<div class="err"><div class="ei">⚙️</div><h2>설정 오류</h2><p>_config.js 파일에 Firebase 설정이 필요합니다</p></div>';
+    document.getElementById('load').innerHTML='<div class="err"><div class="ei">⚙️</div><h2>설정 오류</h2><p>config.js 파일에 Firebase 설정이 필요합니다</p></div>';
     return;
   }
   try{

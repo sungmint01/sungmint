@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-<script src="_config.js"></script>
+<script src="config.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Noto Sans KR',sans-serif;background:#f0f4f8;color:#1e293b;min-height:100vh}
@@ -118,7 +118,7 @@ let db,posts={},filter='all',adminOk=sessionStorage.getItem('smAdmin')==='1';
 
 window.addEventListener('DOMContentLoaded',()=>{
   if(typeof SM_CONFIG==='undefined'||!SM_CONFIG.apiKey||SM_CONFIG.apiKey.includes('여기에')){
-    document.getElementById('postList').innerHTML='<p class="empty">_config.js 설정이 필요합니다</p>';return;
+    document.getElementById('postList').innerHTML='<p class="empty">config.js 설정이 필요합니다</p>';return;
   }
   try{
     if(!firebase.apps.length)firebase.initializeApp(SM_CONFIG);
