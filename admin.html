@@ -416,8 +416,11 @@ function renderSidebar(){
   let html='';
   Object.entries(groups).sort(([a],[b])=>a.localeCompare(b,'ko')).forEach(([cls,list])=>{
     html+=`<div class="sb-class-head">
-      <span>${cls}</span>
-      <button class="sb-class-hw" title="반 일괄 숙제" onclick="openBM('${cls}')">📚+</button>
+      <span class="sb-class-name" onclick="renameClass('${cls}')" title="반 이름 수정" style="cursor:pointer;flex:1">${cls} ✎</span>
+      <div style="display:flex;gap:3px">
+        <button class="sb-class-hw" title="학생 추가" onclick="openSMWithClass('${cls}')">＋</button>
+        <button class="sb-class-hw" title="반 일괄 숙제" onclick="openBM('${cls}')">📚</button>
+      </div>
     </div>`;
     html+=list.map(([id,s])=>{
       const u=Object.values(consults[id]||{}).filter(c=>!c.isRead).length;
@@ -822,6 +825,24 @@ function openLightbox(src){
 function closeLightbox(){
   document.getElementById('lightbox').classList.remove('open');
   document.body.style.overflow='';
+}
+
+// ── Class management ──
+async function renameClass(oldName){
+  const newName = prompt(`"${oldName}" 반 이름을 변경합니다:`, oldName);
+  if(!newName || newName.trim()==='' || newName.trim()===oldName) return;
+  const trimmed = newName.trim();
+  // Update all students in this class
+  const targets = Object.entries(students).filter(([,s])=>(s.cls||'미지정')===oldName);
+  if(!targets.length){toast('해당 반에 학생이 없습니다');return;}
+  await Promise.all(targets.map(([id])=>db.ref('smStudents/'+id+'/cls').set(trimmed)));
+  toast(`"${oldName}" → "${trimmed}" 반 이름 변경 완료`);
+}
+
+function openSMWithClass(cls){
+  // Open student modal with class pre-filled
+  openSM(false);
+  document.getElementById('smClass').value = cls;
 }
 
 // ── Bulk HW ──
