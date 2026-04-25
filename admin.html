@@ -344,6 +344,25 @@ function showApp(){
   db.ref('smStudents').on('value',s=>{students=s.val()||{};renderSidebar();if(uid_&&mode==='student')renderHeader();});
   db.ref('smConsultations').on('value',s=>{consults=s.val()||{};renderSidebar();if(mode==='consult')renderConsultView()});
   db.ref('smPlanners').on('value',s=>{planners=s.val()||{};const d=document.getElementById('rmDate');if(d&&d.value&&document.getElementById('rm').classList.contains('open'))loadRmPlanners(d.value);});
+  cleanOldPlanners();
+}
+
+async function cleanOldPlanners(){
+  const limit=Date.now()-60*24*60*60*1000;
+  try{
+    const snap=await db.ref('smPlanners').get();
+    const all=snap.val()||{};
+    const deletes=[];
+    Object.entries(all).forEach(function([stuId,stuPlanners]){
+      Object.entries(stuPlanners).forEach(function([pid,p]){
+        if((p.ts||0)<limit) deletes.push(db.ref('smPlanners/'+stuId+'/'+pid).remove());
+      });
+    });
+    if(deletes.length>0){
+      await Promise.all(deletes);
+      console.log('60일 초과 플래너 '+deletes.length+'개 삭제');
+    }
+  }catch(e){console.log('플래너 정리 오류:',e.message);}
 }
 function renderSidebar(){
   document.getElementById('sCnt').textContent=`학생 ${Object.keys(students).length}명`;
