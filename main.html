@@ -61,38 +61,26 @@
     .arrow{position:absolute;bottom:18px;right:18px;font-size:16px;color:#2a3a52}
 
     /* 학부모 */
-    .pbox{
-      max-width:405px;width:100%;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:16px;
-      padding:14px 18px 12px;position:relative;overflow:hidden;
-    }
-    .pbox::before{
-      content:'';position:absolute;top:0;left:0;right:0;height:3px;
-      background:linear-gradient(90deg,#f87171,#fb923c);
-    }
-    .p-label{font-family:'Space Mono',monospace;font-size:9px;color:#4a5a72;letter-spacing:2px;text-transform:uppercase;margin-bottom:3px}
-    .p-title{
-      font-family:'Black Han Sans',sans-serif;font-size:15px;margin-bottom:10px;
-      background:linear-gradient(135deg,#f87171,#fb923c);
-      -webkit-background-clip:text;-webkit-text-fill-color:transparent;display:inline;
-    }
-    .p-row{display:flex;gap:8px;margin-top:0}
-    .p-inp{
-      flex:1;border:1.5px solid #e2e8f0;border-radius:10px;
-      padding:9px 12px;font-size:14px;font-family:'Noto Sans KR',sans-serif;
-      outline:none;transition:.2s;background:#f8faff;letter-spacing:4px;
-    }
-    .p-inp:focus{border-color:#f87171;box-shadow:0 0 0 3px rgba(248,113,113,.1);background:#fff}
-    .p-btn{
-      background:linear-gradient(135deg,#f87171,#fb923c);
-      color:#fff;border:none;border-radius:10px;padding:9px 18px;
-      font-size:13px;font-weight:700;cursor:pointer;
-      font-family:'Noto Sans KR',sans-serif;white-space:nowrap;transition:.2s;
-    }
-    .p-btn:hover{opacity:.88}.p-btn:disabled{opacity:.45;cursor:not-allowed}
-    .p-err{font-size:11px;color:#f87171;margin-top:5px;min-height:14px;font-family:'Space Mono',monospace}
+    /* Parent modal */
+    .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+    .modal-ov.open{display:flex}
+    .modal-box{background:#fff;border-radius:20px;width:100%;max-width:340px;box-shadow:0 24px 60px rgba(0,0,0,.28);overflow:hidden;animation:popIn .2s ease}
+    @keyframes popIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+    .modal-top{height:4px;background:linear-gradient(90deg,#f87171,#fb923c)}
+    .modal-body{padding:24px 22px 20px}
+    .modal-title{font-family:'Black Han Sans',sans-serif;font-size:18px;margin-bottom:4px;background:linear-gradient(135deg,#f87171,#fb923c);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .modal-sub{font-family:'Space Mono',monospace;font-size:9px;color:#94a3b8;letter-spacing:2px;text-transform:uppercase;margin-bottom:18px}
+    .modal-inp{width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:11px 14px;font-size:15px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:.2s;background:#f8faff;letter-spacing:4px;margin-bottom:10px}
+    .modal-inp:focus{border-color:#f87171;box-shadow:0 0 0 3px rgba(248,113,113,.12);background:#fff}
+    .modal-btn{width:100%;background:linear-gradient(135deg,#f87171,#fb923c);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:.2s}
+    .modal-btn:hover{opacity:.88}.modal-btn:disabled{opacity:.45;cursor:not-allowed}
+    .modal-err{color:#f87171;font-size:12px;margin-top:7px;min-height:15px;font-family:'Space Mono',monospace}
+    .modal-close-row{display:flex;justify-content:flex-end;padding:10px 14px 0}
+    .modal-close{background:none;border:none;font-size:20px;color:#94a3b8;cursor:pointer;line-height:1}
 
     .footer{font-family:'Space Mono',monospace;font-size:10px;color:#cbd5e1;letter-spacing:2px}
-    @media(max-width:400px){.cards{grid-template-columns:1fr}.logo-text{font-size:36px}} @media(max-width:480px){.pbox{max-width:100%}.p-inp{font-size:13px;letter-spacing:2px}.p-row{flex-direction:column}}
+    @media(max-width:400px){.cards{grid-template-columns:1fr}.logo-text{font-size:36px}}
+      .card-parent{border-top-color:transparent}.icon-parent{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2)}.name-parent{background:linear-gradient(135deg,#f87171,#fb923c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-family:"Black Han Sans",sans-serif}
   </style>
 </head>
 <body>
@@ -133,19 +121,29 @@
       <div class="arrow" style="position:static;margin-left:auto">→</div>
     </a>
 
-    <!-- 학부모 확인 -->
-    <div class="pbox">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <div>
-          <div class="p-label">For Parents</div>
-          <div class="p-title">학부모 확인</div>
+    <!-- 학부모 카드 -->
+    <div class="card card-parent" onclick="openParentModal()" style="padding:16px 20px;display:flex;align-items:center;gap:14px;width:100%">
+      <div class="icon icon-parent" style="width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">👨‍👩‍👧</div>
+      <div>
+        <div class="name name-parent" style="font-size:17px;margin-bottom:2px">학부모 확인</div>
+        <div class="desc" style="font-size:12px">수업 현황 · 숙제 · 플래너 확인</div>
+      </div>
+      <div class="arrow" style="position:static;margin-left:auto">→</div>
+    </div>
+
+    <!-- 학부모 비밀번호 모달 -->
+    <div class="modal-ov" id="parentModal" onclick="if(event.target===this)closeParentModal()">
+      <div class="modal-box">
+        <div class="modal-top"></div>
+        <div class="modal-close-row"><button class="modal-close" onclick="closeParentModal()">✕</button></div>
+        <div class="modal-body">
+          <div class="modal-title">학부모 확인</div>
+          <div class="modal-sub">For Parents</div>
+          <input class="modal-inp" type="password" id="parentPw" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')parentLogin()">
+          <button class="modal-btn" id="parentBtn" onclick="parentLogin()">확인 →</button>
+          <div class="modal-err" id="parentErr"></div>
         </div>
       </div>
-      <div class="p-row">
-        <input class="p-inp" type="password" id="parentPw" placeholder="비밀번호" onkeydown="if(event.key==='Enter')parentLogin()">
-        <button class="p-btn" id="parentBtn" onclick="parentLogin()">확인 →</button>
-      </div>
-      <div class="p-err" id="parentErr"></div>
     </div>
 
     <div class="footer">SUNGMINT · MATH TOOLS</div>
@@ -161,6 +159,17 @@ window.addEventListener('DOMContentLoaded', () => {
   } catch(e) { console.error(e); }
 });
 
+function openParentModal() {
+  document.getElementById('parentModal').classList.add('open');
+  setTimeout(function(){ document.getElementById('parentPw').focus(); }, 100);
+}
+function closeParentModal() {
+  document.getElementById('parentModal').classList.remove('open');
+  document.getElementById('parentPw').value = '';
+  document.getElementById('parentErr').textContent = '';
+  document.getElementById('parentBtn').disabled = false;
+  document.getElementById('parentBtn').textContent = '확인 →';
+}
 async function parentLogin() {
   const pw = document.getElementById('parentPw').value;
   const err = document.getElementById('parentErr');
