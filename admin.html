@@ -602,40 +602,41 @@ function openRM(sid=null,dateStr=null){
 }
 
 function loadRmPlanners(date) {
-  const sec = document.getElementById('rmPlannerSection');
+  var sec = document.getElementById('rmPlannerSection');
   if (!sec || !uid_) return;
-  const sp = (planners[uid_] || {});
-  const items = Object.entries(sp).filter(([,p]) => p.date === date)
-    .sort(([,a],[,b]) => (a.ts||0)-(b.ts||0));
-  if (!items.length) { sec.style.display = 'none'; return; }
-  sec.style.display = '';
-  sec.innerHTML = `<div class="rm-planner-head">📸 플래너 (${items.length}개)</div>` +
-    items.map(([pid, p]) => {
-      const typeLabel = p.type === 'done'
-        ? '<span class="rm-ptype rm-ptype-done">✅ 완료</span>'
-        : '<span class="rm-ptype rm-ptype-plan">📋 계획</span>';
-      return `<div class="rm-pitem">
-        <div class="rm-pitem-head"><span class="rm-pitem-date">${typeLabel}</span><span style="font-size:10px;color:#94a3b8">${new Date(p.ts||0).toLocaleTimeString('ko-KR')}</span></div>
-        <img class="rm-pimg" src="${p.imageData||p.imageUrl||''}" onclick="openLightbox(this.src)" loading="lazy">
-        ${p.comment
-          ? `<div class="rm-pcomment"><div class="rm-pcomment-head">✏️ 코멘트</div>${p.comment.replace(/
-/g,'<br>')}</div>`
-          : '<div class="rm-pno-comment">⏳ 코멘트 없음</div>'
-        }
-        <div class="rm-pcomment-form" id="rpcf_${pid}">
-          <textarea id="rpct_${pid}" placeholder="코멘트 입력">${p.comment||''}</textarea>
-          <div class="rm-pcomment-form-row">
-            <button class="btn-rpc-save" onclick="saveRmComment('${pid}')">저장</button>
-            <button class="btn-rpc-cancel" onclick="toggleRpcForm('${pid}')">취소</button>
-          </div>
-        </div>
-        <div style="padding:6px 12px 8px">
-          <button class="lnk le" onclick="toggleRpcForm('${pid}')" style="font-size:11px">${p.comment?'코멘트 수정':'코멘트 달기'}</button>
-        </div>
-      </div>`;
-    }).join('');
+  var sp = planners[uid_] || {};
+  var items = Object.entries(sp).filter(function(e){ return e[1].date === date; })
+    .sort(function(a,b){ return (a[1].ts||0)-(b[1].ts||0); });
+  if (!items.length) { sec.style.display='none'; return; }
+  sec.style.display='';
+  var html = '<div class="rm-planner-head">\uD83D\uDCF8 \uD50C\ub798\ub108 ('+items.length+'\uac1c)</div>';
+  items.forEach(function(entry) {
+    var pid=entry[0], p=entry[1];
+    var badge = p.type==='done'
+      ? '<span class="rm-ptype rm-ptype-done">\u2705 \uc644\ub8cc</span>'
+      : '<span class="rm-ptype rm-ptype-plan">\uD83D\uDCCB \uacc4\ud68d</span>';
+    var t = new Date(p.ts||0).toLocaleTimeString('ko-KR');
+    var img = (p.imageData||p.imageUrl||'');
+    var commentHtml = p.comment
+      ? '<div class="rm-pcomment"><div class="rm-pcomment-head">\u270f\ufe0f \ucf54\uba58\ud2b8</div>'+p.comment.split('\n').join('<br>')+'</div>'
+      : '<div class="rm-pno-comment">\u23f3 \ucf54\uba58\ud2b8 \uc5c6\uc74c</div>';
+    var btnEdit = p.comment ? '\ucf54\uba58\ud2b8 \uc218\uc815' : '\ucf54\uba58\ud2b8 \ub2ec\uae30';
+    html += '<div class="rm-pitem">';
+    html += '<div class="rm-pitem-head"><span>'+badge+'</span><span style="font-size:10px;color:#94a3b8">'+t+'</span></div>';
+    html += '<img class="rm-pimg" src="'+img+'" onclick="openLightbox(this.src)" loading="lazy">';
+    html += commentHtml;
+    html += '<div class="rm-pcomment-form" id="rpcf_'+pid+'">';
+    html += '<textarea id="rpct_'+pid+'" placeholder="\ucf54\uba58\ud2b8 \uc785\ub825">'+(p.comment||'')+'</textarea>';
+    html += '<div class="rm-pcomment-form-row">';
+    html += '<button class="btn-rpc-save" onclick="saveRmComment(this,\''+pid+'\')">저장</button> ';
+    html += '<button class="btn-rpc-cancel" onclick="toggleRpcForm(\''+pid+'\')">취소</button>';
+    html += '</div></div>';
+    html += '<div style="padding:6px 12px 8px">';
+    html += '<button class="lnk le" onclick="toggleRpcForm(\''+pid+'\')" style="font-size:11px">'+btnEdit+'</button>';
+    html += '</div></div>';
+  });
+  sec.innerHTML=html;
 }
-
 function toggleRpcForm(pid) {
   const f = document.getElementById(`rpcf_${pid}`);
   if (!f) return;
@@ -713,7 +714,7 @@ function renderPlannerView(){
             <span style="font-size:11px;color:#94a3b8">${new Date(p.ts||0).toLocaleString('ko-KR')}</span>
           </div>
           <img class="pv-img" src="${p.imageData||p.imageUrl||''}" onclick="openLightbox(this.src)" loading="lazy">
-          ${p.comment?`<div class="pv-comment"><div class="pv-comment-head">✏️ 코멘트</div>${p.comment.replace(/\n/g,'<br>')}</div>`:''}
+          ${p.comment?`<div class="pv-comment"><div class="pv-comment-head">✏️ 코멘트</div>${p.comment.split('\n').join('<br>')}</div>`:''}
           <div class="pv-comment-form" id="pvf_${sid}_${pid}">
             <textarea id="pvt_${sid}_${pid}" placeholder="코멘트를 입력하세요">${p.comment||''}</textarea>
             <div class="pv-form-row">
