@@ -347,7 +347,7 @@ function renderViewPlanners(data){
         <span>📅 ${y}년 ${+m}월 ${+d}일</span>
         <span style="font-size:11px;color:#94a3b8">${new Date(p.ts||0).toLocaleString('ko-KR')}</span>
       </div>
-      <img class="plan-img" src="${p.imageData||p.imageUrl||\'\'}" onclick="openLbV(this.src)" loading="lazy">
+      <img class="plan-img" src="${p.imageData||p.imageUrl||''}" onclick="openLbV(this.src)" loading="lazy">
       ${p.comment
         ?`<div class="plan-comment"><div class="plan-comment-head">✏️ 선생님 코멘트</div>${p.comment.replace(/\n/g,'<br>')}</div>`
         :`<div class="plan-no-comment">⏳ 코멘트 대기 중</div>`

@@ -187,10 +187,6 @@ textarea.inp{resize:vertical;min-height:68px}
         <span class="sb-consult-label">💬 상담 요청 전체</span>
         <span class="rdot" id="totalUnread" style="display:none"></span>
       </div>
-      <div class="sb-consult" id="sbPlanner" onclick="showPlannerView()">
-        <span class="sb-consult-label">📸 플래너 전체</span>
-        <span class="rdot" id="newPlannerDot" style="display:none">N</span>
-      </div>
       <div class="sb-div"></div>
       <div class="sb-section">학생</div>
       <div id="sList"></div>
@@ -240,10 +236,6 @@ textarea.inp{resize:vertical;min-height:68px}
       <div id="consultView" style="display:none;padding:22px">
         <div style="font-size:16px;font-weight:700;margin-bottom:16px">💬 상담 요청 전체</div>
         <div id="cvContent"><p class="etbl">상담 요청이 없습니다</p></div>
-      </div>
-      <div id="plannerView" style="display:none;padding:22px">
-        <div style="font-size:16px;font-weight:700;margin-bottom:16px">📸 플래너 전체</div>
-        <div id="pvContent"><p class="etbl">제출된 플래너가 없습니다</p></div>
       </div>
     </div>
   </div>
@@ -313,7 +305,8 @@ textarea.inp{resize:vertical;min-height:68px}
       <div class="fg"><label class="fl">클리닉 내용</label><textarea class="inp" id="rmCli" placeholder="클리닉 시간에 다룬 내용"></textarea></div>
       <div class="fg"><label class="fl">학부모 전달 메모</label><textarea class="inp" id="rmNote" placeholder="학부모에게 전달할 사항"></textarea></div>
     </div>
-    <div class="mf">
+    <div id="rmPlannerSection" class="rm-planner-section" style="display:none;padding:0 20px 14px"></div>
+      <div class="mf">
       <button class="btn-del-rec" id="rmDelBtn" onclick="delCurrentRec()" style="display:none">🗑 삭제</button>
       <button class="btn-cn" onclick="closeRM()">취소</button>
       <button class="btn-sv" onclick="saveRecord()">저장</button>
@@ -350,7 +343,7 @@ function showApp(){
   document.getElementById('app').style.display='block';
   db.ref('smStudents').on('value',s=>{students=s.val()||{};renderSidebar();if(uid_&&mode==='student')renderHeader();});
   db.ref('smConsultations').on('value',s=>{consults=s.val()||{};renderSidebar();if(mode==='consult')renderConsultView()});
-  db.ref('smPlanners').on('value',s=>{planners=s.val()||{};if(mode==='planner')renderPlannerView();});
+  db.ref('smPlanners').on('value',s=>{planners=s.val()||{};const d=document.getElementById('rmDate');if(d&&d.value&&document.getElementById('rm').classList.contains('open'))loadRmPlanners(d.value);});
 }
 function renderSidebar(){
   document.getElementById('sCnt').textContent=`학생 ${Object.keys(students).length}명`;
@@ -603,6 +596,59 @@ function openRM(sid=null,dateStr=null){
     }
   }
   document.getElementById('rm').classList.add('open');
+  // Load planners for this date
+  const rmDate = document.getElementById('rmDate').value;
+  loadRmPlanners(rmDate);
+}
+
+function loadRmPlanners(date) {
+  const sec = document.getElementById('rmPlannerSection');
+  if (!sec || !uid_) return;
+  const sp = (planners[uid_] || {});
+  const items = Object.entries(sp).filter(([,p]) => p.date === date)
+    .sort(([,a],[,b]) => (a.ts||0)-(b.ts||0));
+  if (!items.length) { sec.style.display = 'none'; return; }
+  sec.style.display = '';
+  sec.innerHTML = `<div class="rm-planner-head">📸 플래너 (${items.length}개)</div>` +
+    items.map(([pid, p]) => {
+      const typeLabel = p.type === 'done'
+        ? '<span class="rm-ptype rm-ptype-done">✅ 완료</span>'
+        : '<span class="rm-ptype rm-ptype-plan">📋 계획</span>';
+      return `<div class="rm-pitem">
+        <div class="rm-pitem-head"><span class="rm-pitem-date">${typeLabel}</span><span style="font-size:10px;color:#94a3b8">${new Date(p.ts||0).toLocaleTimeString('ko-KR')}</span></div>
+        <img class="rm-pimg" src="${p.imageData||p.imageUrl||''}" onclick="openLightbox(this.src)" loading="lazy">
+        ${p.comment
+          ? `<div class="rm-pcomment"><div class="rm-pcomment-head">✏️ 코멘트</div>${p.comment.replace(/
+/g,'<br>')}</div>`
+          : '<div class="rm-pno-comment">⏳ 코멘트 없음</div>'
+        }
+        <div class="rm-pcomment-form" id="rpcf_${pid}">
+          <textarea id="rpct_${pid}" placeholder="코멘트 입력">${p.comment||''}</textarea>
+          <div class="rm-pcomment-form-row">
+            <button class="btn-rpc-save" onclick="saveRmComment('${pid}')">저장</button>
+            <button class="btn-rpc-cancel" onclick="toggleRpcForm('${pid}')">취소</button>
+          </div>
+        </div>
+        <div style="padding:6px 12px 8px">
+          <button class="lnk le" onclick="toggleRpcForm('${pid}')" style="font-size:11px">${p.comment?'코멘트 수정':'코멘트 달기'}</button>
+        </div>
+      </div>`;
+    }).join('');
+}
+
+function toggleRpcForm(pid) {
+  const f = document.getElementById(`rpcf_${pid}`);
+  if (!f) return;
+  f.classList.toggle('open');
+  if (f.classList.contains('open')) setTimeout(() => document.getElementById(`rpct_${pid}`)?.focus(), 50);
+}
+
+async function saveRmComment(pid) {
+  const ta = document.getElementById(`rpct_${pid}`);
+  if (!ta) return;
+  await db.ref(`smPlanners/${uid_}/${pid}/comment`).set(ta.value.trim());
+  toast('코멘트가 저장되었습니다');
+  loadRmPlanners(document.getElementById('rmDate').value);
 }
 function closeRM(){document.getElementById('rm').classList.remove('open');}
 async function saveRecord(){
@@ -645,7 +691,7 @@ function showPlannerView(){
   document.getElementById('empty').style.display='none';
   document.getElementById('detail').style.display='none';
   document.getElementById('consultView').style.display='none';
-  document.getElementById('plannerView').style.display='';
+  // plannerView removed - now integrated into calendar modal
   renderPlannerView();renderSidebar();
 }
 
