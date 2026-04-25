@@ -644,7 +644,7 @@ function toggleRpcForm(pid) {
   if (f.classList.contains('open')) setTimeout(() => document.getElementById(`rpct_${pid}`)?.focus(), 50);
 }
 
-async function saveRmComment(pid) {
+async function saveRmComment(btn, pid) {
   const ta = document.getElementById(`rpct_${pid}`);
   if (!ta) return;
   await db.ref(`smPlanners/${uid_}/${pid}/comment`).set(ta.value.trim());
