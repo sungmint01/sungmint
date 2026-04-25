@@ -92,6 +92,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f8faff;color:#1a202c;min-
 .lightbox-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
 
 .empty-plan{text-align:center;padding:28px;color:#94a3b8;font-size:13px}
+.type-row{display:flex;gap:8px;margin:0 20px 12px}
+.type-btn{flex:1;padding:9px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8faff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:#64748b;transition:.15s;text-align:center}
+.type-btn:hover{border-color:#a78bfa;background:#faf5ff}
+.type-btn.sel{border-color:#a78bfa;background:#f5f3ff;color:#7c3aed}
+.plan-type-badge{display:inline-flex;align-items:center;border-radius:99px;padding:2px 10px;font-size:11px;font-weight:600}
+.badge-plan{background:#eff6ff;color:#2563eb}
+.badge-done{background:#f0fdf4;color:#15803d}
 .section-title{font-family:'Black Han Sans',sans-serif;font-size:15px;margin-bottom:10px;color:#374151}
 </style>
 </head>
@@ -137,8 +144,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f8faff;color:#1a202c;min-
       <span class="date-label">날짜</span>
       <input class="date-inp" type="date" id="planDate">
     </div>
+    <div class="type-row">
+      <button class="type-btn sel" id="typePlan" onclick="setType('plan')">📋 계획 플래너<br><span style="font-size:10px;font-weight:400;color:#94a3b8">전날 밤 · 아침</span></button>
+      <button class="type-btn" id="typeDone" onclick="setType('done')">✅ 완료 플래너<br><span style="font-size:10px;font-weight:400;color:#94a3b8">하루 끝</span></button>
+    </div>
     <div class="upload-area" id="uploadArea">
-      <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="onFileSelect(event)">
+      <input type="file" id="fileInput" accept="image/*" onchange="onFileSelect(event)">
       <div class="upload-icon">📷</div>
       <div class="upload-text"><strong>사진 찍기 또는 선택</strong><br>플래너를 촬영하거나 갤러리에서 선택하세요</div>
     </div>
@@ -168,7 +179,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f8faff;color:#1a202c;min-
 </div>
 
 <script>
-let db, storage, stuId = null, stuData = null, selectedFile = null, sessions = {};
+let db, storage, stuId = null, stuData = null, selectedFile = null, sessions = {}, planType = 'plan';
 
 window.addEventListener('DOMContentLoaded', () => {
   if (typeof SM_CONFIG === 'undefined' || !SM_CONFIG.apiKey || SM_CONFIG.apiKey.includes('여기에')) {
@@ -265,6 +276,12 @@ function showHwByIdx(i) {
 }
 
 // ── Planner upload ──
+function setType(t) {
+  planType = t;
+  document.getElementById('typePlan').className = 'type-btn' + (t === 'plan' ? ' sel' : '');
+  document.getElementById('typeDone').className = 'type-btn' + (t === 'done' ? ' sel' : '');
+}
+
 function onFileSelect(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -292,23 +309,47 @@ async function uploadPlanner() {
   const prog = document.getElementById('progBar');
   const fill = document.getElementById('progFill');
   btn.disabled = true;
-  btn.textContent = '업로드 중...';
+  btn.innerHTML = '업로드 중...';
   prog.style.display = 'block';
   msg.textContent = '';
 
   try {
-    const ext = selectedFile.name.split('.').pop();
-    const path = `planners/${stuId}/${Date.now()}.${ext}`;
-    const ref = storage.ref(path);
-    const task = ref.put(selectedFile);
+    // Compress image before upload
+    const compressed = await compressImage(selectedFile, 1200);
+    const ext = 'jpg';
+    const fileName = `${stuId}_${date}_${planType}_${Date.now()}.${ext}`;
+    const path = `planners/${stuId}/${fileName}`;
 
-    task.on('state_changed',
-      snap => { fill.style.width = (snap.bytesTransferred/snap.totalBytes*100)+'%'; },
-      err => { throw err; },
+    // Convert blob to base64 and use XMLHttpRequest for more reliable upload
+    const storageRef = storage.ref().child(path);
+    const metadata = { contentType: 'image/jpeg' };
+
+    const uploadTask = storageRef.put(compressed, metadata);
+
+    uploadTask.on('state_changed',
+      snap => {
+        const pct = Math.round(snap.bytesTransferred / snap.totalBytes * 100);
+        fill.style.width = pct + '%';
+        btn.innerHTML = `업로드 중... ${pct}%`;
+      },
+      err => {
+        console.error('Upload error:', err);
+        msg.textContent = '❌ 업로드 실패: ' + err.message;
+        msg.className = 'upload-msg err';
+        prog.style.display = 'none';
+        btn.disabled = false;
+        btn.innerHTML = '📤 플래너 제출하기';
+      },
       async () => {
-        const url = await ref.getDownloadURL();
-        await db.ref(`smPlanners/${stuId}`).push({ date, imageUrl: url, ts: Date.now(), storagePath: path });
-        msg.textContent = '✅ 제출 완료!';
+        const url = await uploadTask.snapshot.ref.getDownloadURL();
+        await db.ref(`smPlanners/${stuId}`).push({
+          date,
+          type: planType,
+          imageUrl: url,
+          storagePath: path,
+          ts: Date.now()
+        });
+        msg.textContent = `✅ ${planType === 'plan' ? '계획' : '완료'} 플래너 제출 완료!`;
         msg.className = 'upload-msg ok';
         prog.style.display = 'none';
         fill.style.width = '0%';
@@ -316,17 +357,39 @@ async function uploadPlanner() {
         document.getElementById('previewImg').src = '';
         document.getElementById('fileInput').value = '';
         selectedFile = null;
-        btn.textContent = '📤 플래너 제출하기';
-        setTimeout(()=>{ msg.textContent=''; }, 3000);
+        btn.disabled = false;
+        btn.innerHTML = '📤 플래너 제출하기';
+        setTimeout(() => { msg.textContent = ''; }, 4000);
       }
     );
   } catch(e) {
-    msg.textContent = '❌ 업로드 실패: ' + e.message;
+    console.error(e);
+    msg.textContent = '❌ 오류: ' + e.message;
     msg.className = 'upload-msg err';
     prog.style.display = 'none';
     btn.disabled = false;
-    btn.textContent = '📤 플래너 제출하기';
+    btn.innerHTML = '📤 플래너 제출하기';
   }
+}
+
+// Image compression helper
+function compressImage(file, maxWidth) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if (w > maxWidth) { h = h * maxWidth / w; w = maxWidth; }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.82);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 // ── Planner list ──
