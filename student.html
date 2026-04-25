@@ -7,7 +7,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <script src="config.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -179,7 +178,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f8faff;color:#1a202c;min-
 </div>
 
 <script>
-let db, storage, stuId = null, stuData = null, selectedFile = null, sessions = {}, planType = 'plan';
+let db, stuId = null, stuData = null, selectedFile = null, sessions = {}, planType = 'plan';
 
 window.addEventListener('DOMContentLoaded', () => {
   if (typeof SM_CONFIG === 'undefined' || !SM_CONFIG.apiKey || SM_CONFIG.apiKey.includes('여기에')) {
@@ -189,7 +188,6 @@ window.addEventListener('DOMContentLoaded', () => {
   try {
     if (!firebase.apps.length) firebase.initializeApp(SM_CONFIG);
     db = firebase.database();
-    storage = firebase.storage();
   } catch(e) { alert('Firebase 오류: ' + e.message); return; }
   document.getElementById('planDate').value = today();
 });
@@ -309,59 +307,37 @@ async function uploadPlanner() {
   const prog = document.getElementById('progBar');
   const fill = document.getElementById('progFill');
   btn.disabled = true;
-  btn.innerHTML = '업로드 중...';
+  btn.innerHTML = '압축 중...';
   prog.style.display = 'block';
+  fill.style.width = '30%';
   msg.textContent = '';
 
   try {
-    // Compress image before upload
-    const compressed = await compressImage(selectedFile, 1200);
-    const ext = 'jpg';
-    const fileName = `${stuId}_${date}_${planType}_${Date.now()}.${ext}`;
-    const path = `planners/${stuId}/${fileName}`;
+    // Compress to small base64 — no Storage needed
+    const base64 = await compressToBase64(selectedFile, 900, 0.75);
+    fill.style.width = '70%';
+    btn.innerHTML = '저장 중...';
 
-    // Convert blob to base64 and use XMLHttpRequest for more reliable upload
-    const storageRef = storage.ref().child(path);
-    const metadata = { contentType: 'image/jpeg' };
+    await db.ref(`smPlanners/${stuId}`).push({
+      date,
+      type: planType,
+      imageData: base64,   // base64 stored in RTDB
+      ts: Date.now()
+    });
 
-    const uploadTask = storageRef.put(compressed, metadata);
+    fill.style.width = '100%';
+    const label = planType === 'plan' ? '계획' : '완료';
+    msg.textContent = `✅ ${label} 플래너 제출 완료!`;
+    msg.className = 'upload-msg ok';
+    setTimeout(() => { prog.style.display = 'none'; fill.style.width = '0%'; }, 600);
+    document.getElementById('previewImg').style.display = 'none';
+    document.getElementById('previewImg').src = '';
+    document.getElementById('fileInput').value = '';
+    selectedFile = null;
+    btn.disabled = false;
+    btn.innerHTML = '📤 플래너 제출하기';
+    setTimeout(() => { msg.textContent = ''; }, 4000);
 
-    uploadTask.on('state_changed',
-      snap => {
-        const pct = Math.round(snap.bytesTransferred / snap.totalBytes * 100);
-        fill.style.width = pct + '%';
-        btn.innerHTML = `업로드 중... ${pct}%`;
-      },
-      err => {
-        console.error('Upload error:', err);
-        msg.textContent = '❌ 업로드 실패: ' + err.message;
-        msg.className = 'upload-msg err';
-        prog.style.display = 'none';
-        btn.disabled = false;
-        btn.innerHTML = '📤 플래너 제출하기';
-      },
-      async () => {
-        const url = await uploadTask.snapshot.ref.getDownloadURL();
-        await db.ref(`smPlanners/${stuId}`).push({
-          date,
-          type: planType,
-          imageUrl: url,
-          storagePath: path,
-          ts: Date.now()
-        });
-        msg.textContent = `✅ ${planType === 'plan' ? '계획' : '완료'} 플래너 제출 완료!`;
-        msg.className = 'upload-msg ok';
-        prog.style.display = 'none';
-        fill.style.width = '0%';
-        document.getElementById('previewImg').style.display = 'none';
-        document.getElementById('previewImg').src = '';
-        document.getElementById('fileInput').value = '';
-        selectedFile = null;
-        btn.disabled = false;
-        btn.innerHTML = '📤 플래너 제출하기';
-        setTimeout(() => { msg.textContent = ''; }, 4000);
-      }
-    );
   } catch(e) {
     console.error(e);
     msg.textContent = '❌ 오류: ' + e.message;
@@ -372,19 +348,22 @@ async function uploadPlanner() {
   }
 }
 
-// Image compression helper
-function compressImage(file, maxWidth) {
-  return new Promise((resolve) => {
+// Compress image and return base64 string
+function compressToBase64(file, maxWidth, quality) {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
+    reader.onerror = reject;
     reader.onload = e => {
       const img = new Image();
+      img.onerror = reject;
       img.onload = () => {
         const canvas = document.createElement('canvas');
         let w = img.width, h = img.height;
-        if (w > maxWidth) { h = h * maxWidth / w; w = maxWidth; }
+        if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
         canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.82);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
       };
       img.src = e.target.result;
     };
@@ -404,7 +383,7 @@ function renderPlanners(data) {
         <span class="plan-date">📅 ${y}년 ${+m}월 ${+d}일</span>
         <span style="font-size:11px;color:#94a3b8">${new Date(p.ts||0).toLocaleString('ko-KR')}</span>
       </div>
-      <img class="plan-img" src="${p.imageUrl}" onclick="openLightbox('${p.imageUrl}')" loading="lazy">
+      <img class="plan-img" src="${p.imageData||p.imageUrl||''}" onclick="openLightbox(this.src)" loading="lazy">
       ${p.comment
         ? `<div class="plan-comment">
              <div class="plan-comment-head">✏️ 선생님 코멘트</div>

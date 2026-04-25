@@ -7,7 +7,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <script src="config.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -325,7 +324,7 @@ textarea.inp{resize:vertical;min-height:68px}
 <div class="lightbox" id="lightbox" onclick="if(event.target===this)closeLightbox()"><button class="lightbox-close" onclick="closeLightbox()">✕</button><img id="lbImg" style="max-width:100%;max-height:90vh;border-radius:10px"></div>
 <script>
 const HASH='9e0bc0a9aa374eab9ae10383ab67c9fadb1e2aa69a1d54555a7dff0670678bda';
-let db,storage,uid_=null,mode='student',students={},sessions={},consults={},planners={};
+let db,uid_=null,mode='student',students={},sessions={},consults={},planners={};
 let calYear,calMonth;
 
 window.addEventListener('DOMContentLoaded',()=>{
@@ -667,7 +666,7 @@ function renderPlannerView(){
             <span>📅 ${y}년 ${+m}월 ${+d}일</span>
             <span style="font-size:11px;color:#94a3b8">${new Date(p.ts||0).toLocaleString('ko-KR')}</span>
           </div>
-          <img class="pv-img" src="${p.imageUrl}" onclick="openLightbox('${p.imageUrl}')" loading="lazy">
+          <img class="pv-img" src="${p.imageData||p.imageUrl||''}" onclick="openLightbox(this.src)" loading="lazy">
           ${p.comment?`<div class="pv-comment"><div class="pv-comment-head">✏️ 코멘트</div>${p.comment.replace(/\n/g,'<br>')}</div>`:''}
           <div class="pv-comment-form" id="pvf_${sid}_${pid}">
             <textarea id="pvt_${sid}_${pid}" placeholder="코멘트를 입력하세요">${p.comment||''}</textarea>
