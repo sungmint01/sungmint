@@ -588,11 +588,12 @@ function openRM(sid=null,dateStr=null){
     ['rmProg','rmPrevHw','rmComment','rmSpecial','rmHwC','rmCli','rmNote'].forEach(f=>document.getElementById(f).value='');
     document.getElementById('rmAbsent').checked=false;
     setEval(3);
-    // 자동 채우기: 이전 수업의 오늘 숙제 → 지난 시간 숙제 범위
-    const prevDate=getPrevSessionDate(targetDate);
-    if(prevDate){
-      const prevRec=Object.values(sessions[uid_]||{}).find(r=>r.date===prevDate);
-      if(prevRec&&prevRec.hwC) document.getElementById('rmPrevHw').value=prevRec.hwC;
+    // 자동 채우기: 가장 최근 이전 수업의 오늘 숙제 → 지난 시간 숙제 범위
+    const allRecs = Object.values(sessions[uid_]||{})
+      .filter(r => r.date && r.date < targetDate && r.hwC)
+      .sort((a,b) => b.date.localeCompare(a.date));
+    if(allRecs.length > 0){
+      document.getElementById('rmPrevHw').value = allRecs[0].hwC;
     }
   }
   document.getElementById('rm').classList.add('open');

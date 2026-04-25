@@ -38,9 +38,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f8faff;color:#1a202c;min-
 .hdr-sub{font-size:13px;color:rgba(255,255,255,.55)}
 .logout-btn{position:absolute;top:14px;right:16px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);font-size:11px;border-radius:8px;padding:5px 10px;cursor:pointer;font-family:inherit}
 
-/* Today homework card */
+/* Homework card (1 week) */
 .hw-card{background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.08);padding:22px;margin-top:-28px;position:relative;z-index:1;margin-bottom:16px;border-top:4px solid var(--pu)}
 .hw-label{font-family:'Space Mono',monospace;font-size:9px;color:#94a3b8;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+.hw-item{background:#f5f3ff;border-radius:12px;padding:14px 16px;margin-bottom:10px;border-left:4px solid var(--pu)}
+.hw-item-date{font-size:11px;color:#7c3aed;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.hw-item-today{background:#7c3aed;color:#fff;border-radius:4px;padding:1px 7px;font-size:10px;font-weight:700}
+.hw-item-content{font-size:14px;color:#374151;line-height:1.7;font-weight:500}
 .hw-title{font-family:'Black Han Sans',sans-serif;font-size:18px;margin-bottom:14px;background:linear-gradient(135deg,var(--pu),var(--pud));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .hw-date{font-size:12px;color:#94a3b8;margin-bottom:10px;display:flex;align-items:center;gap:6px}
 .hw-content{background:#f5f3ff;border-radius:10px;padding:14px 16px;font-size:14px;color:#374151;line-height:1.7;font-weight:500}
@@ -167,11 +171,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f8faff;color:#1a202c;min-
 
   <!-- Today HW -->
   <div class="hw-card">
-    <div class="hw-label">Today's Homework</div>
-    <div class="hw-title">오늘의 숙제</div>
-    <div class="hw-date" id="hwDate"></div>
-    <div id="hwContent"><div class="hw-empty">오늘의 숙제가 없습니다</div></div>
-    <div class="hw-nav" id="hwNav"></div>
+    <div class="hw-label">This Week's Homework</div>
+    <div class="hw-title">이번 주 숙제</div>
+    <div id="hwContent"><div class="hw-empty">등록된 숙제가 없습니다</div></div>
   </div>
 
   <!-- Planner upload -->
@@ -295,40 +297,28 @@ function showApp() {
 
 // ── Homework ──
 function renderHomework() {
-  const arr = Object.values(sessions)
-    .filter(r => r.hwC)
-    .sort((a,b) => (b.date||'').localeCompare(a.date||''));
   const todayStr = today();
-  // Find today or most recent
-  let target = arr.find(r => r.date === todayStr) || arr[0];
-  if (!target) {
-    document.getElementById('hwContent').innerHTML = '<div class="hw-empty">등록된 숙제가 없습니다</div>';
-    document.getElementById('hwDate').textContent = '';
-    document.getElementById('hwNav').innerHTML = '';
+  // 오늘로부터 7일 전
+  const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString().split('T')[0];
+  const arr = Object.values(sessions)
+    .filter(r => r.hwC && r.date && r.date >= weekAgo)
+    .sort((a,b) => (b.date||'').localeCompare(a.date||''));
+  const el = document.getElementById('hwContent');
+  if (!arr.length) {
+    el.innerHTML = '<div class="hw-empty">최근 1주일 내 숙제가 없습니다</div>';
     return;
   }
-  showHw(target, arr);
-}
-
-function showHw(rec, arr) {
-  const [y,m,d] = rec.date.split('-');
-  document.getElementById('hwDate').innerHTML = `📅 ${y}년 ${+m}월 ${+d}일`;
-  document.getElementById('hwContent').innerHTML = `<div class="hw-content">${rec.hwC}</div>`;
-  // Nav: previous sessions
-  if (arr.length > 1) {
-    const idx = arr.indexOf(rec);
-    const nav = document.getElementById('hwNav');
-    nav.innerHTML = arr.slice(0, Math.min(4, arr.length)).map((r, i) => {
-      const [,mm,dd] = r.date.split('-');
-      return `<button class="hw-nav-btn ${r===rec?'active':''}" onclick="showHwByIdx(${i})">${+mm}/${+dd}</button>`;
-    }).join('');
-    window._hwArr = arr;
-  }
-}
-
-function showHwByIdx(i) {
-  const arr = window._hwArr;
-  if (arr && arr[i]) showHw(arr[i], arr);
+  el.innerHTML = arr.map(r => {
+    const [y,m,d] = r.date.split('-');
+    const isToday = r.date === todayStr;
+    return `<div class="hw-item">
+      <div class="hw-item-date">
+        📅 ${y}년 ${+m}월 ${+d}일
+        ${isToday ? '<span class="hw-item-today">오늘</span>' : ''}
+      </div>
+      <div class="hw-item-content">${r.hwC}</div>
+    </div>`;
+  }).join('');
 }
 
 // ── Planner upload ──
