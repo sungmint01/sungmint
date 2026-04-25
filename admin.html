@@ -256,18 +256,20 @@ textarea.inp{resize:vertical;min-height:68px}
       </div>
       <div class="fg"><label class="fl">진도</label><input class="inp" id="rmProg" type="text" placeholder="예: 수I 삼각함수 3단원 p.125~140"></div>
       <div class="fg">
-        <label class="fl">평가</label>
+        <label class="fl">숙제완성도</label>
         <div class="star-row">
-          <button type="button" class="star-btn" id="ev5" onclick="setEval(5)">★★★★★<br><span style="font-size:9px;color:#94a3b8">최우수</span></button>
-          <button type="button" class="star-btn" id="ev4" onclick="setEval(4)">★★★★<br><span style="font-size:9px;color:#94a3b8">우수</span></button>
-          <button type="button" class="star-btn" id="ev3" onclick="setEval(3)">★★★<br><span style="font-size:9px;color:#94a3b8">보통</span></button>
-          <button type="button" class="star-btn" id="ev2" onclick="setEval(2)">★★<br><span style="font-size:9px;color:#94a3b8">미흡</span></button>
-          <button type="button" class="star-btn" id="ev1" onclick="setEval(1)">★<br><span style="font-size:9px;color:#94a3b8">부진</span></button>
-          <button type="button" class="star-btn" id="ev0" onclick="setEval(0)">✕<br><span style="font-size:9px;color:#94a3b8">결석</span></button>
+          <button type="button" class="star-btn" id="ev5" onclick="setEval(5)">★★★★★<br><span style="font-size:10px;font-weight:700">A</span></button>
+          <button type="button" class="star-btn" id="ev4" onclick="setEval(4)">★★★★<br><span style="font-size:10px;font-weight:700">B</span></button>
+          <button type="button" class="star-btn" id="ev3" onclick="setEval(3)">★★★<br><span style="font-size:10px;font-weight:700">C</span></button>
+          <button type="button" class="star-btn" id="ev2" onclick="setEval(2)">★★<br><span style="font-size:10px;font-weight:700">D</span></button>
+          <button type="button" class="star-btn" id="ev1" onclick="setEval(1)">★<br><span style="font-size:10px;font-weight:700">E</span></button>
+          <button type="button" class="star-btn" id="ev0" onclick="setEval(0)">✕<br><span style="font-size:10px;font-weight:700">F</span></button>
         </div>
         <input type="hidden" id="rmEval" value="3">
       </div>
-      <div class="fg"><label class="fl">평가 코멘트 (미흡한 점)</label><textarea class="inp" id="rmComment" placeholder="보완이 필요한 부분을 적어주세요"></textarea></div>
+      <div class="fg"><label class="fl">지난 시간 숙제 범위</label><input class="inp" id="rmPrevHw" type="text" placeholder="자동 입력 (수정 가능)"></div>
+      <div class="fg"><label class="fl">숙제 코멘트</label><textarea class="inp" id="rmComment" placeholder="숙제 관련 코멘트를 적어주세요"></textarea></div>
+      <div class="fg"><label class="fl">특이사항</label><textarea class="inp" id="rmSpecial" placeholder="특이사항을 적어주세요"></textarea></div>
       <div class="fg"><label class="fl">오늘 숙제</label><input class="inp" id="rmHwC" type="text" placeholder="예: 교재 p.130~145 연습문제 전체"></div>
       <div class="fg"><label class="fl">클리닉 내용</label><textarea class="inp" id="rmCli" placeholder="클리닉 시간에 다룬 내용"></textarea></div>
       <div class="fg"><label class="fl">학부모 전달 메모</label><textarea class="inp" id="rmNote" placeholder="학부모에게 전달할 사항"></textarea></div>
@@ -502,6 +504,20 @@ function setEval(v){
     else btn.className='star-btn'+(v===x?' sel':'');
   });
 }
+function getPrevSessionDate(dateStr){
+  const d=new Date(dateStr+'T00:00:00');
+  const dow=d.getDay(); // 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
+  // 수(3)←월(1), 목(4)←화(2), 금(5)←수(3), 토(6)←목(4): -2일
+  // 월(1)←금(5): -3일, 화(2)←토(6): -3일
+  let back=0;
+  if(dow===3||dow===4||dow===5||dow===6) back=2;
+  else if(dow===1) back=3;
+  else if(dow===2) back=3;
+  else return null;
+  const prev=new Date(d);prev.setDate(prev.getDate()-back);
+  return prev.toISOString().split('T')[0];
+}
+
 function openRM(sid=null,dateStr=null){
   document.getElementById('rmId').value=sid||'';
   document.getElementById('rmDelBtn').style.display=sid?'':'none';
@@ -512,16 +528,25 @@ function openRM(sid=null,dateStr=null){
     document.getElementById('rmNum').value=r.num||'';
     document.getElementById('rmProg').value=r.prog||'';
     setEval(r.eval??3);
+    document.getElementById('rmPrevHw').value=r.prevHw||'';
     document.getElementById('rmComment').value=r.comment||'';
+    document.getElementById('rmSpecial').value=r.special||'';
     document.getElementById('rmHwC').value=r.hwC||'';
     document.getElementById('rmCli').value=r.cli||'';
     document.getElementById('rmNote').value=r.note||'';
   }else{
     document.getElementById('rmTitle').textContent='수업 기록 추가';
-    document.getElementById('rmDate').value=dateStr||today();
+    const targetDate=dateStr||today();
+    document.getElementById('rmDate').value=targetDate;
     document.getElementById('rmNum').value=Object.keys(sessions[uid_]||{}).length+1;
-    ['rmProg','rmComment','rmHwC','rmCli','rmNote'].forEach(f=>document.getElementById(f).value='');
+    ['rmProg','rmPrevHw','rmComment','rmSpecial','rmHwC','rmCli','rmNote'].forEach(f=>document.getElementById(f).value='');
     setEval(3);
+    // 자동 채우기: 이전 수업의 오늘 숙제 → 지난 시간 숙제 범위
+    const prevDate=getPrevSessionDate(targetDate);
+    if(prevDate){
+      const prevRec=Object.values(sessions[uid_]||{}).find(r=>r.date===prevDate);
+      if(prevRec&&prevRec.hwC) document.getElementById('rmPrevHw').value=prevRec.hwC;
+    }
   }
   document.getElementById('rm').classList.add('open');
 }
@@ -530,7 +555,7 @@ async function saveRecord(){
   const date=document.getElementById('rmDate').value;
   if(!date){alert('날짜를 입력하세요');return;}
   const[y,m]=date.split('-');calYear=parseInt(y);calMonth=parseInt(m)-1;
-  const data={date,num:parseInt(document.getElementById('rmNum').value)||1,prog:document.getElementById('rmProg').value,eval:parseInt(document.getElementById('rmEval').value),comment:document.getElementById('rmComment').value,hwC:document.getElementById('rmHwC').value,cli:document.getElementById('rmCli').value,note:document.getElementById('rmNote').value,upd:Date.now()};
+  const data={date,num:parseInt(document.getElementById('rmNum').value)||1,prog:document.getElementById('rmProg').value,eval:parseInt(document.getElementById('rmEval').value),prevHw:document.getElementById('rmPrevHw').value,comment:document.getElementById('rmComment').value,special:document.getElementById('rmSpecial').value,hwC:document.getElementById('rmHwC').value,cli:document.getElementById('rmCli').value,note:document.getElementById('rmNote').value,upd:Date.now()};
   const sid=document.getElementById('rmId').value;
   if(sid){await db.ref(`smSessions/${uid_}/${sid}`).update(data);toast('수정되었습니다');}
   else{data.at=Date.now();await db.ref(`smSessions/${uid_}`).push(data);toast('기록이 추가되었습니다');}
