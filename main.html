@@ -62,7 +62,7 @@
 
     /* 학부모 */
     .pbox{
-      width:80%;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:16px;
+      width:min(80%, calc(100% - 0px));margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:16px;
       padding:14px 18px 12px;position:relative;overflow:hidden;
     }
     .pbox::before{
@@ -92,7 +92,7 @@
     .p-err{font-size:11px;color:#f87171;margin-top:5px;min-height:14px;font-family:'Space Mono',monospace}
 
     .footer{font-family:'Space Mono',monospace;font-size:10px;color:#cbd5e1;letter-spacing:2px}
-    @media(max-width:400px){.cards{grid-template-columns:1fr}.logo-text{font-size:36px}.p-row{flex-direction:column}}
+    @media(max-width:480px){.cards{grid-template-columns:1fr}.logo-text{font-size:36px}.pbox{width:100%}.p-row{flex-direction:column}}
   </style>
 </head>
 <body>
