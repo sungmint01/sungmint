@@ -162,6 +162,16 @@ textarea.inp{resize:vertical;min-height:68px}
 .lightbox.open{display:flex}
 .lightbox img{max-width:100%;max-height:90vh;border-radius:10px;object-fit:contain}
 .lightbox-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer}
+.sb-class-head{padding:7px 14px 3px;font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between}
+.sb-class-hw{background:none;border:none;color:#64748b;font-size:10px;cursor:pointer;font-family:inherit;padding:2px 6px;border-radius:4px;transition:.15s}
+.sb-class-hw:hover{background:rgba(116,179,216,.15);color:var(--bl)}
+.si-class{color:#64748b;font-size:10px;margin-top:1px}
+/* Bulk HW modal */
+.bm-class-chip{display:inline-flex;align-items:center;border-radius:8px;padding:5px 12px;font-size:13px;font-weight:600;border:1.5px solid #e2e8f0;background:#f8fafc;cursor:pointer;transition:.15s;margin:0 4px 6px 0}
+.bm-class-chip:hover{border-color:var(--bl);background:#eff8ff}
+.bm-class-chip.sel{border-color:var(--bl);background:var(--bl);color:#fff}
+.bm-stu-list{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.bm-stu-tag{background:#f1f5f9;border-radius:6px;padding:3px 9px;font-size:12px;color:#475569}
 .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:500;z-index:200;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1}
 </style>
@@ -253,6 +263,7 @@ textarea.inp{resize:vertical;min-height:68px}
         </div>
         <div class="fg"><label class="fl">과목</label><input class="inp" id="smSubj" type="text" value="수학"></div>
       </div>
+      <div class="fg"><label class="fl">반 이름</label><input class="inp" id="smClass" type="text" placeholder="예: 월수반, 화목반, 고3반"></div>
       <div class="fg"><label class="fl">학부모 연락처</label><input class="inp" id="smPhone" type="text" placeholder="010-0000-0000"></div>
       <div class="fg">
         <label class="fl">학부모 비밀번호</label>
@@ -266,6 +277,27 @@ textarea.inp{resize:vertical;min-height:68px}
       </div>
     </div>
     <div class="mf"><button class="btn-cn" onclick="closeSM()">취소</button><button class="btn-sv" onclick="saveStudent()">저장</button></div>
+  </div>
+</div>
+<!-- Bulk HW Modal -->
+<div class="ov" id="bm">
+  <div class="mb wide">
+    <div class="mh"><h3>📚 반 일괄 숙제 등록</h3><button class="mc" onclick="closeBM()">✕</button></div>
+    <div class="mbd">
+      <div class="fg">
+        <label class="fl">반 선택</label>
+        <div id="bmClassChips" style="display:flex;flex-wrap:wrap;margin-bottom:4px"></div>
+        <div class="bm-stu-list" id="bmStuList"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">날짜 *</label><input class="inp" id="bmDate" type="date"></div>
+        <div class="fg"><label class="fl">회차</label><input class="inp" id="bmNum" type="number" min="1" placeholder="자동"></div>
+      </div>
+      <div class="fg"><label class="fl">진도</label><input class="inp" id="bmProg" type="text" placeholder="예: 수I 삼각함수 3단원"></div>
+      <div class="fg"><label class="fl">오늘 숙제 *</label><input class="inp" id="bmHwC" type="text" placeholder="숙제 내용을 입력하세요"></div>
+      <div class="fg"><label class="fl">학부모 전달 메모</label><textarea class="inp" id="bmNote" placeholder="선택 사항"></textarea></div>
+    </div>
+    <div class="mf"><button class="btn-cn" onclick="closeBM()">취소</button><button class="btn-sv" onclick="saveBulkHW()">반 전체 등록</button></div>
   </div>
 </div>
 <!-- Record Modal -->
@@ -374,13 +406,28 @@ function renderSidebar(){
   const el=document.getElementById('sList');
   const arr=Object.entries(students).sort(([,a],[,b])=>(a.name||'').localeCompare(b.name||'','ko'));
   if(!arr.length){el.innerHTML='<p style="color:#475569;font-size:11px;text-align:center;padding:16px">등록된 학생 없음</p>';return;}
-  el.innerHTML=arr.map(([id,s])=>{
-    const u=Object.values(consults[id]||{}).filter(c=>!c.isRead).length;
-    return`<div class="si ${id===uid_&&mode==='student'?'on':''}" onclick="selectStu('${id}')">
-      <div><div class="si-name">${s.name||'?'}</div><div class="si-sub">${s.grade||''} · ${s.subj||''}</div></div>
-      ${u?`<div class="rdot">${u}</div>`:''}
+  // 반별 그룹핑
+  const groups={};
+  arr.forEach(([id,s])=>{
+    const cls=s.cls||'미지정';
+    if(!groups[cls])groups[cls]=[];
+    groups[cls].push([id,s]);
+  });
+  let html='';
+  Object.entries(groups).sort(([a],[b])=>a.localeCompare(b,'ko')).forEach(([cls,list])=>{
+    html+=`<div class="sb-class-head">
+      <span>${cls}</span>
+      <button class="sb-class-hw" title="반 일괄 숙제" onclick="openBM('${cls}')">📚+</button>
     </div>`;
-  }).join('');
+    html+=list.map(([id,s])=>{
+      const u=Object.values(consults[id]||{}).filter(c=>!c.isRead).length;
+      return`<div class="si ${id===uid_&&mode==='student'?'on':''}" onclick="selectStu('${id}')">
+        <div><div class="si-name">${s.name||'?'}</div><div class="si-sub">${s.grade||''} · ${s.subj||''}</div></div>
+        ${u?`<div class="rdot">${u}</div>`:''}
+      </div>`;
+    }).join('');
+  });
+  el.innerHTML=html;
 }
 function showConsultView(){
   mode='consult';uid_=null;
@@ -517,13 +564,14 @@ function openSM(edit=false){
     document.getElementById('smName').value=s.name||'';
     document.getElementById('smGrade').value=s.grade||'고3';
     document.getElementById('smSubj').value=s.subj||'수학';
+    document.getElementById('smClass').value=s.cls||'';
     document.getElementById('smPhone').value=s.phone||'';
     document.getElementById('smParentPw').value=s.parentPw||'';
     document.getElementById('smStudentPw').value=s.studentPw||'';
   }else{
     document.getElementById('smTitle').textContent='학생 추가';
     document.getElementById('smId').value='';
-    ['smName','smPhone','smParentPw','smStudentPw'].forEach(f=>document.getElementById(f).value='');
+    ['smName','smClass','smPhone','smParentPw','smStudentPw'].forEach(f=>document.getElementById(f).value='');
     document.getElementById('smGrade').value='고3';
     document.getElementById('smSubj').value='수학';
   }
@@ -535,7 +583,7 @@ async function saveStudent(){
   const name=document.getElementById('smName').value.trim();
   if(!name){alert('이름을 입력하세요');return;}
   const eid=document.getElementById('smId').value;
-  const data={name,grade:document.getElementById('smGrade').value,subj:document.getElementById('smSubj').value,phone:document.getElementById('smPhone').value};
+  const data={name,grade:document.getElementById('smGrade').value,subj:document.getElementById('smSubj').value,cls:document.getElementById('smClass').value.trim(),phone:document.getElementById('smPhone').value};
   const parentPw=document.getElementById('smParentPw').value.trim();
   if(parentPw){
     data.parentPw=parentPw;
@@ -776,11 +824,70 @@ function closeLightbox(){
   document.body.style.overflow='';
 }
 
+// ── Bulk HW ──
+let bmSelectedClass = null;
+function openBM(cls){
+  bmSelectedClass = cls;
+  document.getElementById('bmDate').value = today();
+  ['bmProg','bmHwC','bmNote'].forEach(f=>document.getElementById(f).value='');
+  document.getElementById('bmNum').value='';
+  // render class chips
+  const classes=[...new Set(Object.values(students).map(s=>s.cls||'미지정'))].sort((a,b)=>a.localeCompare(b,'ko'));
+  document.getElementById('bmClassChips').innerHTML=classes.map(cl=>
+    `<span class="bm-class-chip${cl===cls?' sel':''}" onclick="selectBMClass('${cl}')">${cl}</span>`
+  ).join('');
+  updateBMStudentList(cls);
+  document.getElementById('bm').classList.add('open');
+}
+function selectBMClass(cls){
+  bmSelectedClass=cls;
+  document.querySelectorAll('.bm-class-chip').forEach(el=>{
+    el.className='bm-class-chip'+(el.textContent===cls?' sel':'');
+  });
+  updateBMStudentList(cls);
+}
+function updateBMStudentList(cls){
+  const stus=Object.values(students).filter(s=>(s.cls||'미지정')===cls);
+  document.getElementById('bmStuList').innerHTML=stus.map(s=>`<span class="bm-stu-tag">${s.name||'?'}</span>`).join('');
+}
+function closeBM(){document.getElementById('bm').classList.remove('open');}
+async function saveBulkHW(){
+  if(!bmSelectedClass){alert('반을 선택하세요');return;}
+  const date=document.getElementById('bmDate').value;
+  if(!date){alert('날짜를 입력하세요');return;}
+  const hwC=document.getElementById('bmHwC').value.trim();
+  if(!hwC){alert('숙제 내용을 입력하세요');return;}
+  const targets=Object.entries(students).filter(([,s])=>(s.cls||'미지정')===bmSelectedClass);
+  if(!targets.length){alert('해당 반에 학생이 없습니다');return;}
+  const btn=document.querySelector('#bm .btn-sv');
+  btn.disabled=true;btn.textContent='등록 중...';
+  try{
+    await Promise.all(targets.map(async([stuId])=>{
+      // auto num: count existing sessions + 1
+      const snap=await db.ref('smSessions/'+stuId).get();
+      const existing=snap.val()||{};
+      const num=parseInt(document.getElementById('bmNum').value)||Object.keys(existing).length+1;
+      await db.ref('smSessions/'+stuId).push({
+        date,num,
+        prog:document.getElementById('bmProg').value,
+        hwC,
+        note:document.getElementById('bmNote').value,
+        eval:3,
+        at:Date.now(),upd:Date.now()
+      });
+    }));
+    toast(`${bmSelectedClass} 학생 ${targets.length}명에게 숙제가 등록되었습니다`);
+    closeBM();
+  }catch(e){toast('오류: '+e.message);}
+  btn.disabled=false;btn.textContent='반 전체 등록';
+}
+
 function today(){return new Date().toISOString().split('T')[0];}
 function tuid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSM();closeRM();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSM();closeRM();closeBM();}});
 document.getElementById('sm').addEventListener('click',e=>{if(e.target.id==='sm')closeSM();});
+document.getElementById('bm').addEventListener('click',e=>{if(e.target.id==='bm')closeBM();});
 document.getElementById('rm').addEventListener('click',e=>{if(e.target.id==='rm')closeRM();});
 </script>
 </body>
