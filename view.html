@@ -16,6 +16,21 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f0f4f8;color:#1e293b;min-
 .sp{width:38px;height:38px;border:3px solid #e2e8f0;border-top-color:var(--bl);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .ld-txt{color:#64748b;font-size:14px;text-align:center}
+/* Login */
+#loginPage{min-height:100vh;display:none;align-items:center;justify-content:center;background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 60%,#2d5286 100%)}
+#loginPage::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(200,210,230,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(200,210,230,0.04) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
+.lbox{background:#fff;border-radius:24px;padding:44px 36px 36px;width:320px;box-shadow:0 28px 64px rgba(0,0,0,.35);text-align:center;position:relative;z-index:1}
+.lbox::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--bl),var(--bld));border-radius:24px 24px 0 0}
+.lico{width:58px;height:58px;background:linear-gradient(135deg,var(--bl),var(--bld));border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 18px}
+.lbox h1{font-family:'Black Han Sans',sans-serif;font-size:22px;margin-bottom:4px;background:linear-gradient(135deg,var(--bl),var(--bld));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.lbox .lsub{font-family:'Space Mono',monospace;font-size:10px;color:#94a3b8;letter-spacing:2px;margin-bottom:28px;text-transform:uppercase}
+.linp{width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px 14px;font-size:15px;font-family:inherit;outline:none;transition:.2s;background:#f8faff;letter-spacing:4px;margin-bottom:12px}
+.linp:focus{border-color:var(--bl);box-shadow:0 0 0 3px rgba(116,179,216,.15);background:#fff}
+.lbtn{width:100%;background:linear-gradient(135deg,var(--bl),var(--bld));color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s}
+.lbtn:hover{opacity:.9}.lbtn:disabled{background:#cbd5e1;cursor:not-allowed}
+.lerr{color:#ef4444;font-size:12px;margin-top:8px;min-height:16px;font-family:'Space Mono',monospace}
+.lback{display:block;margin-top:18px;font-size:12px;color:#94a3b8;text-decoration:none;font-family:'Space Mono',monospace;letter-spacing:1px}
+.lback:hover{color:#64748b}
 .err{text-align:center;padding:40px 20px}
 .err .ei{font-size:52px;margin-bottom:16px}
 .err h2{font-size:19px;font-weight:700;margin-bottom:8px}
@@ -162,6 +177,17 @@ footer{text-align:center;padding:24px 0 12px;color:#cbd5e1;font-size:12px}
 </style>
 </head>
 <body>
+<div id="loginPage">
+  <div class="lbox">
+    <div class="lico">📋</div>
+    <h1>학부모 페이지</h1>
+    <p class="lsub">For Parents</p>
+    <input class="linp" type="password" id="pwIn" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')doParentLogin()">
+    <button class="lbtn" id="loginBtn" onclick="doParentLogin()">확인 →</button>
+    <div class="lerr" id="lerr"></div>
+    <a class="lback" href="./main.html">← 홈으로</a>
+  </div>
+</div>
 <div id="load"><div><div class="sp"></div><p class="ld-txt">불러오는 중...</p></div></div>
 <div id="wrap">
   <div class="hdr">
@@ -249,33 +275,63 @@ window.addEventListener('DOMContentLoaded',()=>{
   loadPage();
 });
 
+async function doParentLogin(){
+  const pw=document.getElementById('pwIn').value;
+  const err=document.getElementById('lerr');
+  const btn=document.getElementById('loginBtn');
+  if(!pw){err.textContent='비밀번호를 입력하세요';return;}
+  err.textContent='';btn.disabled=true;btn.textContent='확인 중...';
+  try{
+    const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pw));
+    const hash=[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+    const snap=await db.ref('smStudents').get();
+    const all=snap.val()||{};
+    const match=Object.values(all).find(s=>s.parentPwHash===hash);
+    if(match){
+      // Hide login, show loading, load data
+      document.getElementById('loginPage').style.display='none';
+      document.getElementById('load').style.display='flex';
+      const matchEntry=Object.entries(snap.val()||{}).find(([,s])=>s.parentPwHash===hash);loadStudentData(matchEntry[0],matchEntry[1]);
+    }else{
+      err.textContent='비밀번호가 올바르지 않습니다';
+      document.getElementById('pwIn').value='';
+      document.getElementById('pwIn').focus();
+    }
+  }catch(e){err.textContent='오류: '+e.message;}
+  btn.disabled=false;btn.textContent='확인 →';
+}
+
 async function loadPage(){
   const token=new URLSearchParams(location.search).get('token');
-  if(!token){showErr('잘못된 링크','올바른 학부모 링크로 접속해주세요.');return;}
+  if(!token){
+    // No token → show login page
+    document.getElementById('load').style.display='none';
+    document.getElementById('loginPage').style.display='flex';
+    return;
+  }
   try{
     // ✅ client-side 필터링 (인덱스 불필요)
     const snap=await db.ref('smStudents').get();
     const all=snap.val()||{};
     const entry=Object.entries(all).find(([,s])=>s.token===token);
     if(!entry){showErr('학생을 찾을 수 없습니다','링크가 만료되었거나 잘못된 링크입니다.');return;}
-    sid_=entry[0];
-    const stu=entry[1];
-    document.title=`${stu.name} — 수업 현황`;
-    document.getElementById('hName').textContent=stu.name||'';
-    document.getElementById('hGrade').textContent=stu.grade||'';
-    document.getElementById('hSubj').textContent=stu.subj||'';
-    document.getElementById('load').style.display='none';
-    document.getElementById('wrap').style.display='block';
-    db.ref(`smSessions/${sid_}`).on('value',s=>{recData=s.val()||{};renderStats();renderCal()});
-    db.ref(`smPlanners/${sid_}`).on('value',s=>{renderViewPlanners(s.val()||{});});
-    const stored=localStorage.getItem(`smSent_${sid_}`);
-    if(stored)try{sent=JSON.parse(stored);}catch(e){}
-    // Firebase 상담 실시간 리스닝
-    db.ref(`smConsultations/${sid_}`).on('value',s=>{
-      consultData=s.val()||{};
-      renderSent();
-    });
+    loadStudentData(entry[0], entry[1]);
   }catch(e){showErr('오류 발생',''+e.message);}
+}
+
+function loadStudentData(stuId, stu){
+  sid_=stuId;
+  document.title=stu.name+' — 수업 현황';
+  document.getElementById('hName').textContent=stu.name||'';
+  document.getElementById('hGrade').textContent=stu.grade||'';
+  document.getElementById('hSubj').textContent=stu.subj||'';
+  document.getElementById('load').style.display='none';
+  document.getElementById('wrap').style.display='block';
+  db.ref('smSessions/'+sid_).on('value',s=>{recData=s.val()||{};renderStats();renderCal();});
+  db.ref('smPlanners/'+sid_).on('value',s=>{renderViewPlanners(s.val()||{});});
+  const stored=localStorage.getItem('smSent_'+sid_);
+  if(stored)try{sent=JSON.parse(stored);}catch(e){}
+  db.ref('smConsultations/'+sid_).on('value',s=>{consultData=s.val()||{};renderSent();});
 }
 function showErr(title,msg){document.getElementById('load').innerHTML=`<div class="err"><div class="ei">😔</div><h2>${title}</h2><p>${msg}</p></div>`;}
 
