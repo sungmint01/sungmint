@@ -27,8 +27,23 @@
 </head>
 <body>
 
-  <a class="back-home" href="./main.html">← 홈</a>
-<div id="root"></div>
+<div id="loginPage" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#e4e8f4;background-image:radial-gradient(circle at 20% 20%,rgba(55,100,191,.12) 0%,transparent 50%),radial-gradient(circle at 80% 80%,rgba(90,138,224,.1) 0%,transparent 50%)">
+  <div style="background:#e4e8f4;border-radius:24px;padding:44px 36px 36px;width:320px;box-shadow:8px 8px 20px rgba(145,165,210,.6),-6px -6px 16px rgba(255,255,255,.9);text-align:center">
+    <div style="width:58px;height:58px;background:linear-gradient(135deg,#5a8ae0,#3764bf);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 18px;box-shadow:3px 3px 10px rgba(55,100,191,.4),-2px -2px 6px rgba(255,255,255,.6)">📚</div>
+    <div style="font-family:'Nanum Myeongjo',serif;font-size:24px;font-weight:800;color:#1a2840;margin-bottom:4px">오늘의 문제</div>
+    <div style="font-family:'Space Mono',monospace;font-size:10px;color:#8a96b4;letter-spacing:2px;margin-bottom:26px;text-transform:uppercase">OD4P</div>
+    <input id="od4pPwInput" type="password" placeholder="비밀번호 입력"
+      style="width:100%;border:none;border-radius:12px;padding:12px 14px;font-size:15px;font-family:'Noto Sans KR',sans-serif;outline:none;background:#e4e8f4;letter-spacing:4px;margin-bottom:12px;box-shadow:inset 3px 3px 7px rgba(145,165,210,.55),inset -3px -3px 7px rgba(255,255,255,.85);color:#1a2840;text-align:center"
+      onkeydown="if(event.key==='Enter')od4pLogin()">
+    <button onclick="od4pLogin()"
+      style="width:100%;background:linear-gradient(135deg,#5a8ae0,#3764bf);color:#fff;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;box-shadow:3px 3px 10px rgba(55,100,191,.35)">
+      확인 →
+    </button>
+    <div id="od4pErr" style="color:#ef4444;font-size:12px;margin-top:8px;min-height:16px;font-family:'Space Mono',monospace"></div>
+    <a href="./main.html" style="display:block;margin-top:16px;font-size:11px;color:#8a96b4;text-decoration:none;font-family:'Space Mono',monospace;letter-spacing:1px">← 홈으로</a>
+  </div>
+</div>
+<div id="root" style="display:none"></div>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -38,6 +53,45 @@
 const firebaseConfig={apiKey:"AIzaSyAN7K0-V9PPepqmcNq0qA1xg_Sr8n-xiu0",authDomain:"qna-sungmint.firebaseapp.com",databaseURL:"https://qna-sungmint-default-rtdb.firebaseio.com",projectId:"qna-sungmint",storageBucket:"qna-sungmint.firebasestorage.app",messagingSenderId:"1050653821753",appId:"1:1050653821753:web:eb604160345bea4fd5b6e8"};
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
+</script>
+<script>
+// od4p login - plain JS before React
+window._od4pStudentName = "";
+
+async function od4pLogin() {
+  const pw = document.getElementById("od4pPwInput").value;
+  const err = document.getElementById("od4pErr");
+  const btn = document.querySelector("#loginPage button");
+  if (!pw) { err.textContent = "비밀번호를 입력하세요"; return; }
+  err.textContent = ""; btn.disabled = true; btn.textContent = "확인 중...";
+  try {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pw));
+    const hash = [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,"0")).join("");
+    // Check teacher password
+    const teacherBuf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("1340"));
+    const teacherHash = [...new Uint8Array(teacherBuf)].map(b => b.toString(16).padStart(2,"0")).join("");
+    if (hash === teacherHash) {
+      window._od4pStudentName = "__teacher__";
+      document.getElementById("loginPage").style.display = "none";
+      document.getElementById("root").style.display = "";
+      return;
+    }
+    // Check student password
+    const snap = await db.ref("smStudents").get();
+    const all = snap.val() || {};
+    const entry = Object.entries(all).find(([,s]) => s.studentPwHash === hash);
+    if (entry) {
+      window._od4pStudentName = entry[1].name || "학생";
+      document.getElementById("loginPage").style.display = "none";
+      document.getElementById("root").style.display = "";
+    } else {
+      err.textContent = "비밀번호가 올바르지 않습니다";
+      document.getElementById("od4pPwInput").value = "";
+      document.getElementById("od4pPwInput").focus();
+    }
+  } catch(e) { err.textContent = "오류: " + e.message; }
+  btn.disabled = false; btn.textContent = "확인 →";
+}
 </script>
 <script type="text/babel" data-presets="react">
 const {useState,useEffect,useRef,useMemo}=React;
@@ -89,7 +143,7 @@ async function listenAllDates(cb){
 function StudentApp(){
   const[step,setStep]=useState("subject"); // subject|auth|quiz|result|closed|rest
   const[selSubject,setSelSubject]=useState(null);
-  const[name,setName]=useState("");
+  const[name,setName]=useState(window._od4pStudentName||"");
   const[authPw,setAuthPw]=useState("");
   const[authErr,setAuthErr]=useState("");
   const[authLoading,setAuthLoading]=useState(false);
@@ -762,7 +816,7 @@ function TeacherApp(){
 
 // ── 메인 ─────────────────────────────────────────────
 function App(){
-  const[mode,setMode]=useState("student");
+  const[mode,setMode]=useState(window._od4pStudentName==="__teacher__"?"teacher":"student");
   return(
     <div style={{minHeight:"100vh",background:"#f8faff"}}>
       <header style={{background:"#ffffff",borderBottom:"1px solid #e2e8f0",padding:"0 20px",display:"flex",alignItems:"center",justifyContent:"space-between",height:54,position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 16px rgba(0,0,0,0.4)"}}>
