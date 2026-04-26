@@ -328,7 +328,11 @@ textarea.inp{resize:vertical;min-height:68px}
           <input type="checkbox" id="rmAbsent" style="width:17px;height:17px;accent-color:#ef4444;cursor:pointer">
           <span>🚫 결석</span>
         </label>
-        <span style="font-size:12px;color:#94a3b8">체크 시 달력에 빨간 ✕로 표시됩니다</span>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:#374151;margin-left:14px">
+          <input type="checkbox" id="rmLate" style="width:17px;height:17px;accent-color:#f59e0b;cursor:pointer">
+          <span>⏰ 지각</span>
+        </label>
+        <span style="font-size:12px;color:#94a3b8;margin-left:6px">달력에 ⏰으로 표시됩니다</span>
       </div>
       <div class="fg"><label class="fl">지난 시간 숙제 범위</label><input class="inp" id="rmPrevHw" type="text" placeholder="자동 입력 (수정 가능)"></div>
       <div class="fg"><label class="fl">숙제 코멘트</label><textarea class="inp" id="rmComment" placeholder="숙제 관련 코멘트를 적어주세요"></textarea></div>
@@ -505,8 +509,9 @@ function changeMonth(dir){
   if(calMonth<0){calMonth=11;calYear--;}
   renderCal();
 }
-function starsHtml(n,absent){
+function starsHtml(n,absent,late){
   if(absent)return`<span style="color:#ef4444;font-weight:700;font-size:12px">✕</span>`;
+  if(late)return`<span style="font-size:12px">⏰</span>`+(n>0?`<span class="s${n}">${'★'.repeat(n)}</span>`:'');
   if(n===0)return`<span class="s0">✕</span>`;
   return`<span class="s${n}">${'★'.repeat(n)}</span>`;
 }
@@ -539,10 +544,10 @@ function renderCal(){
     if(dow===6)cell.classList.add('sat');
     if(rec){
       const ev=rec.eval??3;
-      const bg=rec.absent?'#fee2e2':ev>=5?'#fefce8':ev===4?'#f0fdf4':ev===3?'#eff8ff':ev===2?'#fff7ed':'#fff5f5';
+      const bg=rec.absent?'#fee2e2':rec.late?'#fffbeb':ev>=5?'#fefce8':ev===4?'#f0fdf4':ev===3?'#eff8ff':ev===2?'#fff7ed':'#fff5f5';
       cell.style.background=bg;
       const pp=rec.prog?rec.prog.slice(0,8)+(rec.prog.length>8?'…':''):'';
-      cell.innerHTML=`<span class="cal-day-num">${d}</span><div class="cal-cell-body"><div class="cal-stars">${starsHtml(ev,rec.absent)}</div>${pp&&!rec.absent?`<div class="cal-prog">${pp}</div>`:''}</div>`;
+      cell.innerHTML=`<span class="cal-day-num">${d}</span><div class="cal-cell-body"><div class="cal-stars">${starsHtml(ev,rec.absent,rec.late)}</div>${pp&&!rec.absent?`<div class="cal-prog">${pp}</div>`:''}</div>`;
       cell.addEventListener('click',()=>openRM(rec.sid));
     }else{
       cell.innerHTML=`<span class="cal-day-num">${d}</span>`;
@@ -644,6 +649,7 @@ function openRM(sid=null,dateStr=null){
     document.getElementById('rmProg').value=r.prog||'';
     setEval(r.eval??3);
     document.getElementById('rmAbsent').checked=!!r.absent;
+    document.getElementById('rmLate').checked=!!r.late;
     document.getElementById('rmPrevHw').value=r.prevHw||'';
     document.getElementById('rmComment').value=r.comment||'';
     document.getElementById('rmSpecial').value=r.special||'';
@@ -657,6 +663,7 @@ function openRM(sid=null,dateStr=null){
     document.getElementById('rmNum').value=Object.keys(sessions[uid_]||{}).length+1;
     ['rmProg','rmPrevHw','rmComment','rmSpecial','rmHwC','rmCli','rmNote'].forEach(f=>document.getElementById(f).value='');
     document.getElementById('rmAbsent').checked=false;
+    document.getElementById('rmLate').checked=false;
     setEval(3);
     // 자동 채우기: 가장 최근 이전 수업의 오늘 숙제 → 지난 시간 숙제 범위
     const allRecs = Object.values(sessions[uid_]||{})
@@ -735,7 +742,7 @@ async function saveRecord(){
   const date=document.getElementById('rmDate').value;
   if(!date){alert('날짜를 입력하세요');return;}
   const[y,m]=date.split('-');calYear=parseInt(y);calMonth=parseInt(m)-1;
-  const data={date,num:parseInt(document.getElementById('rmNum').value)||1,prog:document.getElementById('rmProg').value,eval:parseInt(document.getElementById('rmEval').value),absent:document.getElementById('rmAbsent').checked,prevHw:document.getElementById('rmPrevHw').value,comment:document.getElementById('rmComment').value,special:document.getElementById('rmSpecial').value,hwC:document.getElementById('rmHwC').value,cli:document.getElementById('rmCli').value,note:document.getElementById('rmNote').value,upd:Date.now()};
+  const data={date,num:parseInt(document.getElementById('rmNum').value)||1,prog:document.getElementById('rmProg').value,eval:parseInt(document.getElementById('rmEval').value),absent:document.getElementById('rmAbsent').checked,late:document.getElementById('rmLate').checked,prevHw:document.getElementById('rmPrevHw').value,comment:document.getElementById('rmComment').value,special:document.getElementById('rmSpecial').value,hwC:document.getElementById('rmHwC').value,cli:document.getElementById('rmCli').value,note:document.getElementById('rmNote').value,upd:Date.now()};
   const sid=document.getElementById('rmId').value;
   if(sid){await db.ref(`smSessions/${uid_}/${sid}`).update(data);toast('수정되었습니다');}
   else{data.at=Date.now();await db.ref(`smSessions/${uid_}`).push(data);toast('기록이 추가되었습니다');}
@@ -1249,7 +1256,11 @@ textarea.inp{resize:vertical;min-height:68px}
           <input type="checkbox" id="rmAbsent" style="width:17px;height:17px;accent-color:#ef4444;cursor:pointer">
           <span>🚫 결석</span>
         </label>
-        <span style="font-size:12px;color:#94a3b8">체크 시 달력에 빨간 ✕로 표시됩니다</span>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:#374151;margin-left:14px">
+          <input type="checkbox" id="rmLate" style="width:17px;height:17px;accent-color:#f59e0b;cursor:pointer">
+          <span>⏰ 지각</span>
+        </label>
+        <span style="font-size:12px;color:#94a3b8;margin-left:6px">달력에 ⏰으로 표시됩니다</span>
       </div>
       <div class="fg"><label class="fl">지난 시간 숙제 범위</label><input class="inp" id="rmPrevHw" type="text" placeholder="자동 입력 (수정 가능)"></div>
       <div class="fg"><label class="fl">숙제 코멘트</label><textarea class="inp" id="rmComment" placeholder="숙제 관련 코멘트를 적어주세요"></textarea></div>
