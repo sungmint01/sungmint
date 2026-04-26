@@ -622,7 +622,7 @@ async function delStudent(){
 function setEval(v){
   // 이미 선택된 버튼 다시 클릭 → 선택 해제
   const current=parseInt(document.getElementById('rmEval').value);
-  if(current===v){v=-1;}  // -1 = 선택 없음
+  if(current===v){v=null;}  // -1 = 선택 없음
   document.getElementById('rmEval').value=v;
   [0,1,2,3,4,5].forEach(x=>{
     const btn=document.getElementById('ev'+x);
