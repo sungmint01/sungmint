@@ -162,6 +162,21 @@ textarea.inp{resize:vertical;min-height:68px}
 .lightbox.open{display:flex}
 .lightbox img{max-width:100%;max-height:90vh;border-radius:10px;object-fit:contain}
 .lightbox-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer}
+.planner-status-wrap{padding:16px}
+.ps-date-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.ps-date-label{font-size:12px;font-weight:700;color:#374151}
+.ps-nav-btn{background:#f1f5f9;border:none;border-radius:7px;width:26px;height:26px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;color:#475569}
+.ps-nav-btn:hover{background:#e2e8f0}
+.ps-table{width:100%;border-collapse:collapse;font-size:12px}
+.ps-table th{background:#f8fafc;padding:7px 10px;text-align:left;font-weight:600;color:#374151;border-bottom:1px solid #e2e8f0;font-family:'Gothic A1',sans-serif}
+.ps-table td{padding:8px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+.ps-table tr:last-child td{border-bottom:none}
+.ps-name{font-weight:600;color:#1a2840;font-size:12px}
+.ps-cls{font-size:10px;color:#8a96b4;margin-left:4px}
+.ps-badge{display:inline-flex;align-items:center;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;white-space:nowrap}
+.ps-done{background:#dcfce7;color:#166534}
+.ps-missing{background:#f1f5f9;color:#94a3b8}
+.ps-empty{text-align:center;padding:32px;color:#94a3b8;font-size:13px}
 .sb-class-head{padding:7px 14px 3px;font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between}
 .sb-class-hw{background:none;border:none;color:#64748b;font-size:10px;cursor:pointer;font-family:inherit;padding:2px 6px;border-radius:4px;transition:.15s}
 .sb-class-hw:hover{background:rgba(116,179,216,.15);color:var(--bl)}
@@ -192,6 +207,10 @@ textarea.inp{resize:vertical;min-height:68px}
     <aside class="sidebar">
       <div class="sb-head"><h1>📚 학생관리</h1><p id="sCnt">학생 0명</p></div>
       <div class="sb-actions"><button class="btn-add" onclick="openSM()">＋ 학생 추가</button></div>
+      <div class="sb-section">현황</div>
+      <div class="sb-consult" id="sbPlanner" onclick="showPlannerStatus()">
+        <span class="sb-consult-label">📸 플래너 현황</span>
+      </div>
       <div class="sb-section">상담</div>
       <div class="sb-consult" id="sbConsult" onclick="showConsultView()">
         <span class="sb-consult-label">💬 상담 요청 전체</span>
@@ -241,6 +260,17 @@ textarea.inp{resize:vertical;min-height:68px}
               <div class="cal-dow">수</div><div class="cal-dow">목</div><div class="cal-dow">금</div><div class="cal-dow">토</div>
             </div>
           </div>
+        </div>
+      </div>
+      <div id="plannerStatus" style="display:none;padding:22px">
+        <div style="font-size:16px;font-weight:700;margin-bottom:16px">📸 플래너 제출 현황</div>
+        <div class="planner-status-wrap">
+          <div class="ps-date-row">
+            <button class="ps-nav-btn" onclick="changePsDate(-1)">‹</button>
+            <span class="ps-date-label" id="psDateLabel"></span>
+            <button class="ps-nav-btn" onclick="changePsDate(1)">›</button>
+          </div>
+          <div id="psContent"><div class="ps-empty">날짜를 선택하세요</div></div>
         </div>
       </div>
       <div id="consultView" style="display:none;padding:22px">
@@ -379,7 +409,7 @@ function showApp(){
   document.getElementById('app').style.display='block';
   db.ref('smStudents').on('value',s=>{students=s.val()||{};renderSidebar();if(uid_&&mode==='student')renderHeader();});
   db.ref('smConsultations').on('value',s=>{consults=s.val()||{};renderSidebar();if(mode==='consult')renderConsultView()});
-  db.ref('smPlanners').on('value',s=>{planners=s.val()||{};const d=document.getElementById('rmDate');if(d&&d.value&&document.getElementById('rm').classList.contains('open'))loadRmPlanners(d.value);});
+  db.ref('smPlanners').on('value',s=>{planners=s.val()||{};const d=document.getElementById('rmDate');if(d&&d.value&&document.getElementById('rm').classList.contains('open'))loadRmPlanners(d.value);if(mode==='planner')renderPsTable();});
   cleanOldPlanners();
 }
 
@@ -407,6 +437,7 @@ function renderSidebar(){
   const tu=document.getElementById('totalUnread');
   if(totalU>0){tu.textContent=totalU;tu.style.display='';}else tu.style.display='none';
   document.getElementById('sbConsult').className='sb-consult'+(mode==='consult'?' on':'');
+  document.getElementById('sbPlanner').className='sb-consult'+(mode==='planner'?' on':'');
   const el=document.getElementById('sList');
   const arr=Object.entries(students).sort(([,a],[,b])=>(a.name||'').localeCompare(b.name||'','ko'));
   if(!arr.length){el.innerHTML='<p style="color:#475569;font-size:11px;text-align:center;padding:16px">등록된 학생 없음</p>';return;}
@@ -436,6 +467,50 @@ function renderSidebar(){
   });
   el.innerHTML=html;
 }
+var _psDate = null;
+
+function showPlannerStatus(){
+  mode='planner';uid_=null;
+  document.getElementById('empty').style.display='none';
+  document.getElementById('detail').style.display='none';
+  document.getElementById('consultView').style.display='none';
+  document.getElementById('plannerStatus').style.display='';
+  renderSidebar();
+  if(!_psDate) _psDate = new Date().toISOString().split('T')[0];
+  renderPsTable();
+}
+
+function changePsDate(dir){
+  const d = new Date(_psDate+'T00:00:00');
+  d.setDate(d.getDate()+dir);
+  _psDate = d.toISOString().split('T')[0];
+  renderPsTable();
+}
+
+function renderPsTable(){
+  const lbl = document.getElementById('psDateLabel');
+  const el = document.getElementById('psContent');
+  if(!_psDate){el.innerHTML='<div class="ps-empty">날짜를 선택하세요</div>';return;}
+  const parts = _psDate.split('-');
+  lbl.textContent = parts[0]+'년 '+parseInt(parts[1])+'월 '+parseInt(parts[2])+'일';
+  const stuArr = Object.entries(students).sort(([,a],[,b])=>(a.cls||'').localeCompare(b.cls||'','ko')||(a.name||'').localeCompare(b.name||'','ko'));
+  if(!stuArr.length){el.innerHTML='<div class="ps-empty">등록된 학생이 없습니다</div>';return;}
+  let html='<table class="ps-table"><thead><tr><th>이름</th><th>📋 계획 플래너</th><th>✅ 완료 플래너</th></tr></thead><tbody>';
+  stuArr.forEach(([sid,stu])=>{
+    const sp = (planners[sid]||{});
+    const dayPlanners = Object.values(sp).filter(p=>p.date===_psDate);
+    const hasPlan = dayPlanners.some(p=>p.type!=='done');
+    const hasDone = dayPlanners.some(p=>p.type==='done');
+    html+='<tr>';
+    html+='<td><span class="ps-name">'+( stu.name||'?')+'</span><span class="ps-cls">'+(stu.cls||'')+'</span></td>';
+    html+='<td>'+(hasPlan?'<span class="ps-badge ps-done">✓ 제출</span>':'<span class="ps-badge ps-missing">미제출</span>')+'</td>';
+    html+='<td>'+(hasDone?'<span class="ps-badge ps-done">✓ 제출</span>':'<span class="ps-badge ps-missing">미제출</span>')+'</td>';
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  el.innerHTML=html;
+}
+
 function showConsultView(){
   mode='consult';uid_=null;
   document.getElementById('empty').style.display='none';
