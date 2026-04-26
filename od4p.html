@@ -823,6 +823,11 @@ function App(){
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <span style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:15,background:"linear-gradient(135deg,#5a8ae0,#3764bf)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>OD4P</span>
           <span style={{fontSize:10,color:"#718096",letterSpacing:0.5}}>OneDay 4 Problem</span>
+          {mode==="student"&&window._od4pStudentName&&window._od4pStudentName!=="__teacher__"&&(
+            <span style={{marginLeft:8,background:"#d2dcf0",borderRadius:99,padding:"3px 12px",fontSize:11,fontWeight:700,color:"#3764bf",fontFamily:"'Gothic A1',sans-serif"}}>
+              ✏️ {window._od4pStudentName}
+            </span>
+          )}
         </div>
         <div style={{display:"flex",gap:5}}>
           <button onClick={()=>setMode("teacher")} style={{padding:"5px 12px",borderRadius:6,border:"none",cursor:"pointer",background:mode==="teacher"?"#ede9fe":"transparent",color:mode==="teacher"?"#6d28d9":"#94a3b8",fontWeight:600,fontSize:12}}>🔐 선생님</button>
