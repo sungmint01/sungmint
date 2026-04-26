@@ -481,9 +481,9 @@ function showPlannerStatus(){
 }
 
 function changePsDate(dir){
-  const d = new Date(_psDate+'T00:00:00');
-  d.setDate(d.getDate()+dir);
-  _psDate = d.toISOString().split('T')[0];
+  const [y,m,d] = _psDate.split('-').map(Number);
+  const dt = new Date(y, m-1, d+dir);
+  _psDate = dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
   renderPsTable();
 }
 
