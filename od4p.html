@@ -7,7 +7,7 @@
   <meta http-equiv="Expires" content="0"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>OD4P</title>
-  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Gothic+A1:wght@300;400;700;900&family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Noto Sans KR',sans-serif;background:#f8faff;color:#1a202c;min-height:100vh}
@@ -87,9 +87,12 @@ async function listenAllDates(cb){
 
 // ── 학생 앱 ──────────────────────────────────────────
 function StudentApp(){
-  const[step,setStep]=useState("subject"); // subject|name|quiz|result|closed|rest
+  const[step,setStep]=useState("subject"); // subject|auth|quiz|result|closed|rest
   const[selSubject,setSelSubject]=useState(null);
   const[name,setName]=useState("");
+  const[authPw,setAuthPw]=useState("");
+  const[authErr,setAuthErr]=useState("");
+  const[authLoading,setAuthLoading]=useState(false);
   const[quiz,setQuiz]=useState(null);
   const[answers,setAnswers]=useState({});
   const[result,setResult]=useState(null);
@@ -126,12 +129,13 @@ function StudentApp(){
     setQuiz(null);setAnswers({});setResult(null); // 이전 데이터 초기화
     listenQuiz(availDate,sub.key,data=>{
       setQuiz(data);setLoading(false);
-      setSelSubject(sub);setStep("name");
+      setSelSubject(sub);setStep("auth");
     });
   };
 
   const startQuiz=()=>{
     if(!name.trim())return;
+    // name is set from auth, proceed
     // 기존 제출 기록 확인
     if(quiz?.submissions){
       const existing=Object.values(quiz.submissions).find(s=>s.name===name.trim());
@@ -174,8 +178,8 @@ function StudentApp(){
   if(isClosed)return(
     <div style={{maxWidth:400,margin:"0 auto",padding:"80px 20px",textAlign:"center"}}>
       <div style={{fontSize:52,marginBottom:16}}>🌙</div>
-      <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:24,color:"#1a202c",marginBottom:10}}>지금은 쉬는 시간</div>
-      <div style={{color:"#a0aec0",fontSize:14,lineHeight:1.8}}>오전 6시부터 문제를 풀 수 있어요<br/>조금만 기다려줘요 😴</div>
+      <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:24,color:"#1a2840",marginBottom:10}}>지금은 쉬는 시간</div>
+      <div style={{color:"#8a96b4",fontSize:14,lineHeight:1.8}}>오전 6시부터 문제를 풀 수 있어요<br/>조금만 기다려줘요 😴</div>
     </div>
   );
 
@@ -183,7 +187,7 @@ function StudentApp(){
   if(step==="subject")return(
     <div style={{maxWidth:440,margin:"0 auto",padding:"50px 20px",textAlign:"center"}}>
       <div style={{marginBottom:6,fontSize:13,color:"#718096"}}>{availDate?formatDate(availDate):"─"}</div>
-      <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:38,marginBottom:4,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>OD4P</div>
+      <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:38,marginBottom:4,background:"linear-gradient(135deg,#5a8ae0,#3764bf)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>OD4P</div>
       <div style={{fontSize:12,color:"#718096",marginBottom:36,letterSpacing:1}}>OneDay 4 Problem</div>
       <div style={{fontSize:14,color:"#718096",marginBottom:18}}>풀 과목을 선택하세요</div>
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
@@ -192,8 +196,8 @@ function StudentApp(){
             onMouseEnter={e=>{e.currentTarget.style.borderColor="#6366f1";e.currentTarget.style.background="#f5f3ff";}}
             onMouseLeave={e=>{e.currentTarget.style.borderColor="#e2e8f0";e.currentTarget.style.background="#1e293b";}}>
             <div>
-              <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:18,color:"#1a202c",textAlign:"left"}}>{sub.label}</div>
-              <div style={{fontSize:12,color:"#a0aec0",marginTop:2,textAlign:"left"}}>오늘의 문제 4개</div>
+              <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:18,color:"#1a2840",textAlign:"left"}}>{sub.label}</div>
+              <div style={{fontSize:12,color:"#8a96b4",marginTop:2,textAlign:"left"}}>오늘의 문제 4개</div>
             </div>
             <div style={{fontSize:22}}>→</div>
           </button>
@@ -202,36 +206,61 @@ function StudentApp(){
     </div>
   );
 
-  if(loading)return<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"60vh",color:"#a0aec0",flexDirection:"column",gap:12}}><div style={{fontSize:32}}>⏳</div>불러오는 중...</div>;
+  if(loading)return<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"60vh",color:"#8a96b4",flexDirection:"column",gap:12}}><div style={{fontSize:32}}>⏳</div>불러오는 중...</div>;
 
-  // ── 이름 입력 ───────────────────────────────────────
-  if(step==="name"){
+  // ── 비밀번호 인증 ─────────────────────────────────
+  const doAuth=async()=>{
+    if(!authPw.trim())return;
+    setAuthLoading(true);setAuthErr("");
+    try{
+      const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(authPw));
+      const hash=[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+      const snap=await db.ref("smStudents").get();
+      const all=snap.val()||{};
+      const entry=Object.entries(all).find(([,s])=>s.studentPwHash===hash);
+      if(entry){
+        setName(entry[1].name||"학생");
+        setAuthPw("");setAuthErr("");
+        setStep("quiz"); // skip to quiz directly
+        // load quiz
+        if(!quiz){setLoading(true);}
+      }else{
+        setAuthErr("비밀번호가 올바르지 않습니다");
+        setAuthPw("");
+      }
+    }catch(e){setAuthErr("오류: "+e.message);}
+    setAuthLoading(false);
+  };
+
+  if(step==="auth"){
     const noQuiz=!quiz?.problems;
     return(
       <div style={{maxWidth:420,margin:"0 auto",padding:"40px 20px",textAlign:"center"}}>
-        <button onClick={()=>setStep("subject")} style={{background:"none",border:"none",color:"#a0aec0",cursor:"pointer",fontSize:13,marginBottom:20}}>← 과목 선택으로</button>
-        <div style={{display:"inline-block",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",borderRadius:10,padding:"4px 14px",fontSize:12,fontWeight:700,color:"#fff",marginBottom:12}}>{selSubject?.label}</div>
-        <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:28,color:"#1a202c",marginBottom:4}}>오늘의 문제</div>
-        <div style={{fontSize:13,color:"#a0aec0",marginBottom:24}}>{formatDate(availDate)}</div>
+        <button onClick={()=>setStep("subject")} style={{background:"none",border:"none",color:"#8a96b4",cursor:"pointer",fontSize:13,marginBottom:20,fontFamily:"'Space Mono',monospace"}}>← 과목 선택으로</button>
+        <div style={{display:"inline-block",background:"linear-gradient(135deg,#5a8ae0,#3764bf)",borderRadius:10,padding:"4px 14px",fontSize:12,fontWeight:700,color:"#fff",marginBottom:12}}>{selSubject?.label}</div>
+        <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:28,fontWeight:800,color:"#1a2840",marginBottom:4}}>오늘의 문제</div>
+        <div style={{fontFamily:"'Space Mono',monospace",fontSize:12,color:"#8a96b4",marginBottom:24}}>{formatDate(availDate)}</div>
         {noQuiz?(
-          <div style={{background:"#ffffff",borderRadius:18,border:"1px solid #e2e8f0",padding:40}}>
+          <div style={{background:"#e4e8f4",borderRadius:20,boxShadow:"6px 6px 14px rgba(145,165,210,.6),-4px -4px 10px rgba(255,255,255,.85)",padding:40}}>
             <div style={{fontSize:48,marginBottom:14}}>🎉</div>
-            <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:22,color:"#1a202c",marginBottom:8}}>오늘은 쉬는 날!!</div>
-            <div style={{color:"#a0aec0",fontSize:13}}>내일 또 열심히 해봐요 😊</div>
+            <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:22,fontWeight:800,color:"#1a2840",marginBottom:8}}>오늘은 쉬는 날!!</div>
+            <div style={{color:"#8a96b4",fontSize:13}}>내일 또 열심히 해봐요 😊</div>
           </div>
         ):(
-          <div style={{background:"#ffffff",borderRadius:20,border:"1px solid #e2e8f0",padding:28,boxShadow:"0 8px 32px rgba(0,0,0,0.3)"}}>
-            <div style={{fontSize:13,color:"#a0aec0",marginBottom:8}}>이름을 입력하고 시작해요 ✏️</div>
-            <div style={{fontSize:14,fontWeight:700,color:"#f87171",marginBottom:16}}>실명으로 적으세요!!</div>
-            <input value={name} onChange={e=>setName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&startQuiz()} placeholder="홍길동"
-              style={{width:"100%",background:"#f8faff",border:"2px solid #334155",borderRadius:10,padding:"13px 16px",fontSize:16,color:"#1a202c",outline:"none",textAlign:"center",marginBottom:16}}/>
+          <div style={{background:"#e4e8f4",borderRadius:20,boxShadow:"6px 6px 14px rgba(145,165,210,.6),-4px -4px 10px rgba(255,255,255,.85)",padding:28}}>
+            <div style={{fontSize:13,color:"#5a6e96",marginBottom:20,fontFamily:"'Noto Sans KR',sans-serif"}}>학생 비밀번호를 입력하고 시작해요</div>
+            <input value={authPw} onChange={e=>setAuthPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doAuth()} placeholder="비밀번호"
+              type="password"
+              style={{width:"100%",background:"#e4e8f4",border:"none",borderRadius:12,padding:"13px 16px",fontSize:16,color:"#1a2840",outline:"none",textAlign:"center",marginBottom:8,boxShadow:"inset 3px 3px 7px rgba(145,165,210,.55),inset -3px -3px 7px rgba(255,255,255,.85)",letterSpacing:4}}/>
+            {authErr&&<div style={{color:"#ef4444",fontSize:12,marginBottom:10,fontFamily:"'Space Mono',monospace"}}>{authErr}</div>}
             <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:20,flexWrap:"wrap"}}>
               {Object.values(quiz.problems).map((p,i)=>(
-                <div key={i} style={{background:"#f8faff",borderRadius:8,padding:"5px 11px",fontSize:11,color:"#a0aec0",border:"1px solid #e2e8f0"}}>{i+1}번 {p.type==="객관식"?"🔵":"✏️"}</div>
+                <div key={i} style={{background:"#d2dcf0",borderRadius:8,padding:"5px 11px",fontSize:11,color:"#3764bf"}}>{i+1}번 {p.type==="객관식"?"🔵":"✏️"}</div>
               ))}
             </div>
-            <button onClick={startQuiz} disabled={!name.trim()} style={{width:"100%",background:name.trim()?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#ede9fe",border:"none",borderRadius:12,color:name.trim()?"#fff":"#a78bfa",padding:"15px 0",fontSize:16,fontWeight:900,cursor:name.trim()?"pointer":"not-allowed",fontFamily:"'Black Han Sans',sans-serif"}}>
-              시작하기 →
+            <button onClick={doAuth} disabled={!authPw.trim()||authLoading}
+              style={{width:"100%",background:authPw.trim()?"linear-gradient(135deg,#5a8ae0,#3764bf)":"#b8c4d8",border:"none",borderRadius:12,color:"#fff",padding:"15px 0",fontSize:16,fontWeight:700,cursor:authPw.trim()?"pointer":"not-allowed",fontFamily:"'Gothic A1',sans-serif",boxShadow:authPw.trim()?"3px 3px 10px rgba(55,100,191,.35)":"none"}}>
+              {authLoading?"확인 중...":"시작하기 →"}
             </button>
           </div>
         )}
@@ -247,40 +276,40 @@ function StudentApp(){
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
           <div>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <span style={{background:"linear-gradient(135deg,#6366f1,#8b5cf6)",borderRadius:6,padding:"2px 10px",fontSize:11,fontWeight:700,color:"#fff"}}>{selSubject?.label}</span>
-              <span style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:18,color:"#1a202c"}}>{formatDate(availDate)}</span>
+              <span style={{background:"linear-gradient(135deg,#5a8ae0,#3764bf)",borderRadius:6,padding:"2px 10px",fontSize:11,fontWeight:700,color:"#fff"}}>{selSubject?.label}</span>
+              <span style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:18,color:"#1a2840"}}>{formatDate(availDate)}</span>
             </div>
-            <div style={{fontSize:12,color:"#a0aec0",marginTop:2}}>{name}</div>
+            <div style={{fontSize:12,color:"#8a96b4",marginTop:2}}>{name}</div>
           </div>
           <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:10,padding:"6px 14px",fontSize:13,color:"#718096"}}>{Object.keys(answers).length}/{probs.length}</div>
         </div>
         {probs.map((p,i)=>(
           <div key={i} style={{background:"#ffffff",borderRadius:16,border:"1px solid #e2e8f0",marginBottom:14,overflow:"hidden"}}>
             <div style={{padding:"11px 16px",borderBottom:"1px solid #e9e4ff",display:"flex",alignItems:"center",gap:8}}>
-              <div style={{width:30,height:30,borderRadius:9,background:answers[i]!==undefined&&answers[i]!==""?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#ede9fe",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Black Han Sans',sans-serif",fontSize:14,color:answers[i]!==undefined&&answers[i]!==""?"#fff":"#7c3aed",flexShrink:0}}>{i+1}</div>
+              <div style={{width:30,height:30,borderRadius:9,background:answers[i]!==undefined&&answers[i]!==""?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#ede9fe",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Nanum Myeongjo',serif",fontSize:14,color:answers[i]!==undefined&&answers[i]!==""?"#fff":"#7c3aed",flexShrink:0}}>{i+1}</div>
               <span style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:5,background:p.type==="객관식"?"#ede9fe":"#f0fff4",color:p.type==="객관식"?"#6d28d9":"#16a34a"}}>{p.type}</span>
-              {p.unit&&<span style={{fontSize:11,color:"#a0aec0",marginLeft:2}}>📌 {p.unit}</span>}
+              {p.unit&&<span style={{fontSize:11,color:"#8a96b4",marginLeft:2}}>📌 {p.unit}</span>}
             </div>
             <div style={{padding:"14px 16px"}}>
               {p.image&&<img src={p.image} style={{width:"100%",borderRadius:10,marginBottom:12,maxHeight:300,objectFit:"contain",background:"#fff"}}/>}
-              {p.question&&<div style={{fontSize:15,lineHeight:1.8,color:"#1a202c",marginBottom:14,whiteSpace:"pre-wrap"}}>{p.question}</div>}
+              {p.question&&<div style={{fontSize:15,lineHeight:1.8,color:"#1a2840",marginBottom:14,whiteSpace:"pre-wrap"}}>{p.question}</div>}
               {p.type==="객관식"?(
                 <div style={{display:"flex",flexDirection:"column",gap:7}}>
                   {p.options.map((opt,oi)=>(
                     <div key={oi} onClick={()=>setAnswers(a=>({...a,[i]:String(oi+1)}))} style={{padding:"11px 14px",borderRadius:10,cursor:"pointer",border:"2px solid "+(answers[i]===String(oi+1)?"#6366f1":"#e2e8f0"),background:answers[i]===String(oi+1)?"#ede9fe":"#ffffff",display:"flex",alignItems:"center",gap:10,transition:"all 0.12s"}}>
                       <div style={{width:24,height:24,borderRadius:"50%",flexShrink:0,background:answers[i]===String(oi+1)?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:answers[i]===String(oi+1)?"#fff":"#718096"}}>{oi+1}</div>
-                      <span style={{fontSize:14,color:"#1a202c"}}>{opt}</span>
+                      <span style={{fontSize:14,color:"#1a2840"}}>{opt}</span>
                     </div>
                   ))}
                 </div>
               ):(
                 <input value={answers[i]||""} onChange={e=>setAnswers(a=>({...a,[i]:e.target.value}))} placeholder="답을 입력하세요"
-                  style={{width:"100%",background:"#f8faff",border:"2px solid #334155",borderRadius:10,padding:"12px 14px",fontSize:15,color:"#1a202c",outline:"none"}}/>
+                  style={{width:"100%",background:"#f8faff",border:"2px solid #334155",borderRadius:10,padding:"12px 14px",fontSize:15,color:"#1a2840",outline:"none"}}/>
               )}
             </div>
           </div>
         ))}
-        <button onClick={submit} style={{width:"100%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",borderRadius:14,color:"#fff",padding:"15px 0",fontSize:17,fontWeight:900,cursor:"pointer",fontFamily:"'Black Han Sans',sans-serif",marginTop:4}}>✅ 제출하기</button>
+        <button onClick={submit} style={{width:"100%",background:"linear-gradient(135deg,#5a8ae0,#3764bf)",border:"none",borderRadius:14,color:"#fff",padding:"15px 0",fontSize:17,fontWeight:900,cursor:"pointer",fontFamily:"'Nanum Myeongjo',serif",marginTop:4}}>✅ 제출하기</button>
       </div>
     );
   }
@@ -293,11 +322,11 @@ function StudentApp(){
       <div style={{maxWidth:600,margin:"0 auto",padding:"24px 16px"}}>
         <div style={{background:"#ffffff",borderRadius:20,border:"1px solid #e2e8f0",padding:26,textAlign:"center",marginBottom:18}}>
           <div style={{fontSize:48,marginBottom:8}}>{emoji}</div>
-          <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:28,color:"#1a202c",marginBottom:4}}>{result.score}/{result.total} 맞았어요!</div>
+          <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:28,color:"#1a2840",marginBottom:4}}>{result.score}/{result.total} 맞았어요!</div>
           {result.isReview&&<div style={{display:"inline-block",background:"#ebf4ff",border:"1px solid #3b82f6",borderRadius:8,padding:"3px 12px",fontSize:11,color:"#60a5fa",marginBottom:8}}>📋 이미 제출한 기록이에요</div>}
-          <div style={{fontSize:13,color:"#a0aec0",marginBottom:18}}>{name} · {selSubject?.label} · {formatDate(availDate)}</div>
+          <div style={{fontSize:13,color:"#8a96b4",marginBottom:18}}>{name} · {selSubject?.label} · {formatDate(availDate)}</div>
           <div style={{height:8,background:"#e2e8f0",borderRadius:4,overflow:"hidden",marginBottom:4}}>
-            <div style={{height:"100%",width:pct+"%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",borderRadius:4}}/>
+            <div style={{height:"100%",width:pct+"%",background:"linear-gradient(135deg,#5a8ae0,#3764bf)",borderRadius:4}}/>
           </div>
           <div style={{fontSize:13,color:"#718096"}}>{pct}점</div>
         </div>
@@ -307,12 +336,12 @@ function StudentApp(){
               <div style={{padding:"11px 16px",borderBottom:"1px solid #e9e4ff",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                 <div style={{width:28,height:28,borderRadius:8,background:p.correct?"#059669":"#dc2626",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"#fff",fontWeight:900,flexShrink:0}}>{i+1}</div>
                 <span style={{fontSize:13,fontWeight:700,color:p.correct?"#4ade80":"#f87171"}}>{p.correct?"✅ 정답":"❌ 오답"}</span>
-                {p.unit&&<span style={{fontSize:11,color:"#a0aec0"}}>📌 {p.unit}</span>}
-                <span style={{fontSize:12,color:"#a0aec0",marginLeft:"auto"}}>내 답: <strong style={{color:"#1a202c"}}>{p.userAnswer||"미입력"}</strong>{!p.correct&&<> · 정답: <strong style={{color:"#4ade80"}}>{p.type==="객관식"?p.answer+"번":p.answer}</strong></>}</span>
+                {p.unit&&<span style={{fontSize:11,color:"#8a96b4"}}>📌 {p.unit}</span>}
+                <span style={{fontSize:12,color:"#8a96b4",marginLeft:"auto"}}>내 답: <strong style={{color:"#1a2840"}}>{p.userAnswer||"미입력"}</strong>{!p.correct&&<> · 정답: <strong style={{color:"#4ade80"}}>{p.type==="객관식"?p.answer+"번":p.answer}</strong></>}</span>
               </div>
               <div style={{padding:"12px 16px"}}>
                 {p.image&&<img src={p.image} style={{width:"100%",borderRadius:8,marginBottom:10,maxHeight:200,objectFit:"contain",background:"#fff"}}/>}
-                {p.question&&<div style={{fontSize:13,color:"#a0aec0",marginBottom:10,whiteSpace:"pre-wrap"}}>{p.question}</div>}
+                {p.question&&<div style={{fontSize:13,color:"#8a96b4",marginBottom:10,whiteSpace:"pre-wrap"}}>{p.question}</div>}
                 <button onClick={()=>setShowSol(s=>({...s,[i]:!s[i]}))} style={{background:"#ede9fe",border:"none",borderRadius:8,color:"#6d28d9",padding:"7px 14px",cursor:"pointer",fontSize:12,fontWeight:700,marginBottom:showSol[i]?10:0}}>
                   {showSol[i]?"▲ 해설 닫기":"📖 해설 보기"}
                 </button>
@@ -438,19 +467,19 @@ function TeacherApp(){
   if(!authed)return(
     <div style={{maxWidth:340,margin:"80px auto",padding:"0 20px",textAlign:"center"}}>
       <div style={{fontSize:36,marginBottom:12}}>🔐</div>
-      <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:22,color:"#1a202c",marginBottom:6}}>선생님 전용</div>
-      <div style={{fontSize:13,color:"#a0aec0",marginBottom:24}}>비밀번호를 입력해 주세요</div>
+      <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:22,color:"#1a2840",marginBottom:6}}>선생님 전용</div>
+      <div style={{fontSize:13,color:"#8a96b4",marginBottom:24}}>비밀번호를 입력해 주세요</div>
       <input type="password" value={pw} onChange={e=>{setPw(e.target.value);setPwErr(false);}} onKeyDown={e=>e.key==="Enter"&&login()} placeholder="비밀번호"
-        style={{width:"100%",background:"#ffffff",border:"2px solid "+(pwErr?"#ef4444":"#334155"),borderRadius:10,padding:"12px 16px",fontSize:16,color:"#1a202c",outline:"none",textAlign:"center",marginBottom:8}}/>
+        style={{width:"100%",background:"#ffffff",border:"2px solid "+(pwErr?"#ef4444":"#334155"),borderRadius:10,padding:"12px 16px",fontSize:16,color:"#1a2840",outline:"none",textAlign:"center",marginBottom:8}}/>
       {pwErr&&<div style={{color:"#ef4444",fontSize:12,marginBottom:8}}>비밀번호가 틀렸어요</div>}
-      <button onClick={login} style={{width:"100%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",borderRadius:10,color:"#fff",padding:"13px 0",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"'Black Han Sans',sans-serif",marginTop:4}}>입장하기</button>
+      <button onClick={login} style={{width:"100%",background:"linear-gradient(135deg,#5a8ae0,#3764bf)",border:"none",borderRadius:10,color:"#fff",padding:"13px 0",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"'Nanum Myeongjo',serif",marginTop:4}}>입장하기</button>
     </div>
   );
 
   return(
     <div style={{maxWidth:800,margin:"0 auto",padding:"20px 16px"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:20,flexWrap:"wrap"}}>
-        <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:18,color:"#1a202c"}}>문제 관리</div>
+        <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:18,color:"#1a2840"}}>문제 관리</div>
         <div style={{display:"flex",gap:6,marginLeft:"auto",flexWrap:"wrap"}}>
           {[["upload","📝 출제"],["results","📊 현황"],["students","👥 학생 분석"]].map(([t,l])=>(
             <button key={t} onClick={()=>setTab(t)} style={{padding:"7px 14px",borderRadius:8,border:"none",cursor:"pointer",background:tab===t?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#f3f0ff",color:tab===t?"#fff":"#7c3aed",fontWeight:700,fontSize:12}}>{l}</button>
@@ -463,12 +492,12 @@ function TeacherApp(){
         <div>
           <div style={{background:"#ffffff",borderRadius:12,border:"1px solid #e2e8f0",padding:"14px 16px",marginBottom:18,display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
             <div>
-              <div style={{fontSize:11,color:"#a0aec0",marginBottom:4}}>날짜</div>
+              <div style={{fontSize:11,color:"#8a96b4",marginBottom:4}}>날짜</div>
               <input type="date" value={editDate} onChange={e=>setEditDate(e.target.value)}
-                style={{background:"#f8faff",border:"2px solid #e2e8f0",borderRadius:8,padding:"7px 12px",fontSize:13,color:"#1a202c",outline:"none"}}/>
+                style={{background:"#f8faff",border:"2px solid #e2e8f0",borderRadius:8,padding:"7px 12px",fontSize:13,color:"#1a2840",outline:"none"}}/>
             </div>
             <div>
-              <div style={{fontSize:11,color:"#a0aec0",marginBottom:4}}>과목</div>
+              <div style={{fontSize:11,color:"#8a96b4",marginBottom:4}}>과목</div>
               <div style={{display:"flex",gap:6}}>
                 {SUBJECTS.map(s=>(
                   <button key={s.key} onClick={()=>setEditSub(s)} style={{padding:"7px 14px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:editSub.key===s.key?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#334155",color:editSub.key===s.key?"#fff":"#94a3b8"}}>{s.label}</button>
@@ -480,8 +509,8 @@ function TeacherApp(){
           {problems.map((p,i)=>(
             <div key={i} style={{background:"#ffffff",borderRadius:14,border:"1px solid #e2e8f0",marginBottom:14,overflow:"hidden"}}>
               <div style={{padding:"11px 16px",borderBottom:"1px solid #e9e4ff",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                <div style={{width:28,height:28,borderRadius:8,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Black Han Sans',sans-serif",fontSize:13,color:"#fff"}}>{i+1}</div>
-                <span style={{fontWeight:700,color:"#1a202c",fontSize:13}}>문제 {i+1}</span>
+                <div style={{width:28,height:28,borderRadius:8,background:"linear-gradient(135deg,#5a8ae0,#3764bf)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Nanum Myeongjo',serif",fontSize:13,color:"#fff"}}>{i+1}</div>
+                <span style={{fontWeight:700,color:"#1a2840",fontSize:13}}>문제 {i+1}</span>
                 <div style={{display:"flex",gap:5,marginLeft:"auto"}}>
                   {["객관식","단답형"].map(t=>(
                     <button key={t} onClick={()=>updateProb(i,"type",t)} style={{padding:"4px 10px",borderRadius:6,border:"none",cursor:"pointer",fontSize:11,fontWeight:700,background:p.type===t?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#334155",color:p.type===t?"#fff":"#64748b"}}>{t}</button>
@@ -491,13 +520,13 @@ function TeacherApp(){
               <div style={{padding:"14px 16px",display:"flex",flexDirection:"column",gap:11}}>
                 {/* 단원 */}
                 <div>
-                  <div style={{fontSize:11,color:"#a0aec0",marginBottom:5}}>단원 (통계 분류용)</div>
+                  <div style={{fontSize:11,color:"#8a96b4",marginBottom:5}}>단원 (통계 분류용)</div>
                   <input value={p.unit} onChange={e=>updateProb(i,"unit",e.target.value)} placeholder="예: 지수법칙, 인수분해, 함수의 개념..."
-                    style={{width:"100%",background:"#f8faff",border:"2px solid #e2e8f0",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#1a202c",outline:"none"}}/>
+                    style={{width:"100%",background:"#f8faff",border:"2px solid #e2e8f0",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#1a2840",outline:"none"}}/>
                 </div>
                 {/* 이미지 */}
                 <div>
-                  <div style={{fontSize:11,color:"#a0aec0",marginBottom:5}}>문제 이미지 (선택)</div>
+                  <div style={{fontSize:11,color:"#8a96b4",marginBottom:5}}>문제 이미지 (선택)</div>
                   <input ref={fr[i]} type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleImg(i,e)}/>
                   {p.image?(
                     <div style={{position:"relative",display:"inline-block"}}>
@@ -505,24 +534,24 @@ function TeacherApp(){
                       <button onClick={()=>updateProb(i,"image","")} style={{position:"absolute",top:5,right:5,background:"#ef4444",border:"none",borderRadius:"50%",width:22,height:22,color:"#fff",cursor:"pointer",fontWeight:900,fontSize:11}}>✕</button>
                     </div>
                   ):(
-                    <button onClick={()=>fr[i].current?.click()} style={{background:"#f8faff",border:"2px dashed #334155",borderRadius:8,color:"#a0aec0",padding:"10px 18px",cursor:"pointer",fontSize:12}}>📷 이미지 업로드</button>
+                    <button onClick={()=>fr[i].current?.click()} style={{background:"#f8faff",border:"2px dashed #334155",borderRadius:8,color:"#8a96b4",padding:"10px 18px",cursor:"pointer",fontSize:12}}>📷 이미지 업로드</button>
                   )}
                 </div>
                 {/* 텍스트 */}
                 <div>
-                  <div style={{fontSize:11,color:"#a0aec0",marginBottom:5}}>문제 텍스트 (선택)</div>
+                  <div style={{fontSize:11,color:"#8a96b4",marginBottom:5}}>문제 텍스트 (선택)</div>
                   <textarea value={p.question} onChange={e=>updateProb(i,"question",e.target.value)} rows={2} placeholder="문제 내용 입력"
-                    style={{width:"100%",background:"#f8faff",border:"2px solid #e2e8f0",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#1a202c",outline:"none",resize:"vertical"}}/>
+                    style={{width:"100%",background:"#f8faff",border:"2px solid #e2e8f0",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#1a2840",outline:"none",resize:"vertical"}}/>
                 </div>
                 {/* 객관식 보기 */}
                 {p.type==="객관식"&&(
                   <div>
-                    <div style={{fontSize:11,color:"#a0aec0",marginBottom:6}}>보기 (번호 클릭 → 정답 설정)</div>
+                    <div style={{fontSize:11,color:"#8a96b4",marginBottom:6}}>보기 (번호 클릭 → 정답 설정)</div>
                     {p.options.map((opt,oi)=>(
                       <div key={oi} style={{display:"flex",gap:7,alignItems:"center",marginBottom:5}}>
                         <div onClick={()=>updateProb(i,"answer",String(oi+1))} style={{width:26,height:26,borderRadius:"50%",flexShrink:0,cursor:"pointer",background:p.answer===String(oi+1)?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#334155",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#718096"}}>{oi+1}</div>
                         <input value={opt} onChange={e=>updateOpt(i,oi,e.target.value)} placeholder={`${oi+1}번 보기`}
-                          style={{flex:1,background:"#f8faff",border:"2px solid "+(p.answer===String(oi+1)?"#6366f1":"#334155"),borderRadius:7,padding:"7px 11px",fontSize:12,color:"#1a202c",outline:"none"}}/>
+                          style={{flex:1,background:"#f8faff",border:"2px solid "+(p.answer===String(oi+1)?"#6366f1":"#334155"),borderRadius:7,padding:"7px 11px",fontSize:12,color:"#1a2840",outline:"none"}}/>
                       </div>
                     ))}
                     <div style={{fontSize:11,color:"#6366f1",marginTop:3}}>✓ 정답: {p.answer}번</div>
@@ -531,16 +560,16 @@ function TeacherApp(){
                 {/* 단답형 정답 */}
                 {p.type==="단답형"&&(
                   <div>
-                    <div style={{fontSize:11,color:"#a0aec0",marginBottom:5}}>정답</div>
+                    <div style={{fontSize:11,color:"#8a96b4",marginBottom:5}}>정답</div>
                     <input value={p.answer} onChange={e=>updateProb(i,"answer",e.target.value)} placeholder="정답 입력"
                       style={{width:"100%",background:"#f8faff",border:"2px solid #6366f1",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#4ade80",fontWeight:700,outline:"none"}}/>
                   </div>
                 )}
                 {/* 해설 */}
                 <div style={{borderTop:"1px solid #e2e8f0",paddingTop:10}}>
-                  <div style={{fontSize:11,color:"#a0aec0",marginBottom:6}}>해설</div>
+                  <div style={{fontSize:11,color:"#8a96b4",marginBottom:6}}>해설</div>
                   <textarea value={p.solutionText} onChange={e=>updateProb(i,"solutionText",e.target.value)} rows={2} placeholder="텍스트 해설 (선택)"
-                    style={{width:"100%",background:"#f8faff",border:"2px solid #e2e8f0",borderRadius:8,padding:"9px 12px",fontSize:12,color:"#1a202c",outline:"none",resize:"vertical",marginBottom:7}}/>
+                    style={{width:"100%",background:"#f8faff",border:"2px solid #e2e8f0",borderRadius:8,padding:"9px 12px",fontSize:12,color:"#1a2840",outline:"none",resize:"vertical",marginBottom:7}}/>
                   <input ref={frs[i]} type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleSolImg(i,e)}/>
                   {p.solutionImage?(
                     <div style={{position:"relative",display:"inline-block",marginBottom:7}}>
@@ -548,7 +577,7 @@ function TeacherApp(){
                       <button onClick={()=>updateProb(i,"solutionImage","")} style={{position:"absolute",top:5,right:5,background:"#ef4444",border:"none",borderRadius:"50%",width:22,height:22,color:"#fff",cursor:"pointer",fontWeight:900,fontSize:11}}>✕</button>
                     </div>
                   ):(
-                    <button onClick={()=>frs[i].current?.click()} style={{background:"#f8faff",border:"2px dashed #334155",borderRadius:8,color:"#a0aec0",padding:"8px 16px",cursor:"pointer",fontSize:12,marginBottom:7}}>🖼️ 해설 이미지 업로드</button>
+                    <button onClick={()=>frs[i].current?.click()} style={{background:"#f8faff",border:"2px dashed #334155",borderRadius:8,color:"#8a96b4",padding:"8px 16px",cursor:"pointer",fontSize:12,marginBottom:7}}>🖼️ 해설 이미지 업로드</button>
                   )}
 
                 </div>
@@ -558,7 +587,7 @@ function TeacherApp(){
           {saveOk?(
             <div style={{background:"#f0fff4",border:"2px solid #059669",borderRadius:12,padding:14,textAlign:"center",color:"#4ade80",fontWeight:700}}>✅ {formatDate(editDate)} · {editSub.label} 저장 완료!</div>
           ):(
-            <button onClick={saveQuiz} style={{width:"100%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",borderRadius:14,color:"#fff",padding:"15px 0",fontSize:16,fontWeight:900,cursor:"pointer",fontFamily:"'Black Han Sans',sans-serif"}}>💾 저장하기</button>
+            <button onClick={saveQuiz} style={{width:"100%",background:"linear-gradient(135deg,#5a8ae0,#3764bf)",border:"none",borderRadius:14,color:"#fff",padding:"15px 0",fontSize:16,fontWeight:900,cursor:"pointer",fontFamily:"'Nanum Myeongjo',serif"}}>💾 저장하기</button>
           )}
         </div>
       )}
@@ -594,7 +623,7 @@ function TeacherApp(){
                   <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:18}}>
                     {[{l:"제출 인원",v:total+"명",c:"#6366f1"},{l:"평균 점수",v:avg+"점",c:"#10b981"},{l:"만점자",v:perfect+"명",c:"#f59e0b"}].map((s,si)=>(
                       <div key={si} style={{background:"#ffffff",borderRadius:10,border:"1px solid #e2e8f0",padding:"12px 14px"}}>
-                        <div style={{fontSize:10,color:"#a0aec0",marginBottom:3}}>{s.l}</div>
+                        <div style={{fontSize:10,color:"#8a96b4",marginBottom:3}}>{s.l}</div>
                         <div style={{fontWeight:900,fontSize:20,color:s.c}}>{s.v}</div>
                       </div>
                     ))}
@@ -613,18 +642,18 @@ function TeacherApp(){
                   <div key={si} style={{background:"#ffffff",borderRadius:12,border:"1px solid #e2e8f0",marginBottom:8,padding:"12px 16px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
                     <div style={{width:34,height:34,borderRadius:9,background:"#f8faff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>👤</div>
                     <div style={{flex:1,minWidth:80}}>
-                      <div style={{fontWeight:700,fontSize:14,color:"#1a202c"}}>{sub.name}</div>
-                      <div style={{fontSize:10,color:"#a0aec0"}}>{new Date(sub.ts).toLocaleString("ko-KR",{hour:"2-digit",minute:"2-digit"})}</div>
+                      <div style={{fontWeight:700,fontSize:14,color:"#1a2840"}}>{sub.name}</div>
+                      <div style={{fontSize:10,color:"#8a96b4"}}>{new Date(sub.ts).toLocaleString("ko-KR",{hour:"2-digit",minute:"2-digit"})}</div>
                     </div>
                     <div style={{display:"flex",gap:4}}>
                       {graded.map((g,gi)=>(
                         <div key={gi} style={{width:28,height:28,borderRadius:6,background:g.correct?"#064e3b":"#450a0a",border:"1px solid "+(g.correct?"#059669":"#dc2626"),display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1}}>
-                          <span style={{fontSize:8,color:"#a0aec0"}}>{gi+1}번</span>
+                          <span style={{fontSize:8,color:"#8a96b4"}}>{gi+1}번</span>
                           <span style={{fontSize:11,color:g.correct?"#4ade80":"#f87171",fontWeight:700}}>{g.correct?"O":"X"}</span>
                         </div>
                       ))}
                     </div>
-                    <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:18,color:score===curProbs.length?"#fbbf24":score>=curProbs.length/2?"#4ade80":"#f87171",minWidth:40,textAlign:"right"}}>{score}/{curProbs.length}</div>
+                    <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:18,color:score===curProbs.length?"#fbbf24":score>=curProbs.length/2?"#4ade80":"#f87171",minWidth:40,textAlign:"right"}}>{score}/{curProbs.length}</div>
                     <button onClick={()=>{const subId=Object.keys(curData.submissions)[si];setConfirmDel({type:"one",date:selDate,subKey:selSub.key,subId,name:sub.name});}} style={{background:"#fff5f5",border:"1px solid #7f1d1d",borderRadius:7,color:"#f87171",padding:"5px 9px",cursor:"pointer",fontSize:11}}>삭제</button>
                   </div>
                 );
@@ -638,7 +667,7 @@ function TeacherApp(){
       {tab==="students"&&(
         <div>
           {!dataLoaded?(
-            <div style={{textAlign:"center",padding:"60px",color:"#a0aec0"}}>불러오는 중...</div>
+            <div style={{textAlign:"center",padding:"60px",color:"#8a96b4"}}>불러오는 중...</div>
           ):Object.keys(studentStats).length===0?(
             <div style={{textAlign:"center",padding:"60px",color:"#718096"}}><div style={{fontSize:32,marginBottom:8}}>👤</div>아직 데이터가 없어요</div>
           ):(
@@ -649,27 +678,27 @@ function TeacherApp(){
               return(
                 <div key={sName} style={{background:"#ffffff",borderRadius:14,border:"1px solid #e2e8f0",marginBottom:14,overflow:"hidden"}}>
                   <div style={{padding:"14px 18px",borderBottom:"1px solid #e9e4ff",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-                    <div style={{width:40,height:40,borderRadius:10,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>👤</div>
+                    <div style={{width:40,height:40,borderRadius:10,background:"linear-gradient(135deg,#5a8ae0,#3764bf)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>👤</div>
                     <div style={{flex:1}}>
-                      <div style={{fontWeight:700,fontSize:16,color:"#1a202c"}}>{sName}</div>
-                      <div style={{fontSize:11,color:"#a0aec0"}}>총 {st.total}문제 · {st.correct}개 정답</div>
+                      <div style={{fontWeight:700,fontSize:16,color:"#1a2840"}}>{sName}</div>
+                      <div style={{fontSize:11,color:"#8a96b4"}}>총 {st.total}문제 · {st.correct}개 정답</div>
                     </div>
                     <div style={{textAlign:"right"}}>
-                      <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:24,color:pct>=80?"#4ade80":pct>=60?"#fbbf24":"#f87171"}}>{pct}%</div>
-                      <div style={{fontSize:10,color:"#a0aec0"}}>전체 정답률</div>
+                      <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:24,color:pct>=80?"#4ade80":pct>=60?"#fbbf24":"#f87171"}}>{pct}%</div>
+                      <div style={{fontSize:10,color:"#8a96b4"}}>전체 정답률</div>
                     </div>
                   </div>
                   <div style={{padding:"14px 18px"}}>
                     {/* 과목별 */}
                     <div style={{marginBottom:12}}>
-                      <div style={{fontSize:11,color:"#a0aec0",marginBottom:8}}>과목별 정답률</div>
+                      <div style={{fontSize:11,color:"#8a96b4",marginBottom:8}}>과목별 정답률</div>
                       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                         {Object.entries(st.bySub).map(([subLabel,sv])=>{
                           const sp=Math.round(sv.correct/sv.total*100);
                           return(
                             <div key={subLabel} style={{background:"#f8faff",borderRadius:8,padding:"8px 14px",border:"1px solid #e2e8f0"}}>
                               <div style={{fontSize:11,color:"#718096",marginBottom:3}}>{subLabel}</div>
-                              <div style={{fontWeight:700,fontSize:15,color:sp>=80?"#4ade80":sp>=60?"#fbbf24":"#f87171"}}>{sp}% <span style={{fontSize:10,color:"#a0aec0"}}>({sv.correct}/{sv.total})</span></div>
+                              <div style={{fontWeight:700,fontSize:15,color:sp>=80?"#4ade80":sp>=60?"#fbbf24":"#f87171"}}>{sp}% <span style={{fontSize:10,color:"#8a96b4"}}>({sv.correct}/{sv.total})</span></div>
                             </div>
                           );
                         })}
@@ -677,7 +706,7 @@ function TeacherApp(){
                     </div>
                     {/* 단원별 */}
                     <div>
-                      <div style={{fontSize:11,color:"#a0aec0",marginBottom:8}}>단원별 정답률</div>
+                      <div style={{fontSize:11,color:"#8a96b4",marginBottom:8}}>단원별 정답률</div>
                       <div style={{display:"flex",flexDirection:"column",gap:5}}>
                         {Object.entries(st.byUnit).sort((a,b)=>Math.round(a[1].correct/a[1].total*100)-Math.round(b[1].correct/b[1].total*100)).map(([unit,uv])=>{
                           const up=Math.round(uv.correct/uv.total*100);
@@ -688,7 +717,7 @@ function TeacherApp(){
                                 <div style={{height:"100%",width:up+"%",background:up>=80?"#059669":up>=60?"#d97706":"#dc2626",borderRadius:3}}/>
                               </div>
                               <div style={{fontSize:12,fontWeight:700,color:up>=80?"#4ade80":up>=60?"#fbbf24":"#f87171",minWidth:40,textAlign:"right"}}>{up}%</div>
-                              <div style={{fontSize:10,color:"#a0aec0",minWidth:36}}>({uv.correct}/{uv.total})</div>
+                              <div style={{fontSize:10,color:"#8a96b4",minWidth:36}}>({uv.correct}/{uv.total})</div>
                             </div>
                           );
                         })}
@@ -712,10 +741,10 @@ function TeacherApp(){
         <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999,padding:20}}>
           <div style={{background:"#ffffff",borderRadius:16,border:"2px solid #7f1d1d",padding:28,maxWidth:340,width:"100%",textAlign:"center"}}>
             <div style={{fontSize:32,marginBottom:12}}>🗑️</div>
-            <div style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:18,color:"#1a202c",marginBottom:8}}>
+            <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:18,color:"#1a2840",marginBottom:8}}>
               {confirmDel.type==="one"?`${confirmDel.name}의 기록을 삭제할까요?`:"이 날 전체 기록을 삭제할까요?"}
             </div>
-            <div style={{fontSize:13,color:"#a0aec0",marginBottom:24}}>삭제 후 복구가 불가능해요</div>
+            <div style={{fontSize:13,color:"#8a96b4",marginBottom:24}}>삭제 후 복구가 불가능해요</div>
             <div style={{display:"flex",gap:10}}>
               <button onClick={()=>setConfirmDel(null)} style={{flex:1,background:"#ede9fe",border:"none",borderRadius:10,color:"#6d28d9",padding:"12px 0",cursor:"pointer",fontSize:14,fontWeight:700}}>취소</button>
               <button onClick={async()=>{
@@ -738,7 +767,7 @@ function App(){
     <div style={{minHeight:"100vh",background:"#f8faff"}}>
       <header style={{background:"#ffffff",borderBottom:"1px solid #e2e8f0",padding:"0 20px",display:"flex",alignItems:"center",justifyContent:"space-between",height:54,position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 16px rgba(0,0,0,0.4)"}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontFamily:"'Black Han Sans',sans-serif",fontSize:15,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>OD4P</span>
+          <span style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:15,background:"linear-gradient(135deg,#5a8ae0,#3764bf)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>OD4P</span>
           <span style={{fontSize:10,color:"#718096",letterSpacing:0.5}}>OneDay 4 Problem</span>
         </div>
         <div style={{display:"flex",gap:5}}>

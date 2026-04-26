@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>수업 현황 — 성민T</title>
-<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Gothic+A1:wght@300;400;700;900&family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="config.js"></script>
@@ -17,16 +17,16 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f0f4f8;color:#1e293b;min-
 @keyframes spin{to{transform:rotate(360deg)}}
 .ld-txt{color:#64748b;font-size:14px;text-align:center}
 /* Login */
-#loginPage{min-height:100vh;display:none;align-items:center;justify-content:center;background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 60%,#2d5286 100%)}
+#loginPage{min-height:100vh;display:none;align-items:center;justify-content:center;background:#e4e8f4;background-image:radial-gradient(circle at 20% 20%,rgba(55,100,191,.12) 0%,transparent 50%),radial-gradient(circle at 80% 80%,rgba(90,138,224,.1) 0%,transparent 50%)}
 #loginPage::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(200,210,230,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(200,210,230,0.04) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
-.lbox{background:#fff;border-radius:24px;padding:44px 36px 36px;width:320px;box-shadow:0 28px 64px rgba(0,0,0,.35);text-align:center;position:relative;z-index:1}
+.lbox{background:#e4e8f4;border-radius:24px;padding:44px 36px 36px;width:320px;box-shadow:8px 8px 20px rgba(145,165,210,.6),-6px -6px 16px rgba(255,255,255,.9);text-align:center;position:relative}
 .lbox::before{display:none}
-.lico{width:58px;height:58px;background:linear-gradient(135deg,var(--bl),var(--bld));border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 18px}
-.lbox h1{font-family:'Black Han Sans',sans-serif;font-size:22px;margin-bottom:4px;background:linear-gradient(135deg,var(--bl),var(--bld));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.lico{width:58px;height:58px;background:linear-gradient(135deg,#5a8ae0,#3764bf);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 18px;box-shadow:3px 3px 10px rgba(55,100,191,.4),-2px -2px 6px rgba(255,255,255,.6)}
+.lbox h1{font-family:'Nanum Myeongjo',serif;font-size:24px;font-weight:800;color:#1a2840;margin-bottom:4px}
 .lbox .lsub{font-family:'Space Mono',monospace;font-size:10px;color:#94a3b8;letter-spacing:2px;margin-bottom:28px;text-transform:uppercase}
 .linp{width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px 14px;font-size:15px;font-family:inherit;outline:none;transition:.2s;background:#f8faff;letter-spacing:4px;margin-bottom:12px}
-.linp:focus{border-color:var(--bl);box-shadow:0 0 0 3px rgba(116,179,216,.15);background:#fff}
-.lbtn{width:100%;background:linear-gradient(135deg,var(--bl),var(--bld));color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s}
+.linp:focus{box-shadow:inset 4px 4px 9px rgba(145,165,210,.6),inset -3px -3px 8px rgba(255,255,255,.9)}
+.lbtn{width:100%;background:linear-gradient(135deg,#5a8ae0,#3764bf);color:#fff;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:.2s;box-shadow:3px 3px 10px rgba(55,100,191,.35)}
 .lbtn:hover{opacity:.9}.lbtn:disabled{background:#cbd5e1;cursor:not-allowed}
 .lerr{color:#ef4444;font-size:12px;margin-top:8px;min-height:16px;font-family:'Space Mono',monospace}
 .lback{display:block;margin-top:18px;font-size:12px;color:#94a3b8;text-decoration:none;font-family:'Space Mono',monospace;letter-spacing:1px}
@@ -36,15 +36,15 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f0f4f8;color:#1e293b;min-
 .err h2{font-size:19px;font-weight:700;margin-bottom:8px}
 .err p{font-size:13px;color:#64748b;line-height:1.7}
 #wrap{display:none;max-width:640px;margin:0 auto;padding:0 14px 60px}
-.hdr{background:linear-gradient(135deg,#0f172a,#1e3a5f,#2d5286);padding:36px 24px 68px;margin:0 -14px;position:relative;overflow:hidden}
+.hdr{background:linear-gradient(135deg,#1a2840,#2a3f6f,#3764bf);padding:36px 24px 68px;margin:0 -14px;position:relative;overflow:hidden}
 .hdr::before{content:'';position:absolute;width:260px;height:260px;background:radial-gradient(circle,rgba(116,179,216,.2),transparent 70%);top:-60px;right:-40px;pointer-events:none}
-.hdr-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:99px;padding:5px 14px;font-size:11px;color:rgba(255,255,255,.75);font-weight:500;letter-spacing:.04em;margin-bottom:16px}
+.hdr-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:99px;padding:5px 14px;font-size:11px;color:rgba(255,255,255,.85);font-weight:500;letter-spacing:.04em;margin-bottom:16px}
 .hdr-name{font-size:28px;font-weight:700;color:#fff;margin-bottom:8px}
 .hdr-tags{display:flex;gap:8px;flex-wrap:wrap}
 .htag{background:rgba(255,255,255,.14);color:rgba(255,255,255,.88);border-radius:6px;padding:4px 11px;font-size:12px;font-weight:500}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:-28px;margin-bottom:20px;position:relative;z-index:1}
 .sc{background:#fff;border-radius:12px;padding:14px 10px;box-shadow:0 4px 16px rgba(0,0,0,.08);text-align:center}
-.sn{font-size:22px;font-weight:700;color:var(--bl);line-height:1}
+.sn{font-size:22px;font-weight:700;color:#3764bf;line-height:1}
 .sl{font-size:11px;color:#64748b;margin-top:4px;font-weight:500}
 .card{background:#fff;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px;overflow:hidden}
 .card-head{padding:14px 18px 10px;border-bottom:1px solid #f1f5f9;font-size:14px;font-weight:700}
