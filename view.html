@@ -263,7 +263,7 @@ footer{text-align:center;padding:24px 0 12px;color:#cbd5e1;font-size:12px}
   </div>
 </div>
 <script>
-let db,sid_=null,recData={},sent=[],consultData={},calYear,calMonth;
+let db,sid_=null,recData={},sent=[],consultData={},calYear,calMonth,openDetailDate=null;
 
 window.addEventListener('DOMContentLoaded',()=>{
   const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();
@@ -327,7 +327,18 @@ function loadStudentData(stuId, stu){
   document.getElementById('hSubj').textContent=stu.subj||'';
   document.getElementById('load').style.display='none';
   document.getElementById('wrap').style.display='block';
-  db.ref('smSessions/'+sid_).on('value',function(s){try{recData=s.val()||{};renderStats();renderCal();}catch(e){console.error('session render error:',e);}});
+  db.ref('smSessions/'+sid_).on('value',function(s){
+    try{
+      recData=s.val()||{};
+      renderStats();
+      renderCal();
+      // 팝업이 열려있으면 내용도 갱신
+      if(openDetailDate){
+        var updRec=Object.values(recData).find(function(r){return r.date===openDetailDate;});
+        if(updRec) showDetail(openDetailDate,updRec);
+      }
+    }catch(e){console.error('session render error:',e);}
+  });
   db.ref('smPlanners/'+sid_).on('value',function(s){try{renderViewPlanners(s.val()||{});}catch(e){console.error('planner render error:',e);}});
   const stored=localStorage.getItem('smSent_'+sid_);
   if(stored)try{sent=JSON.parse(stored);}catch(e){}
@@ -402,7 +413,7 @@ function renderCal(){
       cell.style.background=bg;
       const pp=rec.prog||'';
       cell.innerHTML=`<span class="cal-day-num">${d}</span><div class="cal-cell-body"><div class="cal-stars">${starsHtml(ev,rec.absent)}</div>${pp&&!rec.absent?`<div class="cal-prog">${pp}</div>`:''}</div>`;
-      cell.addEventListener('click',()=>showDetail(ds,rec));
+      cell.addEventListener('click',(function(d){return function(){const r=Object.values(recData).find(function(x){return x.date===d;});if(r)showDetail(d,r);};})(ds));
     }else{
       cell.innerHTML=`<span class="cal-day-num">${d}</span>`;
     }
@@ -438,10 +449,12 @@ function showDetail(ds,rec){
     ${rec.comment?`<div class="dm-comment">📝 숙제 코멘트: ${rec.comment.replace(/\n/g,'<br>')}</div>`:''}
     ${rec.special?`<div class="dm-special">⚠️ 특이사항: ${rec.special.replace(/\n/g,'<br>')}</div>`:''}
     ${rec.note?`<div class="dm-note">📌 ${rec.note.replace(/\n/g,'<br>')}</div>`:''}`;
+  openDetailDate=ds;
   document.getElementById('detailOv').classList.add('open');
   document.body.style.overflow='hidden';
 }
 function closeDetail(){
+  openDetailDate=null;
   document.getElementById('detailOv').classList.remove('open');
   document.body.style.overflow='';
 }
