@@ -196,6 +196,27 @@ textarea.inp{resize:vertical;min-height:68px}
 .od-score{font-weight:700;color:#3764bf}
 .od-answers{font-size:10px;color:#64748b;font-family:'Space Mono',monospace}
 .od-not{color:#94a3b8;font-style:italic}
+/* Clinic */
+.cl-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:16px;margin-bottom:12px}
+.cl-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cl-card-title{font-size:14px;font-weight:700;color:#1a2840}
+.cl-badge{display:inline-flex;align-items:center;border-radius:99px;padding:2px 10px;font-size:10px;font-weight:700}
+.cl-active{background:#dcfce7;color:#166534}
+.cl-closed{background:#f1f5f9;color:#94a3b8}
+.cl-target{font-size:11px;color:#5a6e96;margin-bottom:8px}
+.cl-ans-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin-top:8px}
+.cl-ans-cell{background:#f8fafc;border-radius:6px;padding:4px 2px;text-align:center;font-size:10px}
+.cl-ans-num{color:#94a3b8;display:block;font-size:9px}
+.cl-ans-val{color:#3764bf;font-weight:700;display:block}
+.cl-result-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9}
+.cl-result-name{font-size:12px;font-weight:600;color:#1a2840}
+.cl-result-score{font-size:12px;font-weight:700;color:#3764bf}
+.cl-result-wrong{font-size:10px;color:#ef4444}
+.cl-form-ans-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px}
+.cl-form-ans-item{display:flex;flex-direction:column;gap:2px}
+.cl-form-ans-num{font-size:10px;color:#5a6e96;font-weight:600;text-align:center}
+.cl-form-ans-inp{border:1.5px solid #e2e8f0;border-radius:7px;padding:6px 4px;font-size:12px;text-align:center;font-family:inherit;outline:none;width:100%;transition:.15s}
+.cl-form-ans-inp:focus{border-color:#3764bf}
 .sb-class-head{padding:7px 14px 3px;font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between}
 .sb-class-hw{background:none;border:none;color:#64748b;font-size:10px;cursor:pointer;font-family:inherit;padding:2px 6px;border-radius:4px;transition:.15s}
 .sb-class-hw:hover{background:rgba(116,179,216,.15);color:var(--bl)}
@@ -232,6 +253,9 @@ textarea.inp{resize:vertical;min-height:68px}
       </div>
       <div class="sb-consult" id="sbOd4p" onclick="showOd4pStatus()">
         <span class="sb-consult-label">📝 OD4P 응시 현황</span>
+      </div>
+      <div class="sb-consult" id="sbClinic" onclick="showClinicMgr()">
+        <span class="sb-consult-label">📋 클리닉 관리</span>
       </div>
       <div class="sb-section">상담</div>
       <div class="sb-consult" id="sbConsult" onclick="showConsultView()">
@@ -282,6 +306,36 @@ textarea.inp{resize:vertical;min-height:68px}
               <div class="cal-dow">수</div><div class="cal-dow">목</div><div class="cal-dow">금</div><div class="cal-dow">토</div>
             </div>
           </div>
+        </div>
+      </div>
+      <div id="clinicMgr" style="display:none;padding:22px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div style="font-size:16px;font-weight:700">📋 클리닉 관리</div>
+          <button class="btn-sv" onclick="openClinicForm()">+ 클리닉 추가</button>
+        </div>
+        <div id="clinicList"><p class="etbl">등록된 클리닉이 없습니다</p></div>
+      </div>
+      <!-- Clinic Form Modal -->
+      <div class="ov" id="clinicModal">
+        <div class="mb wide">
+          <div class="mh"><h3 id="clinicFormTitle">클리닉 추가</h3><button class="mc" onclick="closeClinicForm()">✕</button></div>
+          <div class="mbd">
+            <div class="fg"><label class="fl">클리닉 제목 *</label><input class="inp" id="clTitle" type="text" placeholder="예: 4월 2주 클리닉"></div>
+            <div class="fg">
+              <label class="fl">대상</label>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px" id="clTargetType">
+                <button type="button" class="bm-class-chip sel" onclick="setClTarget('all')">전체</button>
+                <button type="button" class="bm-class-chip" onclick="setClTarget('class')">반별</button>
+                <button type="button" class="bm-class-chip" onclick="setClTarget('student')">학생별</button>
+              </div>
+              <div id="clTargetSel" style="display:none"></div>
+            </div>
+            <div class="fg">
+              <label class="fl">정답 입력 (입력한 번호까지만 출제)</label>
+              <div id="clAnsGrid" class="cl-form-ans-grid"></div>
+            </div>
+          </div>
+          <div class="mf"><button class="btn-cn" onclick="closeClinicForm()">취소</button><button class="btn-sv" onclick="saveClinicSet()">저장 및 활성화</button></div>
         </div>
       </div>
       <div id="od4pStatus" style="display:none;padding:22px">
@@ -471,6 +525,7 @@ function renderSidebar(){
   document.getElementById('sbConsult').className='sb-consult'+(mode==='consult'?' on':'');
   document.getElementById('sbPlanner').className='sb-consult'+(mode==='planner'?' on':'');
   document.getElementById('sbOd4p').className='sb-consult'+(mode==='od4p'?' on':'');
+  document.getElementById('sbClinic').className='sb-consult'+(mode==='clinic'?' on':'');
   const el=document.getElementById('sList');
   const arr=Object.entries(students).sort(([,a],[,b])=>(a.name||'').localeCompare(b.name||'','ko'));
   if(!arr.length){el.innerHTML='<p style="color:#475569;font-size:11px;text-align:center;padding:16px">등록된 학생 없음</p>';return;}
@@ -502,11 +557,141 @@ function renderSidebar(){
 }
 var _psDate = null;
 
+
+// ════ CLINIC MANAGEMENT ════
+var clinicSets={}, clinicResults={}, _clTargetType='all', _clEditId=null;
+
+function showClinicMgr(){
+  mode='clinic';uid_=null;
+  ['empty','detail','consultView','plannerStatus','od4pStatus'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('clinicMgr').style.display='';
+  renderSidebar();
+  // load clinic data
+  db.ref('smClinicSets').on('value',s=>{clinicSets=s.val()||{};renderClinicList();});
+  db.ref('smClinicResults').on('value',s=>{clinicResults=s.val()||{};renderClinicList();});
+}
+
+function renderClinicList(){
+  var el=document.getElementById('clinicList');
+  var arr=Object.entries(clinicSets).sort(function([,a],[,b]){return(b.createdAt||0)-(a.createdAt||0);});
+  if(!arr.length){el.innerHTML='<p class="etbl">등록된 클리닉이 없습니다</p>';return;}
+  el.innerHTML='';
+  arr.forEach(function([cid,cs]){
+    var results=clinicResults[cid]||{};
+    var resArr=Object.entries(results).sort(function([,a],[,b]){return(a.gradedAt||0)-(b.gradedAt||0);});
+    var ansCnt=Object.keys(cs.answers||{}).length;
+    var target=cs.targetType==='all'?'전체':cs.targetType==='class'?'반: '+(cs.targetCls||''):'학생별';
+    var div=document.createElement('div');
+    div.className='cl-card';
+    // title row
+    var wrongList='';
+    var resHtml='';
+    if(resArr.length){
+      resHtml='<div style="margin-top:8px;border-top:1px solid #f1f5f9;padding-top:8px">';
+      resHtml+='<div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:6px">채점 결과 ('+resArr.length+'명)</div>';
+      resArr.forEach(function([sid,r]){
+        var wrong=r.wrong&&r.wrong.length?r.wrong.join(', '):'없음';
+        resHtml+='<div class="cl-result-row"><span class="cl-result-name">'+r.name+'</span>';
+        resHtml+='<div style="text-align:right"><span class="cl-result-score">'+r.score+'/'+r.total+'점</span>';
+        resHtml+='<div class="cl-result-wrong">오답: '+wrong+'번</div></div></div>';
+      });
+      resHtml+='</div>';
+    }else{
+      resHtml='<div style="font-size:11px;color:#94a3b8;margin-top:6px">아직 채점 결과가 없습니다</div>';
+    }
+    div.innerHTML='<div class="cl-card-head"><span class="cl-card-title">'+cs.title+'</span>'
+      +'<div style="display:flex;gap:6px;align-items:center">'
+      +'<span class="cl-badge '+(cs.active?'cl-active':'cl-closed')+'">'+(cs.active?'활성':'종료')+'</span>'
+      +'<button class="lnk '+(cs.active?'ld':'le')+'" id="togBtn_'+cid+'">'+(cs.active?'종료':'재활성')+'</button>'
+      +'<button class="lnk ld" id="delBtn_'+cid+'">삭제</button>'
+      +'</div></div>'
+      +'<div class="cl-target">대상: '+target+' · '+ansCnt+'문제</div>'
+      +resHtml;
+    el.appendChild(div);
+    // bind events after appendChild
+    document.getElementById('togBtn_'+cid).onclick=(function(id,act){
+      return function(){toggleClinicActive(id,!act);};
+    })(cid,cs.active);
+    document.getElementById('delBtn_'+cid).onclick=(function(id){
+      return function(){deleteClinic(id);};
+    })(cid);
+  });
+}
+function openClinicForm(editId){
+  _clEditId=editId||null;
+  _clTargetType='all';
+  document.getElementById('clinicFormTitle').textContent=editId?'클리닉 수정':'클리닉 추가';
+  document.getElementById('clTitle').value='';
+  setClTarget('all');
+  // build 150-answer grid (5 columns)
+  var grid=document.getElementById('clAnsGrid');
+  grid.innerHTML='';
+  for(var i=1;i<=150;i++){
+    var item=document.createElement('div');
+    item.className='cl-form-ans-item';
+    item.innerHTML='<span class="cl-form-ans-num">'+i+'번</span><input class="cl-form-ans-inp" id="clAns'+i+'" type="text" placeholder="-" maxlength="4">';
+    grid.appendChild(item);
+  }
+  document.getElementById('clinicModal').classList.add('open');
+}
+
+function closeClinicForm(){document.getElementById('clinicModal').classList.remove('open');}
+
+function setClTarget(type){
+  _clTargetType=type;
+  document.querySelectorAll('#clTargetType .bm-class-chip').forEach(function(btn){
+    btn.className='bm-class-chip'+(btn.textContent===({all:'전체',class:'반별',student:'학생별'}[type])?' sel':'');
+  });
+  var sel=document.getElementById('clTargetSel');
+  if(type==='all'){sel.style.display='none';sel.innerHTML='';return;}
+  sel.style.display='';
+  if(type==='class'){
+    var classes=[...new Set(Object.values(students).map(function(s){return s.cls||'미지정';}))].sort(function(a,b){return a.localeCompare(b,'ko');});
+    sel.innerHTML='<select class="inp" id="clTargetCls" style="margin-top:4px">'+classes.map(function(cl){return'<option>'+cl+'</option>';}).join('')+'</select>';
+  }else{
+    var arr=Object.entries(students).sort(function([,a],[,b]){return(a.name||'').localeCompare(b.name||'','ko');});
+    sel.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">'+
+      arr.map(function([sid,s]){return'<label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" class="cl-stu-chk" value="'+sid+'"> '+(s.name||'?')+'</label>';}).join('')+'</div>';
+  }
+}
+
+async function saveClinicSet(){
+  var title=document.getElementById('clTitle').value.trim();
+  if(!title){alert('제목을 입력하세요');return;}
+  var answers={};
+  var lastNum=0;
+  for(var i=1;i<=150;i++){
+    var v=(document.getElementById('clAns'+i)||{}).value||'';
+    if(v.trim()){answers[String(i)]=v.trim();lastNum=i;}
+  }
+  if(!lastNum){alert('정답을 1개 이상 입력하세요');return;}
+  var data={title,answers,active:true,createdAt:Date.now(),targetType:_clTargetType};
+  if(_clTargetType==='class'){
+    data.targetCls=document.getElementById('clTargetCls').value;
+  }else if(_clTargetType==='student'){
+    var checked=[...document.querySelectorAll('.cl-stu-chk:checked')].map(function(el){return el.value;});
+    if(!checked.length){alert('학생을 선택하세요');return;}
+    data.targetStudents=checked;
+  }
+  if(_clEditId) await db.ref('smClinicSets/'+_clEditId).update(data);
+  else await db.ref('smClinicSets').push(data);
+  toast('클리닉이 저장되었습니다');
+  closeClinicForm();
+}
+
+async function toggleClinicActive(cid,active){await db.ref('smClinicSets/'+cid+'/active').set(active);}
+async function deleteClinic(cid){
+  if(!confirm('삭제하시겠습니까? 채점 결과도 함께 삭제됩니다'))return;
+  await Promise.all([db.ref('smClinicSets/'+cid).remove(),db.ref('smClinicResults/'+cid).remove()]);
+  toast('삭제되었습니다');
+}
+// ════ END CLINIC ════
+
 var _odDate = null, _odSubj = null, _od4pData = {};
 
 function showOd4pStatus(){
   mode='od4p';uid_=null;
-  ['empty','detail','consultView','plannerStatus'].forEach(id=>document.getElementById(id).style.display='none');
+  ['empty','detail','consultView','plannerStatus','clinicMgr'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('od4pStatus').style.display='';
   renderSidebar();
   if(!_odDate) _odDate = new Date().toISOString().split('T')[0];
@@ -597,6 +782,7 @@ function showPlannerStatus(){
   document.getElementById('detail').style.display='none';
   document.getElementById('consultView').style.display='none';
   document.getElementById('od4pStatus').style.display='none';
+  document.getElementById('clinicMgr').style.display='none';
   document.getElementById('plannerStatus').style.display='';
   renderSidebar();
   if(!_psDate) _psDate = new Date().toISOString().split('T')[0];
@@ -639,6 +825,7 @@ function showConsultView(){
   document.getElementById('empty').style.display='none';
   document.getElementById('detail').style.display='none';
   document.getElementById('od4pStatus').style.display='none';
+  document.getElementById('clinicMgr').style.display='none';
   document.getElementById('consultView').style.display='';
   renderConsultView();renderSidebar();
 }
@@ -1127,7 +1314,8 @@ async function saveBulkHW(){
 function today(){return new Date().toISOString().split('T')[0];}
 function tuid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSM();closeRM();closeBM();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSM();closeRM();closeBM();closeClinicForm();}});
+document.getElementById('clinicModal').addEventListener('click',e=>{if(e.target.id==='clinicModal')closeClinicForm();});
 document.getElementById('sm').addEventListener('click',e=>{if(e.target.id==='sm')closeSM();});
 document.getElementById('bm').addEventListener('click',e=>{if(e.target.id==='bm')closeBM();});
 document.getElementById('rm').addEventListener('click',e=>{if(e.target.id==='rm')closeRM();});
