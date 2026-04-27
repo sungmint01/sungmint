@@ -321,6 +321,7 @@ textarea.inp{resize:vertical;min-height:68px}
           <div class="mh"><h3 id="clinicFormTitle">클리닉 추가</h3><button class="mc" onclick="closeClinicForm()">✕</button></div>
           <div class="mbd">
             <div class="fg"><label class="fl">클리닉 제목 *</label><input class="inp" id="clTitle" type="text" placeholder="예: 4월 2주 클리닉"></div>
+            <div class="fg"><label class="fl">날짜 *</label><input class="inp" id="clDate" type="date"></div>
             <div class="fg">
               <label class="fl">대상</label>
               <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px" id="clTargetType">
@@ -581,6 +582,7 @@ function renderClinicList(){
     var resArr=Object.entries(results).sort(function([,a],[,b]){return(a.gradedAt||0)-(b.gradedAt||0);});
     var ansCnt=Object.keys(cs.answers||{}).length;
     var target=cs.targetType==='all'?'전체':cs.targetType==='class'?'반: '+(cs.targetCls||''):'학생별';
+    var dateStr=cs.date?cs.date+' · ':'';
     var div=document.createElement('div');
     div.className='cl-card';
     // title row
@@ -613,7 +615,7 @@ function renderClinicList(){
       +'<button class="lnk '+(cs.active?'ld':'le')+'" id="togBtn_'+cid+'">'+(cs.active?'종료':'재활성')+'</button>'
       +'<button class="lnk ld" id="delBtn_'+cid+'">삭제</button>'
       +'</div></div>'
-      +'<div class="cl-target">대상: '+target+' · '+ansCnt+'문제</div>'
+      +'<div class="cl-target">'+dateStr+'대상: '+target+' · '+ansCnt+'문제</div>'
       +resHtml;
     el.appendChild(div);
     // bind events after appendChild
@@ -639,6 +641,7 @@ function openClinicForm(editId){
   document.getElementById('clinicFormTitle').textContent=editId?'클리닉 수정':'클리닉 추가';
   if(editId && clinicSets[editId]){
     var es=clinicSets[editId];
+    document.getElementById('clDate').value=es.date||'';
     document.getElementById('clTitle').value=es.title||'';
     setClTarget(es.targetType||'all');
     // set target value after setClTarget
@@ -653,7 +656,7 @@ function openClinicForm(editId){
       }
     },50);
   }else{
-    document.getElementById('clTitle').value='';
+    document.getElementById('clDate').value=(new Date()).toISOString().split('T')[0];
     setClTarget('all');
   }
   // build 150-answer grid (5 columns)
@@ -706,7 +709,9 @@ async function saveClinicSet(){
     if(v.trim()){answers[String(i)]=v.trim();lastNum=i;}
   }
   if(!lastNum){alert('정답을 1개 이상 입력하세요');return;}
-  var data={title,answers,active:true,createdAt:Date.now(),targetType:_clTargetType};
+  var date=document.getElementById('clDate').value;
+  if(!date){alert('날짜를 입력하세요');return;}
+  var data={title,date,answers,active:true,createdAt:Date.now(),targetType:_clTargetType};
   if(_clTargetType==='class'){
     data.targetCls=document.getElementById('clTargetCls').value;
   }else if(_clTargetType==='student'){

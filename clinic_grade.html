@@ -136,6 +136,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
   <div id="step3" style="display:none">
     <div class="card">
       <div class="card-title" id="step3Title">📝 답안 입력</div>
+      <div style="background:#eff4ff;border-left:3px solid #3764bf;border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#1a2840;line-height:1.8;font-family:'Noto Sans KR',sans-serif">
+        📌 <strong>답 작성 안내</strong><br>
+        루트는 √버튼을 누른 후 작성해주세요.<br>
+        파이(π)는 답 제일 마지막에 작성해주세요.<br>
+        단위는 생략합니다.<br>
+        나눗셈은 <strong>a/b</strong>, 지수는 <strong>2^3</strong>처럼 작성합니다.
+      </div>
       <div class="math-toolbar" id="mathToolbar">
         <span class="math-hint">기호 클릭 → 현재 입력칸에 삽입</span>
         <button class="math-btn" onclick="insertMath('√')">√</button>
@@ -234,7 +241,8 @@ async function loadData(){
 
 function renderClinicList(){
   const el=document.getElementById('clinicItems');
-  const active=Object.entries(clinicData).filter(([,c])=>c.active);
+  const today=new Date().toISOString().split('T')[0];
+  const active=Object.entries(clinicData).filter(([,c])=>c.active&&(!c.date||c.date===today));
   if(!active.length){el.innerHTML='<div style="text-align:center;padding:24px;color:#94a3b8;font-size:13px">활성화된 클리닉이 없습니다</div>';return;}
   el.innerHTML=active.map(([cid,cs])=>{
     const cnt=Object.keys(cs.answers||{}).length;
