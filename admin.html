@@ -1208,7 +1208,7 @@ function openRM(sid=null,dateStr=null){
     document.getElementById('rmTitle').textContent='수업 기록 추가';
     const targetDate=dateStr||today();
     document.getElementById('rmDate').value=targetDate;
-    document.getElementById('rmNum').value=Object.keys(sessions[uid_]||{}).length+1;
+    document.getElementById('rmNum').value='';
     ['rmProg','rmPrevHw','rmComment','rmSpecial','rmHwC','rmCli','rmNote'].forEach(f=>document.getElementById(f).value='');
     document.getElementById('rmAbsent').checked=false;
     document.getElementById('rmLate').checked=false;
@@ -1450,7 +1450,7 @@ async function saveBulkHW(){
       // auto num: count existing sessions + 1
       const snap=await db.ref('smSessions/'+stuId).get();
       const existing=snap.val()||{};
-      const num=parseInt(document.getElementById('bmNum').value)||Object.keys(existing).length+1;
+      const num=parseInt(document.getElementById('bmNum').value)||1;
       await db.ref('smSessions/'+stuId).push({
         date,num,
         prog:document.getElementById('bmProg').value,
