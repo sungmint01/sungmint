@@ -809,7 +809,7 @@ async function adminRegrade(cid,sid){
   // update session
   const sesSnap=await db.ref('smSessions/'+sid).get();
   const sessions=sesSnap.val()||{};
-  const sesEntry=Object.entries(sessions).find(([,s])=>s.cli===cs.title);
+  const sesEntry=Object.entries(sessions).find(([,s])=>s.cli&&s.cli.startsWith(cs.title));
   if(sesEntry) await db.ref('smSessions/'+sid+'/'+sesEntry[0]+'/note').set('[클리닉 채점] '+score+'/'+total+'점'+(wrong.length?'\n오답: '+wrong.join(', ')+'번':''));
   toast(r.name+' 채점 수정 완료');
   document.getElementById('crEdit_'+cid+'_'+sid).style.display='none';
@@ -823,7 +823,7 @@ async function deleteClinicResult(cid,sid,name){
   const sessions=sesSnap.val()||{};
   const cs=clinicSets[cid];
   if(cs){
-    const entry=Object.entries(sessions).find(([,s])=>s.cli===cs.title);
+    const entry=Object.entries(sessions).find(([,s])=>s.cli&&s.cli.startsWith(cs.title));
     if(entry) await db.ref('smSessions/'+sid+'/'+entry[0]).remove();
   }
   toast(name+' 채점 결과 삭제됨');

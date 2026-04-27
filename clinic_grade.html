@@ -361,12 +361,11 @@ async function submitGrade(){
   // Save result
   const result={name:currentStuName,answers:stuAnswers,score,total,wrong,gradedAt:Date.now()};
   await db.ref('smClinicResults/'+selectedClinicId+'/'+currentStuId).set(result);
-  // Auto-save to student session
+  // Auto-save to student session — cli 필드에만 기록
   const sessionData={
     date:new Date().toISOString().split('T')[0],
     num:Object.keys((await db.ref('smSessions/'+currentStuId).get()).val()||{}).length+1,
-    cli:selectedClinic.title,
-    note:'[클리닉 채점] '+score+'/'+total+'점'+(wrong.length?'\n오답: '+wrong.join(', ')+'번':''),
+    cli:selectedClinic.title+', '+score+'/'+total+'점',
     eval:null, at:Date.now(), upd:Date.now()
   };
   await db.ref('smSessions/'+currentStuId).push(sessionData);
@@ -433,7 +432,7 @@ async function regrade(){
   const sesSnap=await db.ref('smSessions/'+currentStuId).get();
   const sessions=sesSnap.val()||{};
   // find the session we created
-  const sesEntry=Object.entries(sessions).find(([,s])=>s.cli===selectedClinic.title);
+  const sesEntry=Object.entries(sessions).find(([,s])=>s.cli&&s.cli.startsWith(selectedClinic.title));
   if(sesEntry){
     await db.ref('smSessions/'+currentStuId+'/'+sesEntry[0]+'/cli').set(selectedClinic.title+', '+score+'/'+total+'점');
   }
