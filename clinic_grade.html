@@ -139,15 +139,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
       <div class="math-toolbar" id="mathToolbar">
         <span class="math-hint">기호 클릭 → 현재 입력칸에 삽입</span>
         <button class="math-btn" onclick="insertMath('√')">√</button>
-        <button class="math-btn" onclick="insertMath('²')">²</button>
-        <button class="math-btn" onclick="insertMath('³')">³</button>
+        <button class="math-btn" onclick="insertMath('^2')">^2</button>
+        <button class="math-btn" onclick="insertMath('^3')">^3</button>
         <button class="math-btn" onclick="insertMath('π')">π</button>
         <button class="math-btn" onclick="insertMath('∞')">∞</button>
         <button class="math-btn" onclick="insertMath('±')">±</button>
         <button class="math-btn" onclick="insertMath('/')">  /  </button>
         <button class="math-btn" onclick="insertMath('(')"> ( </button>
         <button class="math-btn" onclick="insertMath(')')"> ) </button>
-        <button class="math-btn" onclick="insertMath('-')"> - </button>
       </div>
       <div class="ans-grid" id="ansGrid"></div>
     </div>
@@ -170,8 +169,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
       <div class="math-toolbar">
         <span class="math-hint">기호 클릭 → 현재 입력칸에 삽입</span>
         <button class="math-btn" onclick="insertMath('√')">√</button>
-        <button class="math-btn" onclick="insertMath('²')">²</button>
-        <button class="math-btn" onclick="insertMath('³')">³</button>
+        <button class="math-btn" onclick="insertMath('^2')">^2</button>
+        <button class="math-btn" onclick="insertMath('^3')">^3</button>
         <button class="math-btn" onclick="insertMath('π')">π</button>
         <button class="math-btn" onclick="insertMath('±')">±</button>
         <button class="math-btn" onclick="insertMath('/')">  /  </button>
@@ -272,10 +271,25 @@ function goStep3(){
   const entry=Object.entries(allStudents).find(([,s])=>s.name===name);
   if(!entry){
     err.textContent='등록된 학생이 아닙니다';
-    // Suggest similar names
     const similar=Object.values(allStudents).map(s=>s.name||'').filter(n=>n&&n.includes(name.slice(0,1)));
     if(similar.length) sugg.textContent='혹시 이 학생인가요? '+similar.slice(0,3).join(', ');
     return;
+  }
+  // Check class restriction
+  const cs=selectedClinic;
+  if(cs.targetType==='class'){
+    const stuCls=entry[1].cls||'미지정';
+    if(stuCls!==cs.targetCls){
+      err.textContent=`이 클리닉은 "${cs.targetCls}" 반만 응시 가능합니다`;
+      sugg.textContent=`현재 학생 반: ${stuCls}`;
+      return;
+    }
+  }else if(cs.targetType==='student'){
+    const allowed=cs.targetStudents||[];
+    if(!allowed.includes(entry[0])){
+      err.textContent='이 클리닉 대상에 포함되지 않은 학생입니다';
+      return;
+    }
   }
   err.textContent=''; sugg.textContent='';
   currentStuId=entry[0];

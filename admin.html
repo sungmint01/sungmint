@@ -595,7 +595,11 @@ function renderClinicList(){
         resHtml+='<span class="cl-result-name">'+r.name+'</span>';
         resHtml+='<div style="text-align:right"><span class="cl-result-score">'+r.score+'/'+r.total+'점</span>';
         resHtml+='<div class="cl-result-wrong">오답: '+wrong+'번</div>';
-        resHtml+='</div><button class="lnk le" style="font-size:10px" id="editCr_'+cid+'_'+sid+'">수정</button></div>';
+        resHtml+='</div>';
+        resHtml+='<div style="display:flex;gap:5px">';
+        resHtml+='<button class="lnk le" style="font-size:10px" id="editCr_'+cid+'_'+sid+'">수정</button>';
+        resHtml+='<button class="lnk ld" style="font-size:10px" id="delCr_'+cid+'_'+sid+'">삭제</button>';
+        resHtml+='</div></div>';
         resHtml+='<div id="crEdit_'+cid+'_'+sid+'" style="display:none;padding:8px 0"></div>';
       });
       resHtml+='</div>';
@@ -615,6 +619,8 @@ function renderClinicList(){
     resArr.forEach(function([sid]){
       var eb=document.getElementById('editCr_'+cid+'_'+sid);
       if(eb) eb.onclick=(function(ci,si){return function(){openClinicResultEdit(ci,si);};})(cid,sid);
+      var db2=document.getElementById('delCr_'+cid+'_'+sid);
+      if(db2) db2.onclick=(function(ci,si,nm){return function(){deleteClinicResult(ci,si,nm);};})(cid,sid,(clinicResults[cid]||{})[sid]?.name||'?');
     });
     document.getElementById('togBtn_'+cid).onclick=(function(id,act){
       return function(){toggleClinicActive(id,!act);};
@@ -699,13 +705,15 @@ function openClinicResultEdit(cid, sid){
   // Math toolbar (DOM-safe)
   var toolbar=document.createElement('div');
   toolbar.style.cssText='display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;padding:8px;background:#f8fafc;border-radius:8px';
-  ['√','²','³','π','±','/','(',')'].forEach(function(ch){
+  ['√','^2','^3','π','±','/','(',')'].forEach(function(ch){
     var btn=document.createElement('button');
     btn.textContent=ch;
     btn.style.cssText='background:#e4e8f4;border:none;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:#3764bf;font-weight:700;box-shadow:1px 1px 3px rgba(145,165,210,.5),-1px -1px 3px rgba(255,255,255,.8)';
     btn.onclick=(function(c2){return function(){adminInsertMath(c2);};})(ch);
     toolbar.appendChild(btn);
   });
+  // Clear previous to prevent duplication
+  editDiv.innerHTML='';
   editDiv.appendChild(toolbar);
   var html='';
   var gridWrap=document.createElement('div');
@@ -777,6 +785,20 @@ async function adminRegrade(cid,sid){
   if(sesEntry) await db.ref('smSessions/'+sid+'/'+sesEntry[0]+'/note').set('[클리닉 채점] '+score+'/'+total+'점'+(wrong.length?'\n오답: '+wrong.join(', ')+'번':''));
   toast(r.name+' 채점 수정 완료');
   document.getElementById('crEdit_'+cid+'_'+sid).style.display='none';
+}
+
+async function deleteClinicResult(cid,sid,name){
+  if(!confirm(name+'의 채점 결과를 삭제하시겠습니까?'))return;
+  await db.ref('smClinicResults/'+cid+'/'+sid).remove();
+  // Also remove from session
+  const sesSnap=await db.ref('smSessions/'+sid).get();
+  const sessions=sesSnap.val()||{};
+  const cs=clinicSets[cid];
+  if(cs){
+    const entry=Object.entries(sessions).find(([,s])=>s.cli===cs.title);
+    if(entry) await db.ref('smSessions/'+sid+'/'+entry[0]).remove();
+  }
+  toast(name+' 채점 결과 삭제됨');
 }
 
 async function toggleClinicActive(cid,active){await db.ref('smClinicSets/'+cid+'/active').set(active);}
