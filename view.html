@@ -337,11 +337,13 @@ function showErr(title,msg){document.getElementById('load').innerHTML=`<div clas
 
 function starsHtml(n,absent){
   if(absent) return`<span style="color:#ef4444;font-weight:700;font-size:13px">✕</span>`;
+  if(n==null||n<0) return'';
   if(n===0) return`<span style="color:#ef4444;font-weight:700;font-size:11px">✕</span>`;
   return`<span class="s${n}">${'★'.repeat(n)}</span>`;
 }
 function starsLabel(n,absent){
   if(absent) return'결석';
+  if(n==null||n<0) return'-';
   const l={5:'A',4:'B',3:'C',2:'D',1:'E',0:'F(안함)'};
   return l[n]!==undefined?l[n]:'-';
 }
@@ -376,8 +378,10 @@ function renderCal(){
   const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
   const daysInPrev=new Date(calYear,calMonth,0).getDate();
   const grid=document.getElementById('calGrid');
-  const headers=Array.from(grid.children).slice(0,7);
-  grid.innerHTML='';headers.forEach(h=>grid.appendChild(h));
+  grid.innerHTML=`
+    <div class="cal-dow">일</div><div class="cal-dow">월</div><div class="cal-dow">화</div>
+    <div class="cal-dow">수</div><div class="cal-dow">목</div><div class="cal-dow">금</div><div class="cal-dow">토</div>
+  `;
   for(let i=firstDay-1;i>=0;i--){
     const cell=document.createElement('div');
     cell.className='cal-day other-month';
@@ -393,8 +397,8 @@ function renderCal(){
     if(dow===0)cell.classList.add('sun');
     if(dow===6)cell.classList.add('sat');
     if(rec){
-      const ev=rec.eval??3;
-      const bg=rec.absent?'#fee2e2':ev>=5?'#fefce8':ev===4?'#f0fdf4':ev===3?'#eff8ff':ev===2?'#fff7ed':'#fff5f5';
+      const ev=rec.eval!=null&&rec.eval>=0?rec.eval:null;
+      const bg=rec.absent?'#fee2e2':ev===5?'#fefce8':ev===4?'#f0fdf4':ev===3?'#eff8ff':ev===2?'#fff7ed':ev===1||ev===0?'#fff5f5':'#fafbfc';
       cell.style.background=bg;
       const pp=rec.prog||'';
       cell.innerHTML=`<span class="cal-day-num">${d}</span><div class="cal-cell-body"><div class="cal-stars">${starsHtml(ev,rec.absent)}</div>${pp&&!rec.absent?`<div class="cal-prog">${pp}</div>`:''}</div>`;
@@ -416,7 +420,7 @@ function renderCal(){
 
 function showDetail(ds,rec){
   const[y,m,d]=ds.split('-');
-  const ev=rec.eval??3;
+  const ev=rec.eval!=null&&rec.eval>=0?rec.eval:null;
   const absent=!!rec.absent;
   document.getElementById('dmDate').textContent=`${y}년 ${+m}월 ${+d}일 (${rec.num||'-'}회차)`;
   const evHtml=absent
