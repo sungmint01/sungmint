@@ -33,10 +33,18 @@
     .admin-link{position:fixed;top:14px;right:16px;background:#d2dcf0;border:none;border-radius:8px;padding:5px 12px;font-family:'Space Mono',monospace;font-size:10px;color:#3764bf;text-decoration:none;box-shadow:2px 2px 6px rgba(145,165,210,.5),-1px -1px 4px rgba(255,255,255,.8);letter-spacing:1px;transition:.15s}
     .admin-link:hover{box-shadow:3px 3px 8px rgba(145,165,210,.6),-2px -2px 5px rgba(255,255,255,.9)}
     @media(max-width:400px){.cards{grid-template-columns:1fr}.logo-text{font-size:42px}}
+  .admin-modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+  .admin-modal-ov.open{display:flex}
+  .admin-modal{background:#e4e8f4;border-radius:20px;padding:32px 28px 26px;width:300px;box-shadow:8px 8px 20px rgba(145,165,210,.6),-6px -6px 16px rgba(255,255,255,.9);text-align:center}
+  .admin-modal h3{font-family:'Nanum Myeongjo',serif;font-size:20px;font-weight:800;color:#1a2840;margin-bottom:18px}
+  .admin-modal-inp{width:100%;border:none;border-radius:10px;padding:11px 14px;font-size:15px;font-family:inherit;outline:none;background:#e4e8f4;letter-spacing:3px;margin-bottom:10px;box-shadow:inset 3px 3px 7px rgba(145,165,210,.55),inset -3px -3px 7px rgba(255,255,255,.85);color:#1a2840;text-align:center}
+  .admin-modal-btn{width:100%;background:linear-gradient(135deg,#5a8ae0,#3764bf);color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:3px 3px 10px rgba(55,100,191,.3)}
+  .admin-modal-err{color:#ef4444;font-size:11px;margin-top:7px;font-family:'Space Mono',monospace;min-height:15px}
+  .admin-modal-close{position:absolute;top:12px;right:14px;background:none;border:none;font-size:18px;color:#8a96b4;cursor:pointer}
   </style>
 </head>
 <body>
-  <a class="admin-link" href="./admin.html">🔒 admin</a>
+  <button class="admin-link" onclick="openAdminModal()">🔒 admin</button>
   <div class="wrap">
     <div style="text-align:center">
       <div class="logo-badge"><span class="logo-badge-dot"></span>MATH LEARNING SYSTEM</div>
@@ -72,5 +80,43 @@
     </div>
     <div class="footer">SUNGMINT · MATH TOOLS</div>
   </div>
+<div class="admin-modal-ov" id="adminModalOv" onclick="if(event.target===this)closeAdminModal()">
+  <div class="admin-modal" style="position:relative">
+    <button class="admin-modal-close" onclick="closeAdminModal()">✕</button>
+    <h3>🔒 비밀번호 입력</h3>
+    <input class="admin-modal-inp" type="password" id="adminPwInp" placeholder="비밀번호" onkeydown="if(event.key==='Enter')checkAdminPw()">
+    <button class="admin-modal-btn" onclick="checkAdminPw()">확인 →</button>
+    <div class="admin-modal-err" id="adminPwErr"></div>
+  </div>
+</div>
+<script>
+function openAdminModal(){
+  document.getElementById('adminModalOv').classList.add('open');
+  setTimeout(()=>document.getElementById('adminPwInp').focus(),80);
+}
+function closeAdminModal(){
+  document.getElementById('adminModalOv').classList.remove('open');
+  document.getElementById('adminPwInp').value='';
+  document.getElementById('adminPwErr').textContent='';
+}
+async function checkAdminPw(){
+  const pw=document.getElementById('adminPwInp').value;
+  if(!pw)return;
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pw));
+  const hash=[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  // admin: 1340
+  if(hash==='9e0bc0a9aa374eab9ae10383ab67c9fadb1e2aa69a1d54555a7dff0670678bda'){
+    location.href='./admin.html';return;
+  }
+  // assistant: 1q2w3e
+  const buf2=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('1q2w3e'));
+  const hash2=[...new Uint8Array(buf2)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  if(hash===hash2){location.href='./clinic_grade.html';return;}
+  document.getElementById('adminPwErr').textContent='비밀번호가 올바르지 않습니다';
+  document.getElementById('adminPwInp').value='';
+  document.getElementById('adminPwInp').focus();
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAdminModal();});
+</script>
 </body>
 </html>
