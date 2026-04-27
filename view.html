@@ -363,8 +363,9 @@ function renderStats(){
   // 현재 보고 있는 달의 기록만 필터
   const monthStr=calYear+'-'+String(calMonth+1).padStart(2,'0');
   const monthRecs=Object.values(recData).filter(r=>r.date&&r.date.startsWith(monthStr));
-  // 총 수업 횟수: 해당 월
-  document.getElementById('sTot').textContent=monthRecs.length;
+  // 총 수업 횟수: 해당 월 기록 중 가장 큰 회차
+  const maxNum=monthRecs.length?Math.max(...monthRecs.map(r=>r.num||0)):0;
+  document.getElementById('sTot').textContent=maxNum||'-';
   // 평균/최근 등급: 해당 월 중 eval 있는 것
   const arr=monthRecs.filter(r=>r.eval!=null&&r.eval>=0);
   if(arr.length){
