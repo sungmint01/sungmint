@@ -177,6 +177,25 @@ textarea.inp{resize:vertical;min-height:68px}
 .ps-done{background:#dcfce7;color:#166534}
 .ps-missing{background:#f1f5f9;color:#94a3b8}
 .ps-empty{text-align:center;padding:32px;color:#94a3b8;font-size:13px}
+/* OD4P status */
+.od-date-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.od-date-label{font-size:13px;font-weight:700;color:#1a2840}
+.od-subj-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.od-subj-tab{background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:8px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;color:#5a6e96;transition:.15s;font-family:inherit}
+.od-subj-tab:hover{border-color:#3764bf;background:#eff4ff}
+.od-subj-tab.on{background:#d2dcf0;border-color:#3764bf;color:#3764bf}
+.od-summary{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.od-stat{background:#f8fafc;border-radius:8px;padding:7px 14px;font-size:12px;color:#374151;border:1px solid #e2e8f0}
+.od-stat strong{color:#3764bf}
+.od-table{width:100%;border-collapse:collapse;font-size:12px}
+.od-table th{background:#f8fafc;padding:7px 10px;text-align:left;font-weight:600;color:#374151;border-bottom:1px solid #e2e8f0;font-family:'Gothic A1',sans-serif}
+.od-table td{padding:8px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+.od-table tr:last-child td{border-bottom:none}
+.od-name{font-weight:600;color:#1a2840}
+.od-time{font-size:10px;color:#94a3b8}
+.od-score{font-weight:700;color:#3764bf}
+.od-answers{font-size:10px;color:#64748b;font-family:'Space Mono',monospace}
+.od-not{color:#94a3b8;font-style:italic}
 .sb-class-head{padding:7px 14px 3px;font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between}
 .sb-class-hw{background:none;border:none;color:#64748b;font-size:10px;cursor:pointer;font-family:inherit;padding:2px 6px;border-radius:4px;transition:.15s}
 .sb-class-hw:hover{background:rgba(116,179,216,.15);color:var(--bl)}
@@ -210,6 +229,9 @@ textarea.inp{resize:vertical;min-height:68px}
       <div class="sb-section">현황</div>
       <div class="sb-consult" id="sbPlanner" onclick="showPlannerStatus()">
         <span class="sb-consult-label">📸 플래너 현황</span>
+      </div>
+      <div class="sb-consult" id="sbOd4p" onclick="showOd4pStatus()">
+        <span class="sb-consult-label">📝 OD4P 응시 현황</span>
       </div>
       <div class="sb-section">상담</div>
       <div class="sb-consult" id="sbConsult" onclick="showConsultView()">
@@ -261,6 +283,16 @@ textarea.inp{resize:vertical;min-height:68px}
             </div>
           </div>
         </div>
+      </div>
+      <div id="od4pStatus" style="display:none;padding:22px">
+        <div style="font-size:16px;font-weight:700;margin-bottom:16px">📝 OD4P 응시 현황</div>
+        <div class="od-date-nav">
+          <button class="ps-nav-btn" onclick="changeOdDate(-1)">‹</button>
+          <span class="od-date-label" id="odDateLabel"></span>
+          <button class="ps-nav-btn" onclick="changeOdDate(1)">›</button>
+        </div>
+        <div class="od-subj-tabs" id="odSubjTabs"></div>
+        <div id="odContent"><div class="ps-empty">로딩 중...</div></div>
       </div>
       <div id="plannerStatus" style="display:none;padding:22px">
         <div style="font-size:16px;font-weight:700;margin-bottom:16px">📸 플래너 제출 현황</div>
@@ -438,6 +470,7 @@ function renderSidebar(){
   if(totalU>0){tu.textContent=totalU;tu.style.display='';}else tu.style.display='none';
   document.getElementById('sbConsult').className='sb-consult'+(mode==='consult'?' on':'');
   document.getElementById('sbPlanner').className='sb-consult'+(mode==='planner'?' on':'');
+  document.getElementById('sbOd4p').className='sb-consult'+(mode==='od4p'?' on':'');
   const el=document.getElementById('sList');
   const arr=Object.entries(students).sort(([,a],[,b])=>(a.name||'').localeCompare(b.name||'','ko'));
   if(!arr.length){el.innerHTML='<p style="color:#475569;font-size:11px;text-align:center;padding:16px">등록된 학생 없음</p>';return;}
@@ -469,11 +502,101 @@ function renderSidebar(){
 }
 var _psDate = null;
 
+var _odDate = null, _odSubj = null, _od4pData = {};
+
+function showOd4pStatus(){
+  mode='od4p';uid_=null;
+  ['empty','detail','consultView','plannerStatus'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('od4pStatus').style.display='';
+  renderSidebar();
+  if(!_odDate) _odDate = new Date().toISOString().split('T')[0];
+  // load od4p data for this date
+  loadOd4pDate(_odDate);
+}
+
+function changeOdDate(dir){
+  const [y,m,d] = _odDate.split('-').map(Number);
+  const dt = new Date(y, m-1, d+dir);
+  _odDate = dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+  _odSubj = null;
+  loadOd4pDate(_odDate);
+}
+
+function loadOd4pDate(date){
+  const parts = date.split('-');
+  document.getElementById('odDateLabel').textContent = parts[0]+'년 '+parseInt(parts[1])+'월 '+parseInt(parts[2])+'일';
+  db.ref('od4p/'+date).get().then(snap=>{
+    _od4pData = snap.val()||{};
+    renderOdSubjTabs();
+  }).catch(()=>{
+    _od4pData={};
+    renderOdSubjTabs();
+  });
+}
+
+function renderOdSubjTabs(){
+  const tabs = document.getElementById('odSubjTabs');
+  const keys = Object.keys(_od4pData);
+  if(!keys.length){
+    tabs.innerHTML='';
+    document.getElementById('odContent').innerHTML='<div class="ps-empty">해당 날짜에 문제가 없습니다</div>';
+    return;
+  }
+  if(!_odSubj || !_od4pData[_odSubj]) _odSubj = keys[0];
+  tabs.innerHTML='';
+  keys.forEach(function(k){
+    const btn=document.createElement('button');
+    btn.className='od-subj-tab'+(k===_odSubj?' on':'');
+    btn.textContent=k.replace(/_/g,' ');
+    btn.onclick=function(){selectOdSubj(k);};
+    tabs.appendChild(btn);
+  });
+  renderOdTable();
+}
+
+function selectOdSubj(key){
+  _odSubj = key;
+  renderOdSubjTabs();
+}
+
+function renderOdTable(){
+  const el = document.getElementById('odContent');
+  const subj = _od4pData[_odSubj]||{};
+  const subs = subj.submissions||{};
+  const subArr = Object.entries(subs).sort(([,a],[,b])=>(a.ts||0)-(b.ts||0));
+  // Build student lookup by name
+  const stuNames = Object.values(students).map(s=>s.name||'');
+  const total = stuNames.filter(n=>n).length;
+  const submitted = subArr.length;
+  let html = '<div class="od-summary">';
+  html += '<div class="od-stat">응시 <strong>'+submitted+'명</strong></div>';
+  html += '<div class="od-stat">전체 <strong>'+total+'명</strong></div>';
+  html += '<div class="od-stat">미응시 <strong>'+(total-submitted)+'명</strong></div>';
+  html += '</div>';
+  if(!subArr.length){
+    html += '<div class="ps-empty">응시한 학생이 없습니다</div>';
+    el.innerHTML=html;return;
+  }
+  html += '<table class="od-table"><thead><tr><th>이름</th><th>제출 시각</th><th>답안</th></tr></thead><tbody>';
+  subArr.forEach(([,s])=>{
+    const time = new Date(s.ts||0).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+    const ans = s.answers ? Object.values(s.answers).join(' · ') : '-';
+    html += '<tr>';
+    html += '<td><span class="od-name">'+(s.name||'?')+'</span></td>';
+    html += '<td><span class="od-time">'+time+'</span></td>';
+    html += '<td><span class="od-answers">'+ans+'</span></td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
 function showPlannerStatus(){
   mode='planner';uid_=null;
   document.getElementById('empty').style.display='none';
   document.getElementById('detail').style.display='none';
   document.getElementById('consultView').style.display='none';
+  document.getElementById('od4pStatus').style.display='none';
   document.getElementById('plannerStatus').style.display='';
   renderSidebar();
   if(!_psDate) _psDate = new Date().toISOString().split('T')[0];
@@ -515,6 +638,7 @@ function showConsultView(){
   mode='consult';uid_=null;
   document.getElementById('empty').style.display='none';
   document.getElementById('detail').style.display='none';
+  document.getElementById('od4pStatus').style.display='none';
   document.getElementById('consultView').style.display='';
   renderConsultView();renderSidebar();
 }
