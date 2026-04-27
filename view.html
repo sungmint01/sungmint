@@ -360,15 +360,18 @@ function starsLabel(n,absent){
 }
 
 function renderStats(){
-  const arr=Object.values(recData).filter(r=>r.eval!==undefined);
+  const arr=Object.values(recData).filter(r=>r.eval!=null&&r.eval>=0);
   document.getElementById('sTot').textContent=Object.keys(recData).length;
   if(arr.length){
     const valid=arr.filter(r=>r.eval>0);
     const avg=valid.length?Math.round(valid.reduce((a,r)=>a+(r.eval||0),0)/valid.length*10)/10:'-';
-    document.getElementById('sAvg').textContent=avg+'★';
+    document.getElementById('sAvg').textContent=avg==='+'?'-':avg+'★';
     const sorted=Object.values(recData).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-    const ev=sorted[0].eval??3;
+    const ev=sorted[0].eval!=null&&sorted[0].eval>=0?sorted[0].eval:null;
     document.getElementById('sLast').textContent=starsLabel(ev);
+  }else{
+    document.getElementById('sAvg').textContent='-';
+    document.getElementById('sLast').textContent='-';
   }
 }
 
