@@ -33,6 +33,8 @@
     .admin-link{position:fixed;top:14px;right:16px;background:#d2dcf0;border:none;border-radius:8px;padding:5px 12px;font-family:'Space Mono',monospace;font-size:10px;color:#3764bf;text-decoration:none;box-shadow:2px 2px 6px rgba(145,165,210,.5),-1px -1px 4px rgba(255,255,255,.8);letter-spacing:1px;transition:.15s}
     .admin-link:hover{box-shadow:3px 3px 8px rgba(145,165,210,.6),-2px -2px 5px rgba(255,255,255,.9)}
     @media(max-width:400px){.cards{grid-template-columns:1fr}.logo-text{font-size:42px}}
+  .clinic-link{position:fixed;top:14px;right:88px;background:#d2dcf0;border:none;border-radius:8px;padding:5px 12px;font-family:'Space Mono',monospace;font-size:10px;color:#3764bf;text-decoration:none;box-shadow:2px 2px 6px rgba(145,165,210,.5),-1px -1px 4px rgba(255,255,255,.8);letter-spacing:1px;transition:.15s}
+  .clinic-link:hover{box-shadow:3px 3px 8px rgba(145,165,210,.6),-2px -2px 5px rgba(255,255,255,.9)}
   .admin-modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
   .admin-modal-ov.open{display:flex}
   .admin-modal{background:#e4e8f4;border-radius:20px;padding:32px 28px 26px;width:300px;box-shadow:8px 8px 20px rgba(145,165,210,.6),-6px -6px 16px rgba(255,255,255,.9);text-align:center}
@@ -45,6 +47,7 @@
 </head>
 <body>
   <button class="admin-link" onclick="openAdminModal()">🔒 admin</button>
+  <a class="clinic-link" href="./clinic_grade.html">✏️ 조교</a>
   <div class="wrap">
     <div style="text-align:center">
       <div class="logo-badge"><span class="logo-badge-dot"></span>MATH LEARNING SYSTEM</div>
