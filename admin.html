@@ -591,9 +591,12 @@ function renderClinicList(){
       resHtml+='<div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:6px">채점 결과 ('+resArr.length+'명)</div>';
       resArr.forEach(function([sid,r]){
         var wrong=r.wrong&&r.wrong.length?r.wrong.join(', '):'없음';
-        resHtml+='<div class="cl-result-row"><span class="cl-result-name">'+r.name+'</span>';
+        resHtml+='<div class="cl-result-row" id="cr_'+cid+'_'+sid+'">';
+        resHtml+='<span class="cl-result-name">'+r.name+'</span>';
         resHtml+='<div style="text-align:right"><span class="cl-result-score">'+r.score+'/'+r.total+'점</span>';
-        resHtml+='<div class="cl-result-wrong">오답: '+wrong+'번</div></div></div>';
+        resHtml+='<div class="cl-result-wrong">오답: '+wrong+'번</div>';
+        resHtml+='</div><button class="lnk le" style="font-size:10px" id="editCr_'+cid+'_'+sid+'">수정</button></div>';
+        resHtml+='<div id="crEdit_'+cid+'_'+sid+'" style="display:none;padding:8px 0"></div>';
       });
       resHtml+='</div>';
     }else{
@@ -609,6 +612,10 @@ function renderClinicList(){
       +resHtml;
     el.appendChild(div);
     // bind events after appendChild
+    resArr.forEach(function([sid]){
+      var eb=document.getElementById('editCr_'+cid+'_'+sid);
+      if(eb) eb.onclick=(function(ci,si){return function(){openClinicResultEdit(ci,si);};})(cid,sid);
+    });
     document.getElementById('togBtn_'+cid).onclick=(function(id,act){
       return function(){toggleClinicActive(id,!act);};
     })(cid,cs.active);
@@ -677,6 +684,99 @@ async function saveClinicSet(){
   else await db.ref('smClinicSets').push(data);
   toast('클리닉이 저장되었습니다');
   closeClinicForm();
+}
+
+function openClinicResultEdit(cid, sid){
+  const cs=clinicSets[cid];
+  const r=(clinicResults[cid]||{})[sid];
+  if(!cs||!r)return;
+  const editDiv=document.getElementById('crEdit_'+cid+'_'+sid);
+  if(!editDiv)return;
+  if(editDiv.style.display!=='none'){editDiv.style.display='none';return;}
+  const answers=cs.answers||{};
+  const nums=Object.keys(answers).map(Number).sort((a,b)=>a-b);
+  const maxNum=nums[nums.length-1]||0;
+  // Math toolbar (DOM-safe)
+  var toolbar=document.createElement('div');
+  toolbar.style.cssText='display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;padding:8px;background:#f8fafc;border-radius:8px';
+  ['√','²','³','π','±','/','(',')'].forEach(function(ch){
+    var btn=document.createElement('button');
+    btn.textContent=ch;
+    btn.style.cssText='background:#e4e8f4;border:none;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:#3764bf;font-weight:700;box-shadow:1px 1px 3px rgba(145,165,210,.5),-1px -1px 3px rgba(255,255,255,.8)';
+    btn.onclick=(function(c2){return function(){adminInsertMath(c2);};})(ch);
+    toolbar.appendChild(btn);
+  });
+  editDiv.appendChild(toolbar);
+  var html='';
+  var gridWrap=document.createElement('div');
+  gridWrap.style.cssText='display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin-bottom:8px';
+  for(var i=1;i<=maxNum;i++){
+    var val=(r.answers&&(r.answers[String(i)]||r.answers[i]))||'';
+    var correct=answers[String(i)]||'';
+    var isOk=val&&correct&&val===correct;
+    var isWrong=val&&correct&&val!==correct;
+    var cell=document.createElement('div');
+    cell.style.textAlign='center';
+    var lbl=document.createElement('div');
+    lbl.style.cssText='font-size:9px;color:#94a3b8';
+    lbl.textContent=String(i);
+    var inp=document.createElement('input');
+    inp.type='text';inp.value=val;inp.maxLength=6;
+    inp.id='admEd_'+cid+'_'+sid+'_'+i;
+    inp.style.cssText='width:100%;border:none;border-radius:6px;padding:4px 2px;font-size:11px;text-align:center;outline:none;'+(isOk?'background:#dcfce7;border:1px solid #86efac;':(isWrong?'background:#fee2e2;border:1px solid #fca5a5;':'background:#e4e8f4;box-shadow:inset 1px 1px 3px rgba(145,165,210,.5),inset -1px -1px 3px rgba(255,255,255,.8);'));
+    (function(id){inp.addEventListener('focus',function(){adminFocused=id;});})(inp.id);
+    cell.appendChild(lbl);cell.appendChild(inp);
+    gridWrap.appendChild(cell);
+  }
+  editDiv.appendChild(gridWrap);
+  var regradeBtn=document.createElement('button');
+  regradeBtn.className='btn-sv';regradeBtn.style.cssText='font-size:12px;padding:7px 16px';
+  regradeBtn.textContent='다시 채점';
+  regradeBtn.onclick=(function(ci,si){return function(){adminRegrade(ci,si);};})(cid,sid);
+  editDiv.appendChild(regradeBtn);
+  var html=''; // reset html - DOM used above
+  editDiv.style.display='';
+}
+
+var adminFocused=null;
+function adminInsertMath(ch){
+  if(!adminFocused)return;
+  var inp=document.getElementById(adminFocused);
+  if(!inp)return;
+  var s=inp.selectionStart,e=inp.selectionEnd;
+  inp.value=inp.value.slice(0,s)+ch+inp.value.slice(e);
+  inp.selectionStart=inp.selectionEnd=s+ch.length;
+  inp.focus();
+}
+
+async function adminRegrade(cid,sid){
+  const cs=clinicSets[cid];
+  if(!cs)return;
+  const answers=cs.answers||{};
+  const nums=Object.keys(answers).map(Number).sort((a,b)=>a-b);
+  const maxNum=nums[nums.length-1]||0;
+  var score=0,wrong=[],stuAnswers={};
+  for(var i=1;i<=maxNum;i++){
+    var inp=document.getElementById('admEd_'+cid+'_'+sid+'_'+i);
+    var val=inp?inp.value.trim():'';
+    stuAnswers[i]=val;
+    var correct=answers[String(i)]||'';
+    if(val&&correct){
+      if(val===correct)score++;
+      else wrong.push(i);
+    }
+  }
+  const total=nums.length;
+  const r=(clinicResults[cid]||{})[sid];
+  const updated={name:r.name,answers:stuAnswers,score,total,wrong,gradedAt:Date.now()};
+  await db.ref('smClinicResults/'+cid+'/'+sid).set(updated);
+  // update session
+  const sesSnap=await db.ref('smSessions/'+sid).get();
+  const sessions=sesSnap.val()||{};
+  const sesEntry=Object.entries(sessions).find(([,s])=>s.cli===cs.title);
+  if(sesEntry) await db.ref('smSessions/'+sid+'/'+sesEntry[0]+'/note').set('[클리닉 채점] '+score+'/'+total+'점'+(wrong.length?'\n오답: '+wrong.join(', ')+'번':''));
+  toast(r.name+' 채점 수정 완료');
+  document.getElementById('crEdit_'+cid+'_'+sid).style.display='none';
 }
 
 async function toggleClinicActive(cid,active){await db.ref('smClinicSets/'+cid+'/active').set(active);}
