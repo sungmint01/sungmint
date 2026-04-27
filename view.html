@@ -360,13 +360,18 @@ function starsLabel(n,absent){
 }
 
 function renderStats(){
-  const arr=Object.values(recData).filter(r=>r.eval!=null&&r.eval>=0);
-  document.getElementById('sTot').textContent=Object.keys(recData).length;
+  // 현재 보고 있는 달의 기록만 필터
+  const monthStr=calYear+'-'+String(calMonth+1).padStart(2,'0');
+  const monthRecs=Object.values(recData).filter(r=>r.date&&r.date.startsWith(monthStr));
+  // 총 수업 횟수: 해당 월
+  document.getElementById('sTot').textContent=monthRecs.length;
+  // 평균/최근 등급: 해당 월 중 eval 있는 것
+  const arr=monthRecs.filter(r=>r.eval!=null&&r.eval>=0);
   if(arr.length){
     const valid=arr.filter(r=>r.eval>0);
     const avg=valid.length?Math.round(valid.reduce((a,r)=>a+(r.eval||0),0)/valid.length*10)/10:'-';
-    document.getElementById('sAvg').textContent=avg==='+'?'-':avg+'★';
-    const sorted=Object.values(recData).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    document.getElementById('sAvg').textContent=(avg==='-')?'-':avg+'★';
+    const sorted=arr.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
     const ev=sorted[0].eval!=null&&sorted[0].eval>=0?sorted[0].eval:null;
     document.getElementById('sLast').textContent=starsLabel(ev);
   }else{
@@ -379,7 +384,7 @@ function changeMonth(dir){
   calMonth+=dir;
   if(calMonth>11){calMonth=0;calYear++;}
   if(calMonth<0){calMonth=11;calYear--;}
-  closeDetail();renderCal();
+  closeDetail();renderCal();renderStats();
 }
 
 function renderCal(){
