@@ -65,6 +65,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .step-dot.active{background:var(--acc)}
 .step-line{flex:1;height:1px;background:#d2dcf0}
 
+.attend-row{display:flex;align-items:center;gap:20px;padding:14px 18px;background:var(--bg);border-radius:14px;box-shadow:3px 3px 8px var(--sh1),-2px -2px 6px var(--sh2);margin-bottom:14px}
+.attend-label{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--txt)}
+.attend-label input[type=checkbox]{width:18px;height:18px;cursor:pointer;accent-color:#ef4444}
+.attend-label.late input[type=checkbox]{accent-color:#f59e0b}
+.attend-hint{font-size:11px;color:#8a96b4;margin-left:auto}
 .grade-toggle{display:flex;background:var(--bg);border-radius:12px;box-shadow:inset 3px 3px 7px var(--sh1),inset -3px -3px 7px var(--sh2);padding:4px;gap:4px;margin-bottom:14px}
 .grade-tab{flex:1;padding:9px;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--txt2);background:transparent;transition:.2s}
 .grade-tab.on{background:linear-gradient(135deg,var(--acc2),var(--acc));color:#fff;box-shadow:2px 2px 8px rgba(55,100,191,.35)}
@@ -145,6 +150,18 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
   <div id="step3" style="display:none">
     <div class="card">
       <div class="card-title" id="step3Title">📝 채점</div>
+      <!-- 출결 체크 -->
+      <div class="attend-row">
+        <label class="attend-label">
+          <input type="checkbox" id="chkAbsent" onchange="if(this.checked)document.getElementById('chkLate').checked=false">
+          <span>🚫 결석</span>
+        </label>
+        <label class="attend-label late">
+          <input type="checkbox" id="chkLate" onchange="if(this.checked)document.getElementById('chkAbsent').checked=false">
+          <span>⏰ 지각</span>
+        </label>
+        <span class="attend-hint">달력에 자동 반영됩니다</span>
+      </div>
       <!-- 채점 방식 토글 -->
       <div class="grade-toggle">
         <button class="grade-tab on" id="tabAns" onclick="switchGradeTab('ans')">📝 답 입력</button>
@@ -330,8 +347,9 @@ function goStep3(){
   err.textContent=''; sugg.textContent='';
   currentStuId=entry[0];
   currentStuName=entry[1].name;
+  resetAttend();
   buildAnsGrid();
-  document.getElementById('step3Title').textContent='📝 '+currentStuName+' 답안 입력';
+  document.getElementById('step3Title').textContent='📝 '+currentStuName+' 채점';
   setStep(3);
 }
 
@@ -418,10 +436,13 @@ async function submitGrade(){
   const result={name:currentStuName,answers:stuAnswers,score,total,wrong,gradedAt:Date.now()};
   await db.ref('smClinicResults/'+selectedClinicId+'/'+currentStuId).set(result);
   // Auto-save to student session — cli 필드에만 기록
+  const isAbsent=document.getElementById('chkAbsent').checked;
+  const isLate=document.getElementById('chkLate').checked;
   const sessionData={
     date:new Date().toISOString().split('T')[0],
     num:Object.keys((await db.ref('smSessions/'+currentStuId).get()).val()||{}).length+1,
     cli:selectedClinic.title+', '+score+'/'+total+'점',
+    absent:isAbsent, late:isLate,
     eval:null, at:Date.now(), upd:Date.now()
   };
   await db.ref('smSessions/'+currentStuId).push(sessionData);
@@ -504,6 +525,10 @@ async function regrade(){
   document.getElementById('resultSaved').textContent='✓ 수정 저장됨';
 }
 
+function resetAttend(){
+  document.getElementById('chkAbsent').checked=false;
+  document.getElementById('chkLate').checked=false;
+}
 function goBack(step){
   if(step===2) setStep(1);
   else if(step===3) setStep(2);
@@ -519,6 +544,7 @@ function setStep(n){
 }
 
 function resetAll(){
+  resetAttend();
   selectedClinicId=null; selectedClinic=null; currentStuId=null; currentStuName='';
   renderClinicList();
   setStep(1);
