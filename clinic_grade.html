@@ -435,7 +435,7 @@ async function regrade(){
   // find the session we created
   const sesEntry=Object.entries(sessions).find(([,s])=>s.cli===selectedClinic.title);
   if(sesEntry){
-    await db.ref('smSessions/'+currentStuId+'/'+sesEntry[0]+'/note').set('[클리닉 채점] '+score+'/'+total+'점'+(wrong.length?' 오답: '+wrong.join(', ')+'번':''));
+    await db.ref('smSessions/'+currentStuId+'/'+sesEntry[0]+'/cli').set(selectedClinic.title+', '+score+'/'+total+'점');
   }
   // Update display
   document.getElementById('resultScore').textContent=score;

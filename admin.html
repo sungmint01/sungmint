@@ -609,6 +609,7 @@ function renderClinicList(){
     div.innerHTML='<div class="cl-card-head"><span class="cl-card-title">'+cs.title+'</span>'
       +'<div style="display:flex;gap:6px;align-items:center">'
       +'<span class="cl-badge '+(cs.active?'cl-active':'cl-closed')+'">'+(cs.active?'활성':'종료')+'</span>'
+      +'<button class="lnk le" id="editSetBtn_'+cid+'">수정</button>'
       +'<button class="lnk '+(cs.active?'ld':'le')+'" id="togBtn_'+cid+'">'+(cs.active?'종료':'재활성')+'</button>'
       +'<button class="lnk ld" id="delBtn_'+cid+'">삭제</button>'
       +'</div></div>'
@@ -622,6 +623,8 @@ function renderClinicList(){
       var db2=document.getElementById('delCr_'+cid+'_'+sid);
       if(db2) db2.onclick=(function(ci,si,nm){return function(){deleteClinicResult(ci,si,nm);};})(cid,sid,(clinicResults[cid]||{})[sid]?.name||'?');
     });
+    var esb=document.getElementById('editSetBtn_'+cid);
+    if(esb) esb.onclick=(function(id){return function(){openClinicForm(id);};})(cid);
     document.getElementById('togBtn_'+cid).onclick=(function(id,act){
       return function(){toggleClinicActive(id,!act);};
     })(cid,cs.active);
@@ -634,8 +637,25 @@ function openClinicForm(editId){
   _clEditId=editId||null;
   _clTargetType='all';
   document.getElementById('clinicFormTitle').textContent=editId?'클리닉 수정':'클리닉 추가';
-  document.getElementById('clTitle').value='';
-  setClTarget('all');
+  if(editId && clinicSets[editId]){
+    var es=clinicSets[editId];
+    document.getElementById('clTitle').value=es.title||'';
+    setClTarget(es.targetType||'all');
+    // set target value after setClTarget
+    setTimeout(function(){
+      if(es.targetType==='class'&&document.getElementById('clTargetCls'))
+        document.getElementById('clTargetCls').value=es.targetCls||'';
+      if(es.targetType==='student'&&es.targetStudents){
+        es.targetStudents.forEach(function(sid){
+          var chk=document.querySelector('.cl-stu-chk[value="'+sid+'"]');
+          if(chk) chk.checked=true;
+        });
+      }
+    },50);
+  }else{
+    document.getElementById('clTitle').value='';
+    setClTarget('all');
+  }
   // build 150-answer grid (5 columns)
   var grid=document.getElementById('clAnsGrid');
   grid.innerHTML='';
@@ -644,6 +664,14 @@ function openClinicForm(editId){
     item.className='cl-form-ans-item';
     item.innerHTML='<span class="cl-form-ans-num">'+i+'번</span><input class="cl-form-ans-inp" id="clAns'+i+'" type="text" placeholder="-" maxlength="4">';
     grid.appendChild(item);
+  }
+  // Pre-fill answers if editing
+  if(editId && clinicSets[editId]){
+    var ans=clinicSets[editId].answers||{};
+    Object.entries(ans).forEach(function([num,val]){
+      var inp=document.getElementById('clAns'+num);
+      if(inp) inp.value=val;
+    });
   }
   document.getElementById('clinicModal').classList.add('open');
 }
