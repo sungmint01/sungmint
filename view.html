@@ -327,11 +327,11 @@ function loadStudentData(stuId, stu){
   document.getElementById('hSubj').textContent=stu.subj||'';
   document.getElementById('load').style.display='none';
   document.getElementById('wrap').style.display='block';
-  db.ref('smSessions/'+sid_).on('value',s=>{recData=s.val()||{};renderStats();renderCal();});
-  db.ref('smPlanners/'+sid_).on('value',s=>{renderViewPlanners(s.val()||{});});
+  db.ref('smSessions/'+sid_).on('value',function(s){try{recData=s.val()||{};renderStats();renderCal();}catch(e){console.error('session render error:',e);}});
+  db.ref('smPlanners/'+sid_).on('value',function(s){try{renderViewPlanners(s.val()||{});}catch(e){console.error('planner render error:',e);}});
   const stored=localStorage.getItem('smSent_'+sid_);
   if(stored)try{sent=JSON.parse(stored);}catch(e){}
-  db.ref('smConsultations/'+sid_).on('value',s=>{consultData=s.val()||{};renderSent();});
+  db.ref('smConsultations/'+sid_).on('value',function(s){try{consultData=s.val()||{};renderSent();}catch(e){console.error('consult render error:',e);}});
 }
 function showErr(title,msg){document.getElementById('load').innerHTML=`<div class="err"><div class="ei">😔</div><h2>${title}</h2><p>${msg}</p></div>`;}
 
@@ -468,8 +468,7 @@ function renderVPlanCal(){
   var dateMap={};
   Object.values(_vPlannerData).forEach(function(p){if(!p.date)return;if(!dateMap[p.date])dateMap[p.date]=[];dateMap[p.date].push(p);});
   var grid=document.getElementById('vPlanCalGrid');
-  var headers=Array.from(grid.children).slice(0,7);
-  grid.innerHTML='';headers.forEach(function(h){grid.appendChild(h);});
+  grid.innerHTML='<div class="plan-cal-dow">일</div><div class="plan-cal-dow">월</div><div class="plan-cal-dow">화</div><div class="plan-cal-dow">수</div><div class="plan-cal-dow">목</div><div class="plan-cal-dow">금</div><div class="plan-cal-dow">토</div>';
   for(var i=firstDay-1;i>=0;i--){var cell=document.createElement('div');cell.className='plan-cal-day other-month';cell.innerHTML='<span class="plan-cal-day-num">'+(daysInPrev-i)+'</span>';grid.appendChild(cell);}
   for(var d=1;d<=daysInMonth;d++){
     var ds=_vPlanYear+'-'+String(_vPlanMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
@@ -505,6 +504,15 @@ function openVPlanDetail(ds,plans){
   document.getElementById('vPlanDetailOv').classList.add('open');
   document.body.style.overflow='hidden';
 }
+// Firebase 재연결 시 자동 갱신
+window.addEventListener('focus', function(){
+  if(sid_ && db){
+    db.ref('smSessions/'+sid_).once('value', function(s){
+      try{recData=s.val()||{};renderStats();renderCal();}catch(e){}
+    });
+  }
+});
+
 function closeVPlanDetail(){document.getElementById('vPlanDetailOv').classList.remove('open');document.body.style.overflow='';}
 function openLbV(src){document.getElementById('lbVImg').src=src;document.getElementById('lbV').classList.add('open');document.body.style.overflow='hidden';}
 function closeLbV(){document.getElementById('lbV').classList.remove('open');document.body.style.overflow='';}
