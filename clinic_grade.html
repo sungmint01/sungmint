@@ -65,6 +65,15 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .step-dot.active{background:var(--acc)}
 .step-line{flex:1;height:1px;background:#d2dcf0}
 
+.grade-toggle{display:flex;background:var(--bg);border-radius:12px;box-shadow:inset 3px 3px 7px var(--sh1),inset -3px -3px 7px var(--sh2);padding:4px;gap:4px;margin-bottom:14px}
+.grade-tab{flex:1;padding:9px;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--txt2);background:transparent;transition:.2s}
+.grade-tab.on{background:linear-gradient(135deg,var(--acc2),var(--acc));color:#fff;box-shadow:2px 2px 8px rgba(55,100,191,.35)}
+.direct-score-wrap{padding:16px 0 8px;text-align:center}
+.direct-score-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px}
+.score-inp{border:none;border-radius:12px;padding:14px;font-size:24px;font-weight:700;text-align:center;width:90px;font-family:inherit;outline:none;background:var(--bg);box-shadow:inset 3px 3px 7px var(--sh1),inset -3px -3px 7px var(--sh2);color:var(--acc)}
+.score-slash{font-size:28px;font-weight:700;color:var(--txt2)}
+.score-total{font-size:24px;font-weight:700;color:var(--txt)}
+.score-hint{font-size:12px;color:#8a96b4;margin-top:6px}
 .math-toolbar{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;padding:10px 12px;background:var(--bg);border-radius:10px;box-shadow:inset 2px 2px 5px var(--sh1),inset -2px -2px 5px var(--sh2)}
 .math-btn{background:var(--bg);border:none;border-radius:7px;padding:6px 10px;font-size:13px;cursor:pointer;color:var(--acc);font-weight:700;box-shadow:2px 2px 5px var(--sh1),-1px -1px 4px var(--sh2);transition:.15s;min-width:36px}
 .math-btn:hover{box-shadow:3px 3px 7px var(--sh1),-2px -2px 5px var(--sh2)}
@@ -135,15 +144,21 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
   <!-- Step 3: 답안 입력 -->
   <div id="step3" style="display:none">
     <div class="card">
-      <div class="card-title" id="step3Title">📝 답안 입력</div>
-      <div style="background:#eff4ff;border-left:3px solid #3764bf;border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#1a2840;line-height:1.8;font-family:'Noto Sans KR',sans-serif">
-        📌 <strong>답 작성 안내</strong><br>
-        루트는 √버튼을 누른 후 작성해주세요.<br>
-        파이(π)는 답 제일 마지막에 작성해주세요.<br>
-        단위는 생략합니다.<br>
-        나눗셈은 <strong>a/b</strong>, 지수는 <strong>2^3</strong>처럼 작성합니다.
+      <div class="card-title" id="step3Title">📝 채점</div>
+      <!-- 채점 방식 토글 -->
+      <div class="grade-toggle">
+        <button class="grade-tab on" id="tabAns" onclick="switchGradeTab('ans')">📝 답 입력</button>
+        <button class="grade-tab" id="tabDirect" onclick="switchGradeTab('direct')">🔢 점수 직접 입력</button>
       </div>
-      <div class="math-toolbar" id="mathToolbar">
+      <!-- 답 입력 방식 -->
+      <div id="ansMode">
+        <div style="background:#eff4ff;border-left:3px solid #3764bf;border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#1a2840;line-height:1.8;font-family:'Noto Sans KR',sans-serif">
+          📌 <strong>답 작성 안내</strong> · 공란은 오답 처리됩니다<br>
+          루트는 √버튼을 누른 후 작성해주세요.<br>
+          파이(π)는 답 제일 마지막에 작성해주세요.<br>
+          단위는 생략합니다. 나눗셈은 <strong>a/b</strong>, 지수는 <strong>2^3</strong>처럼 작성합니다.
+        </div>
+        <div class="math-toolbar" id="mathToolbar">
         <span class="math-hint">기호 클릭 → 현재 입력칸에 삽입</span>
         <button class="math-btn" onclick="insertMath('√')">√</button>
         <button class="math-btn" onclick="insertMath('^2')">^2</button>
@@ -156,8 +171,21 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
         <button class="math-btn" onclick="insertMath(')')"> ) </button>
       </div>
       <div class="ans-grid" id="ansGrid"></div>
+      </div><!-- end ansMode -->
+      <!-- 점수 직접 입력 방식 -->
+      <div id="directMode" style="display:none">
+        <div class="direct-score-wrap">
+          <div class="score-hint" style="margin-bottom:16px">맞은 개수와 푼 개수를 입력하세요</div>
+          <div class="direct-score-row">
+            <input class="score-inp" type="number" id="directScore" min="0" placeholder="0">
+            <span class="score-slash">/</span>
+            <input class="score-inp" type="number" id="directTotal" min="0" placeholder="0">
+          </div>
+          <div class="score-hint">맞은 개수 / 푼 개수</div>
+        </div>
+      </div>
     </div>
-    <button class="nm-btn" onclick="submitGrade()">채점하기 →</button>
+    <button class="nm-btn" id="submitBtn" onclick="submitGrade()">채점하기 →</button>
     <div class="err" id="err3"></div>
     <a href="#" onclick="goBack(3)" class="back-link">← 이전</a>
   </div>
@@ -317,6 +345,15 @@ function insertMath(ch){
   el.focus();
 }
 
+var _gradeTab='ans';
+function switchGradeTab(tab){
+  _gradeTab=tab;
+  document.getElementById('tabAns').className='grade-tab'+(tab==='ans'?' on':'');
+  document.getElementById('tabDirect').className='grade-tab'+(tab==='direct'?' on':'');
+  document.getElementById('ansMode').style.display=tab==='ans'?'':'none';
+  document.getElementById('directMode').style.display=tab==='direct'?'':'none';
+}
+
 function buildAnsGrid(){
   const answers=selectedClinic.answers||{};
   const nums=Object.keys(answers).map(Number).sort((a,b)=>a-b);
@@ -350,22 +387,33 @@ function buildAnsGrid(){
 }
 
 async function submitGrade(){
-  const answers=selectedClinic.answers||{};
-  const nums=Object.keys(answers).map(Number).sort((a,b)=>a-b);
-  const maxNum=nums[nums.length-1]||0;
-  let score=0, wrong=[], stuAnswers={};
-  for(let i=1;i<=maxNum;i++){
-    const inp=document.getElementById('ga'+i);
-    const val=(inp?inp.value.trim():'');
-    stuAnswers[i]=val;
-    const correct=answers[String(i)]||'';
-    if(val&&correct){
-      if(val===correct){score++;if(inp)inp.className='ans-inp correct';}
-      else{wrong.push(i);if(inp)inp.className='ans-inp wrong';}
+  let score, total, wrong=[], stuAnswers={};
+  if(_gradeTab==='direct'){
+    // 직접 점수 입력
+    score=parseInt(document.getElementById('directScore').value)||0;
+    total=parseInt(document.getElementById('directTotal').value)||0;
+    if(!total){document.getElementById('err3').textContent='푼 개수를 입력하세요';return;}
+    if(score>total){document.getElementById('err3').textContent='맞은 개수가 푼 개수보다 클 수 없습니다';return;}
+    document.getElementById('err3').textContent='';
+  }else{
+    // 답 입력 방식 (공란=오답)
+    const answers=selectedClinic.answers||{};
+    const nums=Object.keys(answers).map(Number).sort((a,b)=>a-b);
+    const maxNum=nums[nums.length-1]||0;
+    total=maxNum;
+    for(let i=1;i<=maxNum;i++){
+      const inp=document.getElementById('ga'+i);
+      const val=(inp?inp.value.trim():'');
+      stuAnswers[i]=val;
+      const correct=answers[String(i)]||'';
+      if(correct){
+        if(val&&val===correct){score=(score||0)+1;if(inp)inp.className='ans-inp correct';}
+        else{wrong.push(i);if(inp)inp.className='ans-inp wrong';}  // 공란도 오답
+      }
     }
+    score=score||0;
   }
-  const total=nums.length;
-  lastResult={stuAnswers,score,total,wrong,nums,maxNum};
+  lastResult={stuAnswers,score,total,wrong,isDirect:_gradeTab==='direct'};
   // Save result
   const result={name:currentStuName,answers:stuAnswers,score,total,wrong,gradedAt:Date.now()};
   await db.ref('smClinicResults/'+selectedClinicId+'/'+currentStuId).set(result);
@@ -387,7 +435,8 @@ async function submitGrade(){
     document.getElementById('resultWrong').innerHTML='<div class="result-ok">🎉 모두 정답!</div>';
   }
   document.getElementById('resultSaved').textContent='✓ 학생 기록에 자동 저장됨';
-  buildEditGrid(stuAnswers);
+  if(_gradeTab!=='direct') buildEditGrid(stuAnswers);
+  else document.getElementById('editGrid').innerHTML='<div style="text-align:center;padding:12px;color:#8a96b4;font-size:12px">직접 점수 입력 방식으로 채점되었습니다</div>';
   setStep(4);
 }
 
