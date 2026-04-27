@@ -1060,12 +1060,7 @@ function starsHtml(n,absent,late){
 function renderCal(){
   const data=sessions[uid_]||{};
   const recMap={};
-  Object.entries(data).forEach(([sid,r])=>{
-    if(!r.date) return;
-    const prev=recMap[r.date];
-    // 클리닉 내용(cli)이 있는 세션 우선, 없으면 최신으로
-    if(!prev || r.cli || (!prev.cli && (r.upd||0)>(prev.upd||0))) recMap[r.date]={...r,sid};
-  });
+  Object.entries(data).forEach(([sid,r])=>{if(r.date)recMap[r.date]={...r,sid};});
   const mn=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
   document.getElementById('calMonth').textContent=`${calYear}년 ${mn[calMonth]}`;
   const todayStr=new Date().toISOString().split('T')[0];
@@ -1217,7 +1212,7 @@ function openRM(sid=null,dateStr=null){
     ['rmProg','rmPrevHw','rmComment','rmSpecial','rmHwC','rmCli','rmNote'].forEach(f=>document.getElementById(f).value='');
     document.getElementById('rmAbsent').checked=false;
     document.getElementById('rmLate').checked=false;
-    setEval(3);
+    setEval(-1); // 기본값 없음
     // 자동 채우기: 가장 최근 이전 수업의 오늘 숙제 → 지난 시간 숙제 범위
     const allRecs = Object.values(sessions[uid_]||{})
       .filter(r => r.date && r.date < targetDate && r.hwC)
@@ -1452,23 +1447,18 @@ async function saveBulkHW(){
   btn.disabled=true;btn.textContent='등록 중...';
   try{
     await Promise.all(targets.map(async([stuId])=>{
+      // auto num: count existing sessions + 1
       const snap=await db.ref('smSessions/'+stuId).get();
       const existing=snap.val()||{};
       const num=parseInt(document.getElementById('bmNum').value)||Object.keys(existing).length+1;
-      // 같은 날짜 세션이 이미 있으면 update(cli 등 기존 데이터 보존), 없으면 push
-      const existingEntry=Object.entries(existing).find(([,r])=>r.date===date);
-      const payload={
+      await db.ref('smSessions/'+stuId).push({
         date,num,
         prog:document.getElementById('bmProg').value,
         hwC,
         note:document.getElementById('bmNote').value,
-        upd:Date.now()
-      };
-      if(existingEntry){
-        await db.ref('smSessions/'+stuId+'/'+existingEntry[0]).update(payload);
-      } else {
-        await db.ref('smSessions/'+stuId).push({...payload,eval:3,at:Date.now()});
-      }
+        eval:3,
+        at:Date.now(),upd:Date.now()
+      });
     }));
     toast(`${bmSelectedClass} 학생 ${targets.length}명에게 숙제가 등록되었습니다`);
     closeBM();
