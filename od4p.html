@@ -186,7 +186,9 @@ function StudentApp(){
       setQuiz(data);setLoading(false);
       if(isFirstLoad){
         isFirstLoad=false;
-        setSelSubject(sub);setStep("auth");
+        setSelSubject(sub);
+        // 이미 로그인 시 이름 설정됨 → 바로 quiz로
+        setStep("quiz");
       }
       // 이후 업데이트는 quiz 데이터만 갱신 (step 변경 없음)
     });
