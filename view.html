@@ -608,13 +608,13 @@ function renderSent(){
         banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,#3764bf,#5a8ae0);color:#fff;text-align:center;padding:12px;font-family:Noto Sans KR,sans-serif;font-size:14px;font-weight:600;box-shadow:0 2px 12px rgba(0,0,0,.2)';
         banner.textContent = '🔄 새로운 업데이트가 있습니다. 잠시 후 자동으로 새로고침됩니다...';
         document.body.appendChild(banner);
-        setTimeout(function(){ location.reload(); }, 3000);
+        setTimeout(function(){ location.reload(); }, 500);
       }
     });
   }
   // 최초 + 5분마다 확인
   setTimeout(checkVersion, 2000);
-  setInterval(checkVersion, 5 * 60 * 1000);
+  setInterval(checkVersion, 30 * 1000);
 })();
 </script>
 
