@@ -306,9 +306,25 @@ function showApp() {
         const myEntry = Object.values(subs).find(e => e.name === stuData.name);
         if (myEntry) {
           if (!od4pData[date]) od4pData[date] = [];
+          // 채점: 정답과 비교
+          var problems = sub.problems || {};
+          var probArr = Object.values(problems);
+          var myAnswers = myEntry.answers || {};
+          var score = 0;
+          var total = probArr.length;
+          var wrongNums = [];
+          probArr.forEach(function(p, i) {
+            var ua = String(myAnswers[i] || '').trim();
+            var correct = p.type === '객관식' ? ua === String(p.answer) : ua.replace(/\s/g,'') === String(p.answer).replace(/\s/g,'');
+            if (correct) score++;
+            else wrongNums.push(i+1);
+          });
           od4pData[date].push({
             subject: sub.title || '',
-            answers: myEntry.answers || {},
+            answers: myAnswers,
+            score: score,
+            total: total,
+            wrongNums: wrongNums,
             ts: myEntry.ts || 0
           });
         }
@@ -504,6 +520,15 @@ function renderPlanCal() {
     if (od4pEntries.length) {
       dotsHtml += '<div class="plan-cal-dot dot-od4p"></div>';
       if (!plans.length) { cell.style.background = '#fffbeb'; cell.style.borderColor = '#fde68a'; }
+      // 점수 요약
+      var totalScore = od4pEntries.reduce(function(a,e){return a+e.score;},0);
+      var totalProbs = od4pEntries.reduce(function(a,e){return a+e.total;},0);
+      if (totalProbs > 0) {
+        var scoreEl = document.createElement('div');
+        scoreEl.style.cssText='font-size:9px;color:#92400e;font-weight:700;line-height:1.2';
+        scoreEl.textContent = totalScore+'/'+totalProbs;
+        cell.appendChild(scoreEl);
+      }
     }
     cell.innerHTML = '<span class="plan-cal-day-num">' + d + '</span>'
       + (dotsHtml ? '<div class="plan-cal-dots">' + dotsHtml + '</div>' : '');
@@ -533,13 +558,22 @@ function openPlanDetail(ds, plans) {
   // od4p 성적 표시
   var od4pDay = od4pData[ds] || [];
   if (od4pDay.length) {
-    html += '<div style="background:#fffbeb;border-left:3px solid #f59e0b;border-radius:0 10px 10px 0;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#92400e">';
-    html += '<div style="font-weight:700;margin-bottom:4px">📝 OD4P 응시</div>';
     od4pDay.forEach(function(e){
-      var total = Object.keys(e.answers).length;
-      html += '<div>' + (e.subject||'문제') + ' · ' + total + '문제 응시</div>';
+      var scoreColor = e.total > 0 ? (e.score/e.total >= 0.8 ? '#166534' : e.score/e.total >= 0.5 ? '#92400e' : '#b91c1c') : '#374151';
+      html += '<div style="background:#fffbeb;border-left:3px solid #f59e0b;border-radius:0 10px 10px 0;padding:12px 14px;margin-bottom:10px">';
+      html += '<div style="font-weight:700;color:#92400e;margin-bottom:6px;font-size:13px">📝 OD4P — ' + (e.subject||'') + '</div>';
+      if (e.total > 0) {
+        html += '<div style="font-size:22px;font-weight:800;color:' + scoreColor + ';margin-bottom:4px">' + e.score + ' / ' + e.total + '점</div>';
+        if (e.wrongNums && e.wrongNums.length > 0) {
+          html += '<div style="font-size:11px;color:#ef4444;margin-top:2px">오답: ' + e.wrongNums.join('번, ') + '번</div>';
+        } else {
+          html += '<div style="font-size:11px;color:#166534;margin-top:2px">🎉 모두 정답!</div>';
+        }
+      } else {
+        html += '<div style="font-size:12px;color:#92400e">' + Object.keys(e.answers).length + '문제 응시</div>';
+      }
+      html += '</div>';
     });
-    html += '</div>';
   }
   plans.sort(function(a,b){ return (a.ts||0)-(b.ts||0); }).forEach(function(p) {
     var badge = p.type === 'done'
