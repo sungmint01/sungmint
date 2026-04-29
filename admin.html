@@ -908,47 +908,37 @@ async function deleteClinicResult(cid,sid,name){
 
 async function applyClinicResultsToSessions(cid){
   const cs=clinicSets[cid];
-  if(!cs){alert('오류: clinicSets['+cid+'] 없음');return;}
+  if(!cs){toast('클리닉 데이터 없음');return;}
   const results=clinicResults[cid]||{};
   const resArr=Object.entries(results);
-  if(!resArr.length){alert('채점 결과 없음\nclinicResults keys: '+Object.keys(clinicResults).join(', ')+'\ncid='+cid);return;}
-  
-  const detail=[];
+  if(!resArr.length){toast('채점 결과가 없습니다');return;}
+  if(!confirm(cs.title+' 결과를 학생 세션에 반영합니다. 계속할까요?'))return;
+  let count=0;
   for(const [stuId,r] of resArr){
     const sesSnap=await db.ref('smSessions/'+stuId).get();
     const sesData=sesSnap.val()||{};
-    const sesList=Object.entries(sesData);
     const cliText=cs.title+', '+r.score+'/'+r.total+'점';
-    
-    // 날짜별로 찾기
-    let targetId=null, targetDate='없음';
-    // 1. cli에 이미 있는 세션
-    const t1=sesList.find(([,s])=>s.cli&&s.cli.startsWith(cs.title));
-    // 2. 클리닉 등록 날짜
-    const t2=cs.date?sesList.find(([,s])=>s.date===cs.date):null;
-    // 3. 채점 날짜
-    const gradedDate=r.gradedAt?new Date(r.gradedAt).toISOString().split('T')[0]:null;
-    const t3=gradedDate?sesList.find(([,s])=>s.date===gradedDate):null;
-    // 4. 가장 최근
-    const sorted=[...sesList].sort(([,a],[,b])=>((b.upd||b.at||0)-(a.upd||a.at||0)));
-    const t4=sorted[0];
-    
-    const target=t1||t2||t3||t4;
-    if(target){
-      targetId=target[0];
-      targetDate=target[1].date||'날짜없음';
-      await db.ref('smSessions/'+stuId+'/'+targetId+'/cli').set(cliText);
-      detail.push(r.name+': '+targetDate+' 세션에 반영 ('+[t1?'기존cli':null,t2?'클리닉날짜':null,t3?'채점날짜':null,t4?'최근세션':null].filter(Boolean)[0]+')');
-    }else{
-      const date=cs.date||gradedDate||today();
-      const newRef=await db.ref('smSessions/'+stuId).push({date,cli:cliText,eval:null,at:Date.now(),upd:Date.now()});
-      detail.push(r.name+': 새 세션 생성('+date+')');
+    const sesList=Object.entries(sesData);
+    if(!sesList.length){
+      const date=cs.date||today();
+      await db.ref('smSessions/'+stuId).push({date,cli:cliText,eval:null,at:Date.now(),upd:Date.now()});
+      count++;continue;
     }
+    // 달력에 보이는 세션 = cli 있는 것 우선, 없으면 최신
+    let target=null;
+    // 클리닉 날짜와 같은 세션들
+    const dateMatches=cs.date?sesList.filter(([,s])=>s.date===cs.date):[];
+    if(dateMatches.length){
+      // 그 중 cli 있는 것 우선, 없으면 최신
+      target=dateMatches.find(([,s])=>s.cli&&s.cli.trim())||
+             dateMatches.sort(([,a],[,b])=>((b.upd||b.at||0)-(a.upd||a.at||0)))[0];
+    }
+    // 날짜 매칭 없으면 전체에서 가장 최근
+    if(!target) target=sesList.sort(([,a],[,b])=>((b.upd||b.at||0)-(a.upd||a.at||0)))[0];
+    await db.ref('smSessions/'+stuId+'/'+target[0]+'/cli').set(cliText);
+    count++;
   }
-  
-  alert('반영 완료!\n'+detail.join('\n'));
-  
-  // 현재 학생 달력 즉시 갱신
+  toast(cs.title+' — '+count+'명 반영 완료');
   if(uid_&&mode==='student'){
     const snap2=await db.ref('smSessions/'+uid_).get();
     sessions[uid_]=snap2.val()||{};
@@ -1220,11 +1210,16 @@ function starsHtml(n,absent,late){
 function renderCal(){
   const data=sessions[uid_]||{};
   const recMap={};
-  Object.entries(data).sort(([,a],[,b])=>(a.upd||0)-(b.upd||0)).forEach(([sid,r])=>{
+  Object.entries(data).forEach(([sid,r])=>{
     if(!r.date)return;
     const prev=recMap[r.date];
-    // 클리닉 기록 있는 것 우선, 없으면 최신 기록
-    if(!prev||(!prev.cli&&r.cli)||(r.upd||0)>(prev.upd||0)) recMap[r.date]={...r,sid};
+    if(!prev){recMap[r.date]={...r,sid};return;}
+    // 우선순위: cli 있는 것 > 최신 업데이트
+    const rHasCli=!!(r.cli&&r.cli.trim());
+    const pHasCli=!!(prev.cli&&prev.cli.trim());
+    if(rHasCli&&!pHasCli) recMap[r.date]={...r,sid};
+    else if(!rHasCli&&pHasCli) {/* keep prev */}
+    else if((r.upd||0)>(prev.upd||0)) recMap[r.date]={...r,sid};
   });
   const mn=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
   document.getElementById('calMonth').textContent=`${calYear}년 ${mn[calMonth]}`;
