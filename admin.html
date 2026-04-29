@@ -912,40 +912,32 @@ async function applyClinicResultsToSessions(cid){
   const results=clinicResults[cid]||{};
   const resArr=Object.entries(results);
   if(!resArr.length){toast('채점 결과가 없습니다');return;}
-  if(!confirm(cs.title+' 결과를 학생 세션에 반영합니다. 계속할까요?'))return;
+  if(!confirm(cs.title+' 결과를 학생 세션에 반영합니다.\n채점된 학생: '+resArr.map(([,r])=>r.name).join(', ')))return;
   let count=0;
-  await Promise.all(resArr.map(async function([stuId,r]){
+  for(const [stuId,r] of resArr){
     const sesSnap=await db.ref('smSessions/'+stuId).get();
-    const sessions=sesSnap.val()||{};
+    const sesData=sesSnap.val()||{};
     const cliText=cs.title+', '+r.score+'/'+r.total+'점';
-    // 1순위: 이미 이 클리닉 내용이 cli에 있는 세션
-    let target=Object.entries(sessions).find(function([,s]){return s.cli&&s.cli.startsWith(cs.title);});
-    // 2순위: 채점 날짜와 같은 날짜의 세션
-    if(!target&&r.gradedAt){
-      const gradedDate=new Date(r.gradedAt).toISOString().split('T')[0];
-      target=Object.entries(sessions).find(function([,s]){return s.date===gradedDate;});
-    }
-    // 3순위: 클리닉 등록 날짜와 같은 날짜의 세션
-    if(!target&&cs.date){
-      target=Object.entries(sessions).find(function([,s]){return s.date===cs.date;});
-    }
-    // 4순위: 가장 최근 세션
-    if(!target){
-      const sorted=Object.entries(sessions).sort(function([,a],[,b]){return(b.upd||0)-(a.upd||0);});
-      if(sorted.length) target=sorted[0];
-    }
+    const sesEntries=Object.entries(sesData);
+    let target=sesEntries.find(([,s])=>s.cli&&s.cli.startsWith(cs.title));
+    if(!target&&cs.date) target=sesEntries.find(([,s])=>s.date===cs.date);
+    if(!target&&r.gradedAt){const d=new Date(r.gradedAt).toISOString().split('T')[0];target=sesEntries.find(([,s])=>s.date===d);}
+    if(!target&&sesEntries.length) target=sesEntries.sort(([,a],[,b])=>((b.upd||b.at||0)-(a.upd||a.at||0)))[0];
     if(target){
       await db.ref('smSessions/'+stuId+'/'+target[0]+'/cli').set(cliText);
     }else{
-      // 세션 자체가 없으면 새로 생성
       const date=cs.date||new Date(r.gradedAt||Date.now()).toISOString().split('T')[0];
       await db.ref('smSessions/'+stuId).push({date,cli:cliText,eval:null,at:Date.now(),upd:Date.now()});
     }
     count++;
-  }));
-  toast(cs.title+' — '+count+'명 세션에 반영 완료');
+  }
+  toast(cs.title+' — '+count+'명 반영 완료');
+  if(uid_&&mode==='student'){
+    const snap2=await db.ref('smSessions/'+uid_).get();
+    sessions[uid_]=snap2.val()||{};
+    renderCal();
+  }
 }
-
 async function toggleClinicActive(cid,active){await db.ref('smClinicSets/'+cid+'/active').set(active);}
 async function deleteClinic(cid){
   if(!confirm('삭제하시겠습니까? 채점 결과도 함께 삭제됩니다'))return;
