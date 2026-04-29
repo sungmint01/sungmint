@@ -4,6 +4,9 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>sungmint</title>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+  <script src="config.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Gothic+A1:wght@300;400;700;900&family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
@@ -84,9 +87,13 @@
   if(typeof firebase === 'undefined') return;
   var VERSION_KEY = 'sungmint_version';
   var localVer = localStorage.getItem(VERSION_KEY);
+  // main.html에서 Firebase 초기화
+  if(typeof SM_CONFIG !== 'undefined' && SM_CONFIG.apiKey && !SM_CONFIG.apiKey.includes('여기에')) {
+    try { if(!firebase.apps.length) firebase.initializeApp(SM_CONFIG); } catch(e) {}
+  }
   function checkVersion(){
-    if(!window.db && !firebase.apps.length) return;
-    var dbRef = (window.db || firebase.database()).ref('smAppVersion');
+    if(!firebase.apps.length) return;
+    var dbRef = firebase.database().ref('smAppVersion');
     dbRef.once('value', function(s){
       var serverVer = s.val();
       if(!serverVer) return;

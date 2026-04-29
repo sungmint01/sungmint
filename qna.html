@@ -474,8 +474,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   var VERSION_KEY = 'sungmint_version';
   var localVer = localStorage.getItem(VERSION_KEY);
   function checkVersion(){
-    if(!window.db && !firebase.apps.length) return;
-    var dbRef = (window.db || firebase.database()).ref('smAppVersion');
+    if(!firebase.apps.length) return;
+    var dbRef = firebase.database().ref('smAppVersion');
     dbRef.once('value', function(s){
       var serverVer = s.val();
       if(!serverVer) return;
