@@ -2,6 +2,9 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>클리닉 채점 — 성민T</title>
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Gothic+A1:wght@300;400;700;900&family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -550,5 +553,40 @@ function resetAll(){
   setStep(1);
 }
 </script>
+
+<script>
+// ── 자동 업데이트 감지 ──
+(function(){
+  if(typeof firebase === 'undefined') return;
+  var VERSION_KEY = 'sungmint_version';
+  var localVer = localStorage.getItem(VERSION_KEY);
+  function checkVersion(){
+    if(!window.db && !firebase.apps.length) return;
+    var dbRef = (window.db || firebase.database()).ref('smAppVersion');
+    dbRef.once('value', function(s){
+      var serverVer = s.val();
+      if(!serverVer) return;
+      if(!localVer){
+        localStorage.setItem(VERSION_KEY, serverVer);
+        localVer = serverVer;
+        return;
+      }
+      if(serverVer !== localVer){
+        localStorage.setItem(VERSION_KEY, serverVer);
+        // 부드럽게 알림 후 새로고침
+        var banner = document.createElement('div');
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,#3764bf,#5a8ae0);color:#fff;text-align:center;padding:12px;font-family:Noto Sans KR,sans-serif;font-size:14px;font-weight:600;box-shadow:0 2px 12px rgba(0,0,0,.2)';
+        banner.textContent = '🔄 새로운 업데이트가 있습니다. 잠시 후 자동으로 새로고침됩니다...';
+        document.body.appendChild(banner);
+        setTimeout(function(){ location.reload(); }, 3000);
+      }
+    });
+  }
+  // 최초 + 5분마다 확인
+  setTimeout(checkVersion, 2000);
+  setInterval(checkVersion, 5 * 60 * 1000);
+})();
+</script>
+
 </body>
 </html>

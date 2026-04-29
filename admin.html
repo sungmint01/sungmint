@@ -265,7 +265,7 @@ textarea.inp{resize:vertical;min-height:68px}
       <div class="sb-div"></div>
       <div class="sb-section">학생</div>
       <div id="sList"></div>
-      <div class="sb-foot"><button class="btn-out" onclick="logout()">로그아웃</button></div>
+      <div class="sb-foot" style="display:flex;flex-direction:column;gap:6px"><button class="btn-sv" style="font-size:11px;padding:7px" onclick="bumpVersion()" title="전체 페이지 자동 새로고침 트리거">🔄 업데이트 배포</button><button class="btn-out" onclick="logout()">로그아웃</button></div>
     </aside>
     <div class="main">
       <div class="empty" id="empty" style="height:100%">
@@ -1466,6 +1466,11 @@ async function saveBulkHW(){
   btn.disabled=false;btn.textContent='반 전체 등록';
 }
 
+async function bumpVersion(){
+  const ver = Date.now().toString();
+  await db.ref('smAppVersion').set(ver);
+  toast('✅ 배포 완료 — 학생/학부모 페이지가 3초 내 자동 새로고침됩니다');
+}
 function today(){return new Date().toISOString().split('T')[0];}
 function tuid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
