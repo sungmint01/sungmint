@@ -286,7 +286,8 @@ textarea.inp{resize:vertical;min-height:68px}
       <div class="sb-div"></div>
       <div class="sb-section">학생</div>
       <div id="sList"></div>
-      <div class="sb-foot" style="display:flex;flex-direction:column;gap:6px"><button class="btn-sv" style="font-size:11px;padding:7px;background:#f59e0b;box-shadow:none" onclick="cleanWrongPrevHw()" title="잘못 입력된 지난숙제 일괄 초기화">🧹 지난숙제 정리</button><button class="btn-sv" style="font-size:11px;padding:7px" onclick="bumpVersion()" title="전체 페이지 자동 새로고침 트리거">🔄 업데이트 배포</button><button class="btn-out" onclick="logout()">로그아웃</button></div>
+      <div class="sb-foot" style="display:flex;flex-direction:column;gap:6px"><button class="btn-sv" style="font-size:11px;padding:7px;background:#7c3aed;box-shadow:none" onclick="mergeSessionsByDate()" title="같은 날짜 중복 세션 병합">🔗 세션 병합</button>
+<button class="btn-sv" style="font-size:11px;padding:7px;background:#f59e0b;box-shadow:none" onclick="cleanWrongPrevHw()" title="잘못 입력된 지난숙제 일괄 초기화">🧹 지난숙제 정리</button><button class="btn-sv" style="font-size:11px;padding:7px" onclick="bumpVersion()" title="전체 페이지 자동 새로고침 트리거">🔄 업데이트 배포</button><button class="btn-out" onclick="logout()">로그아웃</button></div>
     </aside>
     <div class="main">
       <div class="empty" id="empty" style="height:100%">
@@ -1608,10 +1609,23 @@ async function saveBulkHW(){
       // 같은 날짜 세션이 있으면 hwC/note만 업데이트 (cli 등 기존 데이터 보존)
       // 같은 날짜의 세션 찾기 (종류 무관 - 어떤 세션이든 hwC/prog/note만 업데이트)
       const dateRecs = Object.entries(existing).filter(([,r])=>r.date===date);
-      // 우선순위: hwC 있는 것 > cli 없는 것 > 최신
+      // 중복 세션이면 병합 후 단일 세션에 업데이트
+      if(dateRecs.length>1){
+        // 가장 많은 필드를 가진 세션을 기준으로 병합
+        const filledCount=([,r])=>Object.values(r).filter(v=>v!==null&&v!==''&&v!==undefined).length;
+        dateRecs.sort((a,b)=>filledCount(b)-filledCount(a));
+        const base=dateRecs[0];
+        let merged_={...base[1]};
+        for(const [sid,r] of dateRecs.slice(1)){
+          for(const [k,v] of Object.entries(r)){
+            if(v!==null&&v!==undefined&&v!==''&&!merged_[k]) merged_[k]=v;
+          }
+          await db.ref('smSessions/'+stuId+'/'+sid).remove();
+        }
+        await db.ref('smSessions/'+stuId+'/'+base[0]).update(merged_);
+      }
       const existingRec = dateRecs.find(([,r])=>r.hwC) ||
-                          dateRecs.find(([,r])=>!r.cli) ||
-                          dateRecs.sort(([,a],[,b])=>((b.upd||0)-(a.upd||0)))[0];
+                          dateRecs[0] || null;
       const bmProg = document.getElementById('bmProg').value;
       const bmNote = document.getElementById('bmNote').value;
       // 입력된 칸만 반영
@@ -1631,6 +1645,44 @@ async function saveBulkHW(){
     closeBM();
   }catch(e){toast('오류: '+e.message);}
   btn.disabled=false;btn.textContent='반 전체 등록';
+}
+
+async function mergeSessionsByDate(){
+  if(!confirm('같은 날짜에 여러 세션이 있는 경우 하나로 합칩니다.\n기존 데이터는 모두 보존됩니다. 계속할까요?'))return;
+  const allStuIds=Object.keys(students);
+  let merged=0;
+  for(const stuId of allStuIds){
+    const snap=await db.ref('smSessions/'+stuId).get();
+    const ses=snap.val()||{};
+    // 날짜별로 그룹화
+    const byDate={};
+    for(const [sid,r] of Object.entries(ses)){
+      if(!r.date) continue;
+      if(!byDate[r.date]) byDate[r.date]=[];
+      byDate[r.date].push([sid,r]);
+    }
+    // 같은 날짜 2개 이상이면 합치기
+    for(const [date,recs] of Object.entries(byDate)){
+      if(recs.length<2) continue;
+      // 기준 세션: hwC 있는 것 우선, 없으면 최신
+      recs.sort(([,a],[,b])=>((b.upd||b.at||0)-(a.upd||a.at||0)));
+      const baseRec=recs.find(([,r])=>r.hwC)||recs[0];
+      const merged_data={...baseRec[1]};
+      // 나머지 세션의 필드 병합 (빈 필드만 채움)
+      for(const [sid,r] of recs){
+        if(sid===baseRec[0]) continue;
+        for(const [k,v] of Object.entries(r)){
+          if(v!==null&&v!==undefined&&v!==''&&!merged_data[k]) merged_data[k]=v;
+        }
+        // 삭제
+        await db.ref('smSessions/'+stuId+'/'+sid).remove();
+      }
+      merged_data.upd=Date.now();
+      await db.ref('smSessions/'+stuId+'/'+baseRec[0]).set(merged_data);
+      merged++;
+    }
+  }
+  toast('완료: '+merged+'개 날짜 세션 병합됨');
 }
 
 async function cleanWrongPrevHw(){
