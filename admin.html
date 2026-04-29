@@ -278,6 +278,9 @@ textarea.inp{resize:vertical;min-height:68px}
       <div class="sb-consult" id="sbOd4p" onclick="showOd4pStatus()">
         <span class="sb-consult-label">📝 OD4P 현황/수정</span>
       </div>
+      <div class="sb-consult" id="sbHwMgr" onclick="showHwMgr()">
+        <span class="sb-consult-label">📖 숙제 채점 관리</span>
+      </div>
       <div class="sb-consult" id="sbClinic" onclick="showClinicMgr()">
         <span class="sb-consult-label">📋 클리닉 관리</span>
       </div>
@@ -331,6 +334,37 @@ textarea.inp{resize:vertical;min-height:68px}
               <div class="cal-dow">수</div><div class="cal-dow">목</div><div class="cal-dow">금</div><div class="cal-dow">토</div>
             </div>
           </div>
+        </div>
+      </div>
+      <div id="hwMgr" style="display:none;padding:22px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div style="font-size:16px;font-weight:700">📖 숙제 채점 관리</div>
+          <button class="btn-sv" onclick="openHwForm()">+ 숙제 추가</button>
+        </div>
+        <div id="hwMgrList"><p class="etbl">등록된 숙제 채점이 없습니다</p></div>
+      </div>
+      <!-- Hw Form Modal (reuse clinicModal style) -->
+      <div class="ov" id="hwModal">
+        <div class="mb wide">
+          <div class="mh"><h3 id="hwFormTitle">숙제 채점 추가</h3><button class="mc" onclick="closeHwForm()">✕</button></div>
+          <div class="mbd">
+            <div class="fg"><label class="fl">제목 *</label><input class="inp" id="hwTitle" type="text" placeholder="예: 4월 4주 숙제"></div>
+            <div class="fg"><label class="fl">날짜 *</label><input class="inp" id="hwDate" type="date"></div>
+            <div class="fg">
+              <label class="fl">대상</label>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px" id="hwTargetType">
+                <button type="button" class="bm-class-chip sel" onclick="setHwTarget('all')">전체</button>
+                <button type="button" class="bm-class-chip" onclick="setHwTarget('class')">반별</button>
+                <button type="button" class="bm-class-chip" onclick="setHwTarget('student')">학생별</button>
+              </div>
+              <div id="hwTargetSel" style="display:none"></div>
+            </div>
+            <div class="fg">
+              <label class="fl">정답 입력 (입력한 번호까지만 출제)</label>
+              <div id="hwAnsGrid2" class="cl-form-ans-grid"></div>
+            </div>
+          </div>
+          <div class="mf"><button class="btn-cn" onclick="closeHwForm()">취소</button><button class="btn-sv" onclick="saveHwSet()">저장 및 활성화</button></div>
         </div>
       </div>
       <div id="clinicMgr" style="display:none;padding:22px">
@@ -580,6 +614,7 @@ function renderSidebar(){
   document.getElementById('sbPlanner').className='sb-consult'+(mode==='planner'?' on':'');
   document.getElementById('sbOd4p').className='sb-consult'+(mode==='od4p'?' on':'');
   document.getElementById('sbClinic').className='sb-consult'+(mode==='clinic'?' on':'');
+  document.getElementById('sbHwMgr').className='sb-consult'+(mode==='hw'?' on':'');
   const el=document.getElementById('sList');
   const arr=Object.entries(students).sort(([,a],[,b])=>(a.name||'').localeCompare(b.name||'','ko'));
   if(!arr.length){el.innerHTML='<p style="color:#475569;font-size:11px;text-align:center;padding:16px">등록된 학생 없음</p>';return;}
@@ -612,10 +647,164 @@ function renderSidebar(){
 var _psDate = null;
 
 
+
+// ════ HW MANAGEMENT ════
+function showHwMgr(){
+  mode='hw';uid_=null;
+  ['empty','detail','consultView','plannerStatus','od4pStatus','clinicMgr'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('hwMgr').style.display='';
+  renderSidebar();
+  db.ref('smHwSets').on('value',s=>{hwSets=s.val()||{};renderHwMgrList();});
+  db.ref('smHwResults').on('value',s=>{hwResults=s.val()||{};renderHwMgrList();});
+}
+
+function renderHwMgrList(){
+  var el=document.getElementById('hwMgrList');
+  var arr=Object.entries(hwSets).sort(function([,a],[,b]){return(b.createdAt||0)-(a.createdAt||0);});
+  if(!arr.length){el.innerHTML='<p class="etbl">등록된 숙제가 없습니다</p>';return;}
+  el.innerHTML='';
+  arr.forEach(function([hid,hw]){
+    var results=hwResults[hid]||{};
+    var resArr=Object.entries(results).sort(function([,a],[,b]){return(a.gradedAt||0)-(b.gradedAt||0);});
+    var ansCnt=Object.keys(hw.answers||{}).length;
+    var target=hw.targetType==='all'?'전체':hw.targetType==='class'?'반: '+(hw.targetCls||''):'학생별';
+    var div=document.createElement('div');
+    div.className='cl-card';
+    var resHtml='';
+    if(resArr.length){
+      resHtml='<div style="margin-top:8px;border-top:1px solid #f1f5f9;padding-top:8px">';
+      resHtml+='<div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:6px">채점 결과 ('+resArr.length+'명)</div>';
+      resArr.forEach(function([sid,r]){
+        resHtml+='<div class="cl-result-row"><span class="cl-result-name">'+r.name+'</span>';
+        resHtml+='<div style="text-align:right"><span class="cl-result-score">'+r.score+'/'+r.total+'점</span></div>';
+        resHtml+='<button class="lnk ld" id="hwDelRes_'+hid+'_'+sid+'">삭제</button></div>';
+      });
+      resHtml+='</div>';
+    }else{
+      resHtml='<div style="font-size:11px;color:#94a3b8;margin-top:6px">아직 채점 결과가 없습니다</div>';
+    }
+    div.innerHTML='<div class="cl-card-head"><span class="cl-card-title">'+hw.title+'</span>'
+      +'<div style="display:flex;gap:6px;align-items:center">'
+      +'<span class="cl-badge '+(hw.active?'cl-active':'cl-closed')+'">'+(hw.active?'활성':'종료')+'</span>'
+      +'<button class="lnk le" id="hwEditBtn_'+hid+'">수정</button>'
+      +'<button class="lnk '+(hw.active?'ld':'le')+'" id="hwTogBtn_'+hid+'">'+(hw.active?'종료':'재활성')+'</button>'
+      +'<button class="lnk ld" id="hwDelBtn_'+hid+'">삭제</button>'
+      +'</div></div>'
+      +'<div class="cl-target">'+(hw.date||'')+' · 대상: '+target+' · '+ansCnt+'문제</div>'
+      +resHtml;
+    el.appendChild(div);
+    document.getElementById('hwEditBtn_'+hid).onclick=(function(id){return function(){openHwForm(id);};})(hid);
+    document.getElementById('hwTogBtn_'+hid).onclick=(function(id,act){return function(){db.ref('smHwSets/'+id+'/active').set(!act);};})(hid,hw.active);
+    document.getElementById('hwDelBtn_'+hid).onclick=(function(id){return function(){if(confirm('삭제하시겠습니까?'))Promise.all([db.ref('smHwSets/'+id).remove(),db.ref('smHwResults/'+id).remove()]).then(()=>toast('삭제됨'));};})(hid);
+    resArr.forEach(function([sid]){
+      var db2=document.getElementById('hwDelRes_'+hid+'_'+sid);
+      if(db2) db2.onclick=(function(ci,si){return function(){if(confirm('삭제?'))db.ref('smHwResults/'+ci+'/'+si).remove().then(()=>toast('삭제됨'));};})(hid,sid);
+    });
+  });
+}
+
+function openHwForm(editId){
+  _hwEditId=editId||null;_hwTargetType='all';
+  document.getElementById('hwFormTitle').textContent=editId?'숙제 수정':'숙제 추가';
+  document.getElementById('hwDate').value=(new Date()).toISOString().split('T')[0];
+  document.getElementById('hwTitle').value='';
+  setHwTarget('all');
+  var grid=document.getElementById('hwAnsGrid2');grid.innerHTML='';
+  // 기존 답안 있으면 시작번호 추론
+  var startNum=1;
+  if(editId&&hwSets[editId]){
+    var existKeys=Object.keys(hwSets[editId].answers||{}).map(Number).filter(n=>n>0).sort((a,b)=>a-b);
+    if(existKeys.length) startNum=existKeys[0];
+  }
+  for(var i=0;i<150;i++){
+    var displayNum=startNum+i;
+    var item=document.createElement('div');item.className='cl-form-ans-item';
+    if(i===0){
+      // 첫 번째 칸: 번호 수정 가능
+      item.innerHTML='<input class="cl-form-ans-inp" id="hwStartNum" type="number" min="1" max="9999" value="'+displayNum+'" style="font-size:10px;color:#3764bf;font-weight:700;text-align:center;margin-bottom:2px" placeholder="시작번호">'
+        +'<input class="cl-form-ans-inp" id="hwAns_0" type="text" placeholder="-" maxlength="10" data-idx="0">';
+    }else{
+      item.innerHTML='<span class="cl-form-ans-num" id="hwNumLbl_'+i+'">'+(displayNum)+'번</span>'
+        +'<input class="cl-form-ans-inp" id="hwAns_'+i+'" type="text" placeholder="-" maxlength="10" data-idx="'+i+'">';
+    }
+    grid.appendChild(item);
+  }
+  // 시작번호 변경 시 라벨 업데이트
+  document.getElementById('hwStartNum').addEventListener('input',function(){
+    var s=parseInt(this.value)||1;
+    for(var j=1;j<150;j++){var lbl=document.getElementById('hwNumLbl_'+j);if(lbl)lbl.textContent=(s+j)+'번';}
+  });
+  if(editId&&hwSets[editId]){
+    var es=hwSets[editId];
+    document.getElementById('hwTitle').value=es.title||'';
+    document.getElementById('hwDate').value=es.date||'';
+    setHwTarget(es.targetType||'all');
+    setTimeout(function(){
+      var ans=es.answers||{};
+      var sn=parseInt(document.getElementById('hwStartNum').value)||1;
+      Object.entries(ans).forEach(function([num,val]){
+        var idx=parseInt(num)-sn;
+        if(idx>=0&&idx<150){var inp=document.getElementById('hwAns_'+idx);if(inp)inp.value=val;}
+      });
+    },60);
+  }
+  document.getElementById('hwModal').classList.add('open');
+}
+
+function closeHwForm(){document.getElementById('hwModal').classList.remove('open');}
+
+function setHwTarget(type){
+  _hwTargetType=type;
+  document.querySelectorAll('#hwTargetType .bm-class-chip').forEach(function(btn){
+    btn.className='bm-class-chip'+(btn.textContent===({all:'전체',class:'반별',student:'학생별'}[type])?' sel':'');
+  });
+  var sel=document.getElementById('hwTargetSel');
+  if(type==='all'){sel.style.display='none';return;}
+  sel.style.display='';
+  if(type==='class'){
+    var classes=[...new Set(Object.values(students).map(function(s){return s.cls||'미지정';}))].sort(function(a,b){return a.localeCompare(b,'ko');});
+    sel.innerHTML='<select class="inp" id="hwTargetCls">'+classes.map(function(cl){return'<option>'+cl+'</option>';}).join('')+'</select>';
+  }else{
+    var arr=Object.entries(students).sort(function([,a],[,b]){return(a.name||'').localeCompare(b.name||'','ko');});
+    sel.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:4px">'+arr.map(function([sid,s]){return'<label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" class="hw-stu-chk" value="'+sid+'"> '+(s.name||'?')+'</label>';}).join('')+'</div>';
+  }
+}
+
+async function saveHwSet(){
+  var title=document.getElementById('hwTitle').value.trim();
+  var date=document.getElementById('hwDate').value;
+  if(!title){alert('제목을 입력하세요');return;}
+  if(!date){alert('날짜를 입력하세요');return;}
+  var answers={};var lastNum=0;
+  var sn=parseInt(document.getElementById('hwStartNum').value)||1;
+  for(var i=0;i<150;i++){
+    var inp=document.getElementById('hwAns_'+i);
+    var v=inp?inp.value.trim():'';
+    if(v){var realNum=sn+i;answers[String(realNum)]=v;lastNum=realNum;}
+  }
+  if(!lastNum){alert('정답을 1개 이상 입력하세요');return;}
+  var data={title,date,answers,active:true,createdAt:Date.now(),targetType:_hwTargetType};
+  if(_hwTargetType==='class') data.targetCls=document.getElementById('hwTargetCls').value;
+  else if(_hwTargetType==='student'){
+    var checked=[...document.querySelectorAll('.hw-stu-chk:checked')].map(function(el){return el.value;});
+    if(!checked.length){alert('학생을 선택하세요');return;}
+    data.targetStudents=checked;
+  }
+  if(_hwEditId) await db.ref('smHwSets/'+_hwEditId).update(data);
+  else await db.ref('smHwSets').push(data);
+  toast('숙제 채점이 저장되었습니다');closeHwForm();
+}
+
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeHwForm();});
+document.getElementById('hwModal').addEventListener('click',function(e){if(e.target.id==='hwModal')closeHwForm();});
+// ════ END HW ════
+
 // ════ CLINIC MANAGEMENT ════
 var clinicSets={}, clinicResults={}, _clTargetType='all', _clEditId=null;
+var hwSets={}, hwResults={}, _hwTargetType='all', _hwEditId=null;
 
 function showClinicMgr(){
+  document.getElementById('hwMgr').style.display='none';
   mode='clinic';uid_=null;
   ['empty','detail','consultView','plannerStatus','od4pStatus'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('clinicMgr').style.display='';
@@ -955,6 +1144,7 @@ async function deleteClinic(cid){
 var _od4pAllData={}, _od4pSelDate=null, _od4pSelSubj=null, _od4pFocused=null;
 
 function showOd4pStatus(){
+  document.getElementById('hwMgr').style.display='none';
   mode='od4p';uid_=null;
   ['empty','detail','consultView','plannerStatus','clinicMgr'].forEach(function(id){document.getElementById(id).style.display='none';});
   document.getElementById('od4pStatus').style.display='';
@@ -1081,6 +1271,7 @@ async function od4pSaveEdit(subId){
   toast('수정 저장됨');
 }
 function showPlannerStatus(){
+  document.getElementById('hwMgr').style.display='none';
   mode='planner';uid_=null;
   document.getElementById('empty').style.display='none';
   document.getElementById('detail').style.display='none';
@@ -1125,6 +1316,7 @@ function renderPsTable(){
 }
 
 function showConsultView(){
+  document.getElementById('hwMgr').style.display='none';
   mode='consult';uid_=null;
   document.getElementById('empty').style.display='none';
   document.getElementById('detail').style.display='none';

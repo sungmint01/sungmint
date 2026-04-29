@@ -95,6 +95,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);background-image:radial-gradient(circle at 20% 20%,rgba(55,100,191,.12) 0%,transparent 50%),radial-gradient(circle at 80% 80%,rgba(90,138,224,.1) 0%,transparent 50%)}
 .login-box{background:var(--bg);border-radius:24px;padding:44px 36px 36px;width:320px;box-shadow:8px 8px 20px var(--sh1),-6px -6px 16px var(--sh2);text-align:center}
 .login-ico{width:58px;height:58px;background:linear-gradient(135deg,var(--acc2),var(--acc));border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 18px;box-shadow:3px 3px 10px rgba(55,100,191,.4),-2px -2px 6px rgba(255,255,255,.6)}
+.hw-section{margin-top:20px}
+.hw-divider{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.hw-divider-line{flex:1;height:1px;background:#d2dcf0}
+.hw-divider-label{font-family:'Space Mono',monospace;font-size:10px;color:#8a96b4;letter-spacing:2px;white-space:nowrap}
 .pdf-download{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:12px;padding:13px 16px;margin-top:12px;box-shadow:3px 3px 8px var(--sh1),-2px -2px 6px var(--sh2);text-decoration:none;color:var(--txt);transition:.15s}
 .pdf-download:hover{box-shadow:4px 4px 10px var(--sh1),-3px -3px 8px var(--sh2)}
 .pdf-icon{width:40px;height:40px;background:linear-gradient(135deg,#ef4444,#b91c1c);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
@@ -141,6 +145,76 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
     </div>
     <button class="nm-btn" onclick="goStep2()" style="margin-top:4px">다음 →</button>
     <div class="err" id="err1"></div>
+    <!-- 숙제 채점 -->
+    <div class="hw-section">
+      <div class="hw-divider"><div class="hw-divider-line"></div><div class="hw-divider-label">HOMEWORK GRADING</div><div class="hw-divider-line"></div></div>
+      <div class="card" id="hwCard">
+        <div class="card-title">📖 숙제 채점</div>
+        <div id="hwClinicItems"><div style="text-align:center;padding:16px;color:#94a3b8;font-size:12px">로딩 중...</div></div>
+      </div>
+      <!-- 숙제 학생 이름 -->
+      <div id="hwStep2" style="display:none">
+        <div class="card" style="margin-top:12px">
+          <div class="card-title">✏️ 학생 이름</div>
+          <input class="nm-inp" type="text" id="hwStuNameInp" placeholder="이름을 입력하세요" onkeydown="if(event.key==='Enter')hwGoGrade()">
+          <div class="err" id="hwErr2"></div>
+          <div class="sugg" id="hwSugg2"></div>
+        </div>
+        <button class="nm-btn" onclick="hwGoGrade()">다음 →</button>
+        <a href="#" onclick="hwBack()" class="back-link">← 숙제 선택으로</a>
+      </div>
+      <!-- 숙제 답안 입력 -->
+      <div id="hwStep3" style="display:none">
+        <div class="card" style="margin-top:12px">
+          <div class="card-title" id="hwStep3Title">📝 답안 입력</div>
+          <div class="grade-toggle">
+            <button class="grade-tab on" id="hwTabAns" onclick="hwSwitchTab('ans')">📝 답 입력</button>
+            <button class="grade-tab" id="hwTabDirect" onclick="hwSwitchTab('direct')">🔢 점수 직접 입력</button>
+          </div>
+          <div id="hwAnsMode">
+            <div style="background:#eff4ff;border-left:3px solid #3764bf;border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#1a2840;line-height:1.8">
+              📌 <strong>답 작성 안내</strong> · 공란은 오답 처리됩니다<br>
+              루트는 √버튼을 누른 후 작성해주세요. 나눗셈은 <strong>a/b</strong>, 지수는 <strong>2^3</strong>처럼 작성합니다.
+            </div>
+            <div class="math-toolbar">
+              <span class="math-hint">기호 클릭 → 현재 입력칸에 삽입</span>
+              <button class="math-btn" onclick="insertMathHw('√')">√</button>
+              <button class="math-btn" onclick="insertMathHw('^2')">^2</button>
+              <button class="math-btn" onclick="insertMathHw('^3')">^3</button>
+              <button class="math-btn" onclick="insertMathHw('π')">π</button>
+              <button class="math-btn" onclick="insertMathHw('±')">±</button>
+              <button class="math-btn" onclick="insertMathHw('/')">  /  </button>
+            </div>
+            <div class="ans-grid" id="hwAnsGrid"></div>
+          </div>
+          <div id="hwDirectMode" style="display:none">
+            <div class="direct-score-wrap">
+              <div class="score-hint" style="margin-bottom:16px">맞은 개수와 푼 개수를 입력하세요</div>
+              <div class="direct-score-row">
+                <input class="score-inp" type="number" id="hwDirectScore" min="0" placeholder="0">
+                <span class="score-slash">/</span>
+                <input class="score-inp" type="number" id="hwDirectTotal" min="0" placeholder="0">
+              </div>
+              <div class="score-hint">맞은 개수 / 푼 개수</div>
+            </div>
+          </div>
+        </div>
+        <button class="nm-btn" onclick="hwSubmit()">채점하기 →</button>
+        <div class="err" id="hwErr3"></div>
+        <a href="#" onclick="hwBack()" class="back-link">← 이전</a>
+      </div>
+      <!-- 숙제 결과 -->
+      <div id="hwStep4" style="display:none">
+        <div class="result-box" style="margin-top:12px">
+          <div style="font-size:14px;color:#5a6e96;margin-bottom:8px;font-family:'Gothic A1',sans-serif" id="hwResultName"></div>
+          <div class="result-score" id="hwResultScore"></div>
+          <div class="result-total" id="hwResultTotal"></div>
+          <div id="hwResultWrong"></div>
+          <div class="result-saved" id="hwResultSaved"></div>
+        </div>
+        <button class="nm-btn" onclick="hwReset()" style="margin-top:12px">다른 학생 채점</button>
+      </div>
+    </div>
   </div>
 
   <!-- Step 2: 학생 이름 입력 -->
@@ -287,6 +361,8 @@ async function clinicLogin(){
 }
 
 let db, allStudents={}, clinicData={}, selectedClinicId=null, selectedClinic=null;
+let hwData_={};
+
 let currentStuId=null, currentStuName='', lastResult=null, focusedInput=null;
 
 window.addEventListener('DOMContentLoaded', ()=>{
@@ -298,14 +374,163 @@ window.addEventListener('DOMContentLoaded', ()=>{
   // loadData called after login
 });
 
+
+// ════ 숙제 채점 JS ════
+let hwSets={}, hwResults={}, selectedHwId=null, selectedHw=null;
+let currentHwStuId=null, currentHwStuName='', _hwGradeTab='ans', hwFocused=null;
+
+function renderHwList(){
+  const el=document.getElementById('hwClinicItems');
+  const today_=new Date().toISOString().split('T')[0];
+  const active=Object.entries(hwSets).filter(([,h])=>h.active&&(!h.date||h.date===today_));
+  if(!active.length){el.innerHTML='<div style="text-align:center;padding:16px;color:#94a3b8;font-size:12px">오늘 활성화된 숙제 채점이 없습니다</div>';return;}
+  el.innerHTML=active.map(([hid,h])=>{
+    const cnt=Object.keys(h.answers||{}).length;
+    return`<div class="clinic-item ${hid===selectedHwId?'sel':''}" onclick="selectHw('${hid}')">
+      <div class="clinic-name">${h.title}</div>
+      <div class="clinic-meta">${cnt}문제 · ${h.targetType==='all'?'전체':h.targetType==='class'?'반: '+(h.targetCls||''):'학생별'}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectHw(hid){
+  selectedHwId=hid;selectedHw=hwSets[hid];
+  renderHwList();
+  document.getElementById('hwStep2').style.display='';
+  document.getElementById('hwStuNameInp').value='';
+  document.getElementById('hwErr2').textContent='';
+  setTimeout(()=>document.getElementById('hwStuNameInp').focus(),100);
+}
+
+function hwBack(){
+  ['hwStep2','hwStep3','hwStep4'].forEach(id=>document.getElementById(id).style.display='none');
+}
+
+function hwGoGrade(){
+  const name=document.getElementById('hwStuNameInp').value.trim();
+  const err=document.getElementById('hwErr2');
+  if(!name){err.textContent='이름을 입력하세요';return;}
+  const entry=Object.entries(allStudents).find(([,s])=>s.name===name);
+  if(!entry){
+    err.textContent='등록된 학생이 아닙니다';
+    const similar=Object.values(allStudents).map(s=>s.name||'').filter(n=>n&&n.includes(name.slice(0,1)));
+    if(similar.length) document.getElementById('hwSugg2').textContent='혹시: '+similar.slice(0,3).join(', ');
+    return;
+  }
+  if(selectedHw.targetType==='class'&&entry[1].cls!==selectedHw.targetCls){
+    err.textContent=`이 숙제는 "${selectedHw.targetCls}" 반만 응시 가능합니다`;return;
+  }
+  if(selectedHw.targetType==='student'&&!(selectedHw.targetStudents||[]).includes(entry[0])){
+    err.textContent='대상에 포함되지 않은 학생입니다';return;
+  }
+  err.textContent='';document.getElementById('hwSugg2').textContent='';
+  currentHwStuId=entry[0];currentHwStuName=entry[1].name;
+  document.getElementById('hwStep3Title').textContent='📝 '+currentHwStuName+' 답안 입력';
+  hwBuildGrid();
+  document.getElementById('hwStep3').style.display='';
+}
+
+function hwSwitchTab(tab){
+  _hwGradeTab=tab;
+  document.getElementById('hwTabAns').className='grade-tab'+(tab==='ans'?' on':'');
+  document.getElementById('hwTabDirect').className='grade-tab'+(tab==='direct'?' on':'');
+  document.getElementById('hwAnsMode').style.display=tab==='ans'?'':'none';
+  document.getElementById('hwDirectMode').style.display=tab==='direct'?'':'none';
+}
+
+function insertMathHw(ch){
+  if(!hwFocused)return;
+  const el=document.getElementById(hwFocused);
+  if(!el)return;
+  const s=el.selectionStart,e=el.selectionEnd;
+  el.value=el.value.slice(0,s)+ch+el.value.slice(e);
+  el.selectionStart=el.selectionEnd=s+ch.length;
+  el.focus();
+}
+
+function hwBuildGrid(){
+  const answers=selectedHw.answers||{};
+  const ansNums=Object.keys(answers).map(Number).sort((a,b)=>a-b);
+  const grid=document.getElementById('hwAnsGrid');
+  grid.innerHTML='';
+  db.ref('smHwResults/'+selectedHwId+'/'+currentHwStuId).once('value').then(snap=>{
+    const prev=snap.val();
+    const prevAnswers=prev?prev.answers:{};
+    ansNums.forEach((num,idx)=>{
+      const item=document.createElement('div');item.className='ans-item';
+      const prevVal=prevAnswers[num]||prevAnswers[String(num)]||'';
+      item.innerHTML=`<span class="ans-num">${num}번</span><input class="ans-inp" id="hwa${idx}" type="text" placeholder="-" maxlength="10" value="${prevVal}">`;
+      grid.appendChild(item);
+    });
+    ansNums.forEach((_,idx)=>{
+      const inp=document.getElementById('hwa'+idx);
+      if(inp) inp.addEventListener('focus',()=>{hwFocused='hwa'+idx;});
+    });
+    for(let i=0;i<ansNums.length-1;i++){
+      const inp=document.getElementById('hwa'+i);
+      if(inp) inp.addEventListener('keydown',e=>{
+        if(e.key==='Enter'||e.key==='Tab'){e.preventDefault();const nx=document.getElementById('hwa'+(i+1));if(nx)nx.focus();}
+      });
+    }
+    if(prev&&_hwGradeTab==='direct'){
+      document.getElementById('hwDirectScore').value=prev.score||'';
+      document.getElementById('hwDirectTotal').value=prev.total||'';
+    }
+  });
+}
+
+async function hwSubmit(){
+  let score,total,wrong=[],stuAnswers={};
+  if(_hwGradeTab==='direct'){
+    score=parseInt(document.getElementById('hwDirectScore').value)||0;
+    total=parseInt(document.getElementById('hwDirectTotal').value)||0;
+    if(!total){document.getElementById('hwErr3').textContent='푼 개수를 입력하세요';return;}
+    if(score>total){document.getElementById('hwErr3').textContent='맞은 개수가 푼 개수보다 클 수 없습니다';return;}
+    document.getElementById('hwErr3').textContent='';
+  }else{
+    const answers=selectedHw.answers||{};
+    const ansNums=Object.keys(answers).map(Number).sort((a,b)=>a-b);
+    total=ansNums.length;score=0;
+    ansNums.forEach((num,idx)=>{
+      const inp=document.getElementById('hwa'+idx);
+      const val=inp?inp.value.trim():'';
+      stuAnswers[num]=val;
+      const correct=answers[String(num)]||'';
+      if(correct){
+        if(val&&val===correct){score++;if(inp)inp.className='ans-inp correct';}
+        else{wrong.push(num);if(inp)inp.className='ans-inp wrong';}
+      }
+    });
+  }
+  const result={name:currentHwStuName,answers:stuAnswers,score,total,wrong,gradedAt:Date.now()};
+  await db.ref('smHwResults/'+selectedHwId+'/'+currentHwStuId).set(result);
+  document.getElementById('hwResultName').textContent=currentHwStuName;
+  document.getElementById('hwResultScore').textContent=score;
+  document.getElementById('hwResultTotal').textContent='/ '+total+' 점';
+  document.getElementById('hwResultWrong').innerHTML=wrong.length?'<div class="result-wrong">❌ 오답: '+wrong.join('번, ')+'번</div>':'<div class="result-ok">🎉 모두 정답!</div>';
+  document.getElementById('hwResultSaved').textContent='✓ 결과 저장됨';
+  document.getElementById('hwStep3').style.display='none';
+  document.getElementById('hwStep4').style.display='';
+}
+
+function hwReset(){
+  currentHwStuId=null;currentHwStuName='';selectedHwId=null;selectedHw=null;
+  ['hwStep2','hwStep3','hwStep4'].forEach(id=>document.getElementById(id).style.display='none');
+  renderHwList();
+}
+// ════ END 숙제 채점 JS ════
+
 async function loadData(){
-  const [stuSnap, clinicSnap] = await Promise.all([
+  const [stuSnap, clinicSnap, hwSnap] = await Promise.all([
     db.ref('smStudents').get(),
-    db.ref('smClinicSets').get()
+    db.ref('smClinicSets').get(),
+    db.ref('smHwSets').get()
   ]);
   allStudents=stuSnap.val()||{};
   clinicData=clinicSnap.val()||{};
+  hwSets=hwSnap.val()||{};
   renderClinicList();
+  renderHwList();
 }
 
 function renderClinicList(){
