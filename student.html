@@ -623,37 +623,37 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 </script>
 
+
+
 <script>
-// ── 자동 업데이트 감지 ──
 (function(){
-  if(typeof firebase === 'undefined') return;
-  var VERSION_KEY = 'sungmint_version';
-  var localVer = localStorage.getItem(VERSION_KEY);
-  function checkVersion(){
+  if(typeof firebase==='undefined') return;
+  var VK='smv';
+  function initFB(){
+    if(typeof SM_CONFIG==='undefined'||!SM_CONFIG.apiKey||SM_CONFIG.apiKey.includes('여기에')) return false;
+    try{if(!firebase.apps.length)firebase.initializeApp(SM_CONFIG);}catch(e){}
+    return true;
+  }
+  function doCheck(){
     if(!firebase.apps.length) return;
-    var dbRef = firebase.database().ref('smAppVersion');
-    dbRef.once('value', function(s){
-      var serverVer = s.val();
-      if(!serverVer) return;
-      if(!localVer){
-        localStorage.setItem(VERSION_KEY, serverVer);
-        localVer = serverVer;
-        return;
-      }
-      if(serverVer !== localVer){
-        localStorage.setItem(VERSION_KEY, serverVer);
-        // 부드럽게 알림 후 새로고침
-        var banner = document.createElement('div');
-        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,#3764bf,#5a8ae0);color:#fff;text-align:center;padding:12px;font-family:Noto Sans KR,sans-serif;font-size:14px;font-weight:600;box-shadow:0 2px 12px rgba(0,0,0,.2)';
-        banner.textContent = '🔄 새로운 업데이트가 있습니다. 잠시 후 자동으로 새로고침됩니다...';
-        document.body.appendChild(banner);
-        setTimeout(function(){ location.reload(); }, 500);
-      }
+    firebase.database().ref('smAppVersion').once('value',function(s){
+      var sv=s.val();
+      if(!sv) return;
+      var lv=sessionStorage.getItem(VK);
+      if(lv===null){sessionStorage.setItem(VK,sv);return;}
+      if(sv!==lv){sessionStorage.setItem(VK,sv);location.reload(true);}
     });
   }
-  // 최초 + 5분마다 확인
-  setTimeout(checkVersion, 2000);
-  setInterval(checkVersion, 30 * 1000);
+  // 페이지 최초 로드 시 즉시 체크
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){if(initFB())doCheck();});
+  }else{if(initFB())doCheck();}
+  // 탭이 포커스될 때마다 체크
+  document.addEventListener('visibilitychange',function(){
+    if(document.visibilityState==='visible'&&initFB())doCheck();
+  });
+  // 30초마다 백그라운드 체크
+  setInterval(function(){if(initFB())doCheck();},30000);
 })();
 </script>
 
