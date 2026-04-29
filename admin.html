@@ -917,18 +917,29 @@ async function applyClinicResultsToSessions(cid){
   await Promise.all(resArr.map(async function([stuId,r]){
     const sesSnap=await db.ref('smSessions/'+stuId).get();
     const sessions=sesSnap.val()||{};
-    // 이미 cli에 이 클리닉 내용이 있는 세션 찾기
-    const existing=Object.entries(sessions).find(function([,s]){return s.cli&&s.cli.startsWith(cs.title);});
     const cliText=cs.title+', '+r.score+'/'+r.total+'점';
-    if(existing){
-      // 이미 있으면 업데이트
-      await db.ref('smSessions/'+stuId+'/'+existing[0]+'/cli').set(cliText);
+    // 1순위: 이미 이 클리닉 내용이 cli에 있는 세션
+    let target=Object.entries(sessions).find(function([,s]){return s.cli&&s.cli.startsWith(cs.title);});
+    // 2순위: 채점 날짜와 같은 날짜의 세션
+    if(!target&&r.gradedAt){
+      const gradedDate=new Date(r.gradedAt).toISOString().split('T')[0];
+      target=Object.entries(sessions).find(function([,s]){return s.date===gradedDate;});
+    }
+    // 3순위: 클리닉 등록 날짜와 같은 날짜의 세션
+    if(!target&&cs.date){
+      target=Object.entries(sessions).find(function([,s]){return s.date===cs.date;});
+    }
+    // 4순위: 가장 최근 세션
+    if(!target){
+      const sorted=Object.entries(sessions).sort(function([,a],[,b]){return(b.upd||0)-(a.upd||0);});
+      if(sorted.length) target=sorted[0];
+    }
+    if(target){
+      await db.ref('smSessions/'+stuId+'/'+target[0]+'/cli').set(cliText);
     }else{
-      // 없으면 새 세션 생성 (날짜는 채점 시각 기준)
-      const date=new Date(r.gradedAt||Date.now()).toISOString().split('T')[0];
-      await db.ref('smSessions/'+stuId).push({
-        date,cli:cliText,eval:null,at:r.gradedAt||Date.now(),upd:Date.now()
-      });
+      // 세션 자체가 없으면 새로 생성
+      const date=cs.date||new Date(r.gradedAt||Date.now()).toISOString().split('T')[0];
+      await db.ref('smSessions/'+stuId).push({date,cli:cliText,eval:null,at:Date.now(),upd:Date.now()});
     }
     count++;
   }));
