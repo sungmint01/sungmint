@@ -360,6 +360,11 @@ async function clinicLogin(){
   btn.disabled=false;btn.textContent='확인 →';
 }
 
+function today(){
+  const d=new Date();
+  if(d.getHours()<3) d.setDate(d.getDate()-1);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
 let db, allStudents={}, clinicData={}, selectedClinicId=null, selectedClinic=null;
 let hwData_={};
 
@@ -381,7 +386,7 @@ let currentHwStuId=null, currentHwStuName='', _hwGradeTab='ans', hwFocused=null;
 
 function renderHwList(){
   const el=document.getElementById('hwClinicItems');
-  const today_=new Date().toISOString().split('T')[0];
+  const today_=today();
   const active=Object.entries(hwSets).filter(([,h])=>h.active&&(!h.date||h.date===today_));
   if(!active.length){el.innerHTML='<div style="text-align:center;padding:16px;color:#94a3b8;font-size:12px">오늘 활성화된 숙제 채점이 없습니다</div>';return;}
   el.innerHTML=active.map(([hid,h])=>{
@@ -535,7 +540,7 @@ async function loadData(){
 
 function renderClinicList(){
   const el=document.getElementById('clinicItems');
-  const today=new Date().toISOString().split('T')[0];
+  const today=today();
   const active=Object.entries(clinicData).filter(([,c])=>c.active&&(!c.date||c.date===today));
   if(!active.length){el.innerHTML='<div style="text-align:center;padding:24px;color:#94a3b8;font-size:13px">활성화된 클리닉이 없습니다</div>';return;}
   el.innerHTML=active.map(([cid,cs])=>{
@@ -712,7 +717,7 @@ async function submitGrade(){
   // Auto-save to student session — cli 필드에만 기록
   const isAbsent=document.getElementById('chkAbsent').checked;
   const isLate=document.getElementById('chkLate').checked;
-  const todayStr=new Date().toISOString().split('T')[0];
+  const todayStr=today();
   const cliText=selectedClinic.title+', '+score+'/'+total+'점';
   // cli/absent/late만 업데이트 (다른 필드 건드리지 않음)
   const existingSes=await findOrCreateSession(currentStuId, todayStr);
@@ -792,7 +797,7 @@ async function regrade(){
   // find the session we created
   const allSes=Object.entries(sessions);
   let sesEntry=allSes.find(([,s])=>s.cli&&s.cli.startsWith(selectedClinic.title));
-  if(!sesEntry){const d=new Date().toISOString().split('T')[0];sesEntry=allSes.find(([,s])=>s.date===d&&s.hwC)||allSes.sort(([,a],[,b])=>((b.upd||b.at||0)-(a.upd||a.at||0)))[0];}
+  if(!sesEntry){const d=today();sesEntry=allSes.find(([,s])=>s.date===d&&s.hwC)||allSes.sort(([,a],[,b])=>((b.upd||b.at||0)-(a.upd||a.at||0)))[0];}
   if(sesEntry){
     await db.ref('smSessions/'+currentStuId+'/'+sesEntry[0]).update({cli:selectedClinic.title+', '+score+'/'+total+'점',upd:Date.now()});
   }

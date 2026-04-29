@@ -1919,7 +1919,12 @@ async function bumpVersion(){
   await db.ref('smAppVersion').set(ver);
   toast('✅ 배포 완료 — 학생/학부모 페이지가 3초 내 자동 새로고침됩니다');
 }
-function today(){return new Date().toISOString().split('T')[0];}
+function today(){
+  const d=new Date();
+  // 새벽 3시 이전이면 전날로 처리
+  if(d.getHours()<3) d.setDate(d.getDate()-1);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
 function tuid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSM();closeRM();closeBM();closeClinicForm();}});

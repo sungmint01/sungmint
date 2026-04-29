@@ -267,6 +267,12 @@ footer{text-align:center;padding:24px 0 12px;color:#cbd5e1;font-size:12px}
 </div>
 <script>
 let db,sid_=null,recData={},sent=[],consultData={},calYear,calMonth,openDetailDate=null;
+function today(){
+  const d=new Date();
+  if(d.getHours()<3) d.setDate(d.getDate()-1);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
 
 window.addEventListener('DOMContentLoaded',()=>{
   const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();
@@ -396,7 +402,7 @@ function renderCal(){
   Object.values(recData).forEach(r=>{if(r.date)recMap[r.date]=r;});
   const mn=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
   document.getElementById('calMonth').textContent=`${calYear}년 ${mn[calMonth]}`;
-  const todayStr=new Date().toISOString().split('T')[0];
+  const todayStr=today();
   const firstDay=new Date(calYear,calMonth,1).getDay();
   const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
   const daysInPrev=new Date(calYear,calMonth,0).getDate();
@@ -486,7 +492,7 @@ function changeVPlanMonth(dir){
 function renderVPlanCal(){
   var mn=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
   document.getElementById('vPlanCalMonth').textContent=_vPlanYear+'년 '+mn[_vPlanMonth];
-  var todayStr=new Date().toISOString().split('T')[0];
+  var todayStr=today();
   var firstDay=new Date(_vPlanYear,_vPlanMonth,1).getDay();
   var daysInMonth=new Date(_vPlanYear,_vPlanMonth+1,0).getDate();
   var daysInPrev=new Date(_vPlanYear,_vPlanMonth,0).getDate();

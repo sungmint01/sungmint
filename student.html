@@ -241,6 +241,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f8faff;color:#1a202c;min-
 </div>
 
 <script>
+function today(){
+  const d=new Date();
+  if(d.getHours()<3) d.setDate(d.getDate()-1);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
 let db, stuId = null, stuData = null, selectedFile = null, sessions = {}, planType = 'plan', plannerData = {}, planYear, planMonth, od4pData = {};
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -478,7 +483,7 @@ function changePlanMonth(dir) {
 function renderPlanCal() {
   var mn = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
   document.getElementById('planCalMonth').textContent = _planCalYear + '년 ' + mn[_planCalMonth];
-  var todayStr = new Date().toISOString().split('T')[0];
+  var todayStr = today();
   var firstDay = new Date(_planCalYear, _planCalMonth, 1).getDay();
   var daysInMonth = new Date(_planCalYear, _planCalMonth + 1, 0).getDate();
   var daysInPrev = new Date(_planCalYear, _planCalMonth, 0).getDate();
@@ -606,7 +611,7 @@ function closeLightbox() {
   document.body.style.overflow = '';
 }
 
-function today() { return new Date().toISOString().split('T')[0]; }
+function today() { return today(); }
 
 // Auto-login if session exists
 window.addEventListener('DOMContentLoaded', async () => {

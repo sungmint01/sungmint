@@ -108,10 +108,9 @@ function localDateStr(d){
 }
 function getAvailableDate(){
   const now=new Date();
-  const h=now.getHours();
-  if(h>=6) return localDateStr(now); // 오전6시 이후: 오늘
-  if(h<2){const y=new Date(now);y.setDate(y.getDate()-1);return localDateStr(y);} // 자정~2시: 어제
-  return null; // 오전2~6시: 접근불가
+  // 새벽 3시 이전이면 전날 날짜 반환
+  if(now.getHours()<3){const y=new Date(now);y.setDate(y.getDate()-1);return localDateStr(y);}
+  return localDateStr(now);
 }
 function todayKey(){return localDateStr(new Date());}
 function formatDate(d){if(!d)return"";const[y,m,day]=d.split("-");return`${parseInt(m)}월 ${parseInt(day)}일`;}
