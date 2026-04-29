@@ -342,6 +342,14 @@ textarea.inp{resize:vertical;min-height:68px}
           <div class="mh"><h3 id="clinicFormTitle">클리닉 추가</h3><button class="mc" onclick="closeClinicForm()">✕</button></div>
           <div class="mbd">
             <div class="fg"><label class="fl">클리닉 제목 *</label><input class="inp" id="clTitle" type="text" placeholder="예: 4월 2주 클리닉"></div>
+            <div class="fg">
+              <label class="fl">해설 PDF (선택)</label>
+              <div style="display:flex;align-items:center;gap:10px">
+                <input type="file" id="clPdfFile" accept=".pdf" style="flex:1;font-size:13px" onchange="onClPdfSelect(event)">
+                <span id="clPdfStatus" style="font-size:11px;color:#5a6e96"></span>
+              </div>
+              <div style="font-size:11px;color:#94a3b8;margin-top:3px">업로드 후 3일이 지나면 자동 삭제됩니다 (최대 5MB)</div>
+            </div>
             <div class="fg"><label class="fl">날짜 *</label><input class="inp" id="clDate" type="date"></div>
             <div class="fg">
               <label class="fl">대상</label>
@@ -521,6 +529,24 @@ function showApp(){
   db.ref('smConsultations').on('value',s=>{consults=s.val()||{};renderSidebar();if(mode==='consult')renderConsultView()});
   db.ref('smPlanners').on('value',s=>{planners=s.val()||{};const d=document.getElementById('rmDate');if(d&&d.value&&document.getElementById('rm').classList.contains('open'))loadRmPlanners(d.value);if(mode==='planner')renderPsTable();});
   cleanOldPlanners();
+  cleanOldPdfData();
+}
+
+async function cleanOldPdfData(){
+  const limit=Date.now()-3*24*60*60*1000;
+  try{
+    const snap=await db.ref('smClinicSets').get();
+    const all=snap.val()||{};
+    const deletes=[];
+    Object.entries(all).forEach(function([cid,cs]){
+      if(cs.pdfData&&(cs.pdfUploadedAt||0)<limit){
+        deletes.push(db.ref('smClinicSets/'+cid+'/pdfData').remove());
+        deletes.push(db.ref('smClinicSets/'+cid+'/pdfName').remove());
+        deletes.push(db.ref('smClinicSets/'+cid+'/pdfUploadedAt').remove());
+      }
+    });
+    if(deletes.length)await Promise.all(deletes);
+  }catch(e){}
 }
 
 async function cleanOldPlanners(){
@@ -702,7 +728,7 @@ function openClinicForm(editId){
   document.getElementById('clinicModal').classList.add('open');
 }
 
-function closeClinicForm(){document.getElementById('clinicModal').classList.remove('open');}
+function closeClinicForm(){document.getElementById('clinicModal').classList.remove('open');_clPdfData=null;_clPdfName='';document.getElementById('clPdfFile').value='';document.getElementById('clPdfStatus').textContent='';}
 
 function setClTarget(type){
   _clTargetType=type;
@@ -720,6 +746,26 @@ function setClTarget(type){
     sel.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">'+
       arr.map(function([sid,s]){return'<label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" class="cl-stu-chk" value="'+sid+'"> '+(s.name||'?')+'</label>';}).join('')+'</div>';
   }
+}
+
+var _clPdfData=null, _clPdfName='';
+function onClPdfSelect(e){
+  var file=e.target.files[0];
+  if(!file) return;
+  if(file.size>5*1024*1024){
+    alert('PDF 파일은 5MB 이하만 가능합니다. 현재: '+Math.round(file.size/1024/1024*10)/10+'MB');
+    e.target.value=''; _clPdfData=null; _clPdfName='';
+    document.getElementById('clPdfStatus').textContent='';
+    return;
+  }
+  document.getElementById('clPdfStatus').textContent='변환 중...';
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    _clPdfData=ev.target.result; // base64 data URL
+    _clPdfName=file.name;
+    document.getElementById('clPdfStatus').textContent='✓ '+file.name+' ('+Math.round(file.size/1024)+'KB)';
+  };
+  reader.readAsDataURL(file);
 }
 
 async function saveClinicSet(){
@@ -1122,7 +1168,12 @@ function starsHtml(n,absent,late){
 function renderCal(){
   const data=sessions[uid_]||{};
   const recMap={};
-  Object.entries(data).forEach(([sid,r])=>{if(r.date)recMap[r.date]={...r,sid};});
+  Object.entries(data).sort(([,a],[,b])=>(a.upd||0)-(b.upd||0)).forEach(([sid,r])=>{
+    if(!r.date)return;
+    const prev=recMap[r.date];
+    // 클리닉 기록 있는 것 우선, 없으면 최신 기록
+    if(!prev||(!prev.cli&&r.cli)||(r.upd||0)>(prev.upd||0)) recMap[r.date]={...r,sid};
+  });
   const mn=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
   document.getElementById('calMonth').textContent=`${calYear}년 ${mn[calMonth]}`;
   const todayStr=new Date().toISOString().split('T')[0];
@@ -1513,16 +1564,26 @@ async function saveBulkHW(){
       const snap=await db.ref('smSessions/'+stuId).get();
       const existing=snap.val()||{};
       const num=parseInt(document.getElementById('bmNum').value)||1;
-      await db.ref('smSessions/'+stuId).push({
-        date,num,
-        prog:document.getElementById('bmProg').value,
-        hwC,
-        note:document.getElementById('bmNote').value,
-        eval:3,
-        at:Date.now(),upd:Date.now()
-      });
+      // 같은 날짜 세션이 있으면 hwC/note만 업데이트 (cli 등 기존 데이터 보존)
+      const existingRec=Object.entries(existing).find(([,r])=>r.date===date);
+      if(existingRec){
+        await db.ref('smSessions/'+stuId+'/'+existingRec[0]).update({
+          hwC,
+          note:document.getElementById('bmNote').value,
+          upd:Date.now()
+        });
+      }else{
+        await db.ref('smSessions/'+stuId).push({
+          date,num,
+          prog:document.getElementById('bmProg').value,
+          hwC,
+          note:document.getElementById('bmNote').value,
+          eval:null,
+          at:Date.now(),upd:Date.now()
+        });
+      }
     }));
-    toast(`${bmSelectedClass} 학생 ${targets.length}명에게 숙제가 등록되었습니다`);
+    toast(`${bmSelectedClass} 학생 ${targets.length}명 숙제 등록 완료 (기존 기록 유지)`);
     closeBM();
   }catch(e){toast('오류: '+e.message);}
   btn.disabled=false;btn.textContent='반 전체 등록';
