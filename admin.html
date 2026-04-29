@@ -907,41 +907,36 @@ async function deleteClinicResult(cid,sid,name){
 }
 
 async function applyClinicResultsToSessions(cid){
-  const cs=clinicSets[cid];
+  const cs = clinicSets[cid];
   if(!cs){toast('클리닉 데이터 없음');return;}
-  const results=clinicResults[cid]||{};
-  const resArr=Object.entries(results);
+  const results = clinicResults[cid]||{};
+  const resArr = Object.entries(results);
   if(!resArr.length){toast('채점 결과가 없습니다');return;}
-  if(!confirm(cs.title+' 결과를 학생 세션에 반영합니다. 계속할까요?'))return;
+  if(!confirm(cs.title+' 결과를 학생 세션에 반영합니다.\n(클리닉 내용 칸만 업데이트됩니다)'))return;
   let count=0;
   for(const [stuId,r] of resArr){
-    const sesSnap=await db.ref('smSessions/'+stuId).get();
-    const sesData=sesSnap.val()||{};
-    const cliText=cs.title+', '+r.score+'/'+r.total+'점';
-    const sesList=Object.entries(sesData);
-    if(!sesList.length){
-      const date=cs.date||today();
-      await db.ref('smSessions/'+stuId).push({date,cli:cliText,eval:null,at:Date.now(),upd:Date.now()});
-      count++;continue;
+    const snap = await db.ref('smSessions/'+stuId).get();
+    const sesData = snap.val()||{};
+    const sesList = Object.entries(sesData);
+    if(!sesList.length) continue; // 세션 없으면 건너뜀 (새 세션 생성 안 함)
+    const cliText = cs.title+', '+r.score+'/'+r.total+'점';
+    // 우선순위: ①이미 이 클리닉 cli 있는 세션 ②클리닉 날짜 세션(hwC 있는 것) ③클리닉 날짜 세션(아무거나) ④가장 최근
+    let target =
+      sesList.find(([,s])=>s.cli&&s.cli.startsWith(cs.title)) ||
+      (cs.date && sesList.find(([,s])=>s.date===cs.date&&s.hwC)) ||
+      (cs.date && sesList.find(([,s])=>s.date===cs.date)) ||
+      sesList.sort(([,a],[,b])=>((b.upd||b.at||0)-(a.upd||a.at||0)))[0];
+    if(target){
+      // cli 필드만 update - 다른 필드 절대 건드리지 않음
+      await db.ref('smSessions/'+stuId+'/'+target[0]+'/cli').set(cliText);
+      await db.ref('smSessions/'+stuId+'/'+target[0]+'/upd').set(Date.now());
+      count++;
     }
-    // 달력에 보이는 세션 = cli 있는 것 우선, 없으면 최신
-    let target=null;
-    // 클리닉 날짜와 같은 세션들
-    const dateMatches=cs.date?sesList.filter(([,s])=>s.date===cs.date):[];
-    if(dateMatches.length){
-      // 그 중 cli 있는 것 우선, 없으면 최신
-      target=dateMatches.find(([,s])=>s.cli&&s.cli.trim())||
-             dateMatches.sort(([,a],[,b])=>((b.upd||b.at||0)-(a.upd||a.at||0)))[0];
-    }
-    // 날짜 매칭 없으면 전체에서 가장 최근
-    if(!target) target=sesList.sort(([,a],[,b])=>((b.upd||b.at||0)-(a.upd||a.at||0)))[0];
-    await db.ref('smSessions/'+stuId+'/'+target[0]+'/cli').set(cliText);
-    count++;
   }
-  toast(cs.title+' — '+count+'명 반영 완료');
+  toast(cs.title+' — '+count+'명 클리닉 내용 반영 완료');
   if(uid_&&mode==='student'){
-    const snap2=await db.ref('smSessions/'+uid_).get();
-    sessions[uid_]=snap2.val()||{};
+    const s2 = await db.ref('smSessions/'+uid_).get();
+    sessions[uid_] = s2.val()||{};
     renderCal();
   }
 }
@@ -1373,12 +1368,11 @@ function openRM(sid=null,dateStr=null){
     document.getElementById('rmAbsent').checked=false;
     document.getElementById('rmLate').checked=false;
     setEval(-1); // 기본값 없음
-    // 자동 채우기: 가장 최근 이전 수업의 오늘 숙제 → 지난 시간 숙제 범위
-    const allRecs = Object.values(sessions[uid_]||{})
-      .filter(r => r.date && r.date < targetDate && r.hwC)
-      .sort((a,b) => b.date.localeCompare(a.date));
-    if(allRecs.length > 0){
-      document.getElementById('rmPrevHw').value = allRecs[0].hwC;
+    // 자동 채우기: 정확히 이전 수업 날의 숙제만 (요일 규칙 기반)
+    const prevDate = getPrevSessionDate(targetDate);
+    if(prevDate){
+      const prevRec = Object.values(sessions[uid_]||{}).find(r=>r.date===prevDate&&r.hwC);
+      if(prevRec) document.getElementById('rmPrevHw').value = prevRec.hwC;
     }
   }
   document.getElementById('rm').classList.add('open');
@@ -1612,22 +1606,25 @@ async function saveBulkHW(){
       const existing=snap.val()||{};
       const num=parseInt(document.getElementById('bmNum').value)||1;
       // 같은 날짜 세션이 있으면 hwC/note만 업데이트 (cli 등 기존 데이터 보존)
-      const existingRec=Object.entries(existing).find(([,r])=>r.date===date);
+      // 같은 날짜의 세션 찾기 (종류 무관 - 어떤 세션이든 hwC/prog/note만 업데이트)
+      const dateRecs = Object.entries(existing).filter(([,r])=>r.date===date);
+      // 우선순위: hwC 있는 것 > cli 없는 것 > 최신
+      const existingRec = dateRecs.find(([,r])=>r.hwC) ||
+                          dateRecs.find(([,r])=>!r.cli) ||
+                          dateRecs.sort(([,a],[,b])=>((b.upd||0)-(a.upd||0)))[0];
+      const bmProg = document.getElementById('bmProg').value;
+      const bmNote = document.getElementById('bmNote').value;
+      // 입력된 칸만 반영
+      const updateData = {upd:Date.now()};
+      if(hwC) updateData.hwC = hwC;
+      if(num) updateData.num = num;
+      if(bmProg) updateData.prog = bmProg;
+      if(bmNote) updateData.note = bmNote;
       if(existingRec){
-        await db.ref('smSessions/'+stuId+'/'+existingRec[0]).update({
-          hwC,
-          note:document.getElementById('bmNote').value,
-          upd:Date.now()
-        });
+        await db.ref('smSessions/'+stuId+'/'+existingRec[0]).update(updateData);
       }else{
-        await db.ref('smSessions/'+stuId).push({
-          date,num,
-          prog:document.getElementById('bmProg').value,
-          hwC,
-          note:document.getElementById('bmNote').value,
-          eval:null,
-          at:Date.now(),upd:Date.now()
-        });
+        updateData.date = date; updateData.eval = null; updateData.at = Date.now();
+        await db.ref('smSessions/'+stuId).push(updateData);
       }
     }));
     toast(`${bmSelectedClass} 학생 ${targets.length}명 숙제 등록 완료 (기존 기록 유지)`);
