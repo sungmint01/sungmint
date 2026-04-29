@@ -286,7 +286,7 @@ textarea.inp{resize:vertical;min-height:68px}
       <div class="sb-div"></div>
       <div class="sb-section">학생</div>
       <div id="sList"></div>
-      <div class="sb-foot" style="display:flex;flex-direction:column;gap:6px"><button class="btn-sv" style="font-size:11px;padding:7px" onclick="bumpVersion()" title="전체 페이지 자동 새로고침 트리거">🔄 업데이트 배포</button><button class="btn-out" onclick="logout()">로그아웃</button></div>
+      <div class="sb-foot" style="display:flex;flex-direction:column;gap:6px"><button class="btn-sv" style="font-size:11px;padding:7px;background:#f59e0b;box-shadow:none" onclick="cleanWrongPrevHw()" title="잘못 입력된 지난숙제 일괄 초기화">🧹 지난숙제 정리</button><button class="btn-sv" style="font-size:11px;padding:7px" onclick="bumpVersion()" title="전체 페이지 자동 새로고침 트리거">🔄 업데이트 배포</button><button class="btn-out" onclick="logout()">로그아웃</button></div>
     </aside>
     <div class="main">
       <div class="empty" id="empty" style="height:100%">
@@ -1631,6 +1631,36 @@ async function saveBulkHW(){
     closeBM();
   }catch(e){toast('오류: '+e.message);}
   btn.disabled=false;btn.textContent='반 전체 등록';
+}
+
+async function cleanWrongPrevHw(){
+  if(!confirm('잘못 자동입력된 지난 시간 숙제 범위를 정리합니다.\n\n규칙에 맞지 않는 prevHw는 모두 삭제됩니다.\n계속할까요?'))return;
+  const allStuIds = Object.keys(students);
+  let fixed=0, checked=0;
+  for(const stuId of allStuIds){
+    const snap = await db.ref('smSessions/'+stuId).get();
+    const ses = snap.val()||{};
+    for(const [sid,r] of Object.entries(ses)){
+      if(!r.date||!r.prevHw) continue;
+      checked++;
+      // 이 세션의 정확한 이전 수업 날 계산
+      const prevDate = getPrevSessionDate(r.date);
+      if(!prevDate){
+        // 일요일 등 규칙 없는 날 - prevHw 삭제
+        await db.ref('smSessions/'+stuId+'/'+sid+'/prevHw').remove();
+        fixed++; continue;
+      }
+      // 이전 수업 날 세션의 hwC와 일치하는지 확인
+      const prevRec = Object.values(ses).find(s=>s.date===prevDate&&s.hwC);
+      if(!prevRec){
+        // 이전 수업 날 기록이 없는데 prevHw가 있으면 삭제
+        await db.ref('smSessions/'+stuId+'/'+sid+'/prevHw').remove();
+        fixed++;
+      }
+      // 일치하면 그대로 유지
+    }
+  }
+  toast('완료: '+checked+'개 확인, '+fixed+'개 정리됨');
 }
 
 async function bumpVersion(){
