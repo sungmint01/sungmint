@@ -661,6 +661,7 @@ function renderClinicList(){
       +'<div style="display:flex;gap:6px;align-items:center">'
       +'<span class="cl-badge '+(cs.active?'cl-active':'cl-closed')+'">'+(cs.active?'활성':'종료')+'</span>'
       +'<button class="lnk le" id="editSetBtn_'+cid+'">수정</button>'
+      +'<button class="lnk le" id="applyClinicBtn_'+cid+'" title="채점 결과를 세션에 다시 반영">클리닉 반영</button>'
       +'<button class="lnk '+(cs.active?'ld':'le')+'" id="togBtn_'+cid+'">'+(cs.active?'종료':'재활성')+'</button>'
       +'<button class="lnk ld" id="delBtn_'+cid+'">삭제</button>'
       +'</div></div>'
@@ -676,6 +677,8 @@ function renderClinicList(){
     });
     var esb=document.getElementById('editSetBtn_'+cid);
     if(esb) esb.onclick=(function(id){return function(){openClinicForm(id);};})(cid);
+    var applyBtn=document.getElementById('applyClinicBtn_'+cid);
+    if(applyBtn) applyBtn.onclick=(function(id){return function(){applyClinicResultsToSessions(id);};})(cid);
     document.getElementById('togBtn_'+cid).onclick=(function(id,act){
       return function(){toggleClinicActive(id,!act);};
     })(cid,cs.active);
@@ -901,6 +904,35 @@ async function deleteClinicResult(cid,sid,name){
     if(entry) await db.ref('smSessions/'+sid+'/'+entry[0]).remove();
   }
   toast(name+' 채점 결과 삭제됨');
+}
+
+async function applyClinicResultsToSessions(cid){
+  const cs=clinicSets[cid];
+  if(!cs){toast('클리닉 데이터 없음');return;}
+  const results=clinicResults[cid]||{};
+  const resArr=Object.entries(results);
+  if(!resArr.length){toast('채점 결과가 없습니다');return;}
+  if(!confirm(cs.title+' 결과를 학생 세션에 반영합니다. 계속할까요?'))return;
+  let count=0;
+  await Promise.all(resArr.map(async function([stuId,r]){
+    const sesSnap=await db.ref('smSessions/'+stuId).get();
+    const sessions=sesSnap.val()||{};
+    // 이미 cli에 이 클리닉 내용이 있는 세션 찾기
+    const existing=Object.entries(sessions).find(function([,s]){return s.cli&&s.cli.startsWith(cs.title);});
+    const cliText=cs.title+', '+r.score+'/'+r.total+'점';
+    if(existing){
+      // 이미 있으면 업데이트
+      await db.ref('smSessions/'+stuId+'/'+existing[0]+'/cli').set(cliText);
+    }else{
+      // 없으면 새 세션 생성 (날짜는 채점 시각 기준)
+      const date=new Date(r.gradedAt||Date.now()).toISOString().split('T')[0];
+      await db.ref('smSessions/'+stuId).push({
+        date,cli:cliText,eval:null,at:r.gradedAt||Date.now(),upd:Date.now()
+      });
+    }
+    count++;
+  }));
+  toast(cs.title+' — '+count+'명 세션에 반영 완료');
 }
 
 async function toggleClinicActive(cid,active){await db.ref('smClinicSets/'+cid+'/active').set(active);}
