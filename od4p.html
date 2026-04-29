@@ -144,12 +144,6 @@ function StudentApp(){
   const[step,setStep]=useState("subject"); // subject|auth|quiz|result|closed|rest
   const[selSubject,setSelSubject]=useState(null);
   const[name,setName]=useState(window._od4pStudentName||"");
-  // 로그인 후 이름 동기화
-  React.useEffect(()=>{
-    if(window._od4pStudentName&&window._od4pStudentName!=="__teacher__"){
-      setName(window._od4pStudentName);
-    }
-  },[]);
   const[authPw,setAuthPw]=useState("");
   const[authErr,setAuthErr]=useState("");
   const[authLoading,setAuthLoading]=useState(false);
@@ -854,7 +848,8 @@ function App(){
     </div>
   );
 }
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+window._od4pRoot=ReactDOM.createRoot(document.getElementById("root"));
+window._od4pRoot.render(<App/>);
 </script>
 </body>
 </html>
