@@ -688,7 +688,7 @@ function openClinicForm(editId){
   for(var i=1;i<=150;i++){
     var item=document.createElement('div');
     item.className='cl-form-ans-item';
-    item.innerHTML='<span class="cl-form-ans-num">'+i+'번</span><input class="cl-form-ans-inp" id="clAns'+i+'" type="text" placeholder="-" maxlength="4">';
+    item.innerHTML='<span class="cl-form-ans-num">'+i+'번</span><input class="cl-form-ans-inp" id="clAns'+i+'" type="text" placeholder="-" maxlength="10">';
     grid.appendChild(item);
   }
   // Pre-fill answers if editing
