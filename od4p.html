@@ -144,6 +144,12 @@ function StudentApp(){
   const[step,setStep]=useState("subject"); // subject|auth|quiz|result|closed|rest
   const[selSubject,setSelSubject]=useState(null);
   const[name,setName]=useState(window._od4pStudentName||"");
+  // 로그인 후 이름 동기화
+  React.useEffect(()=>{
+    if(window._od4pStudentName&&window._od4pStudentName!=="__teacher__"){
+      setName(window._od4pStudentName);
+    }
+  },[]);
   const[authPw,setAuthPw]=useState("");
   const[authErr,setAuthErr]=useState("");
   const[authLoading,setAuthLoading]=useState(false);
@@ -169,7 +175,7 @@ function StudentApp(){
           setQuiz(null);
           setAnswers({});
           setResult(null);
-          setName("");
+          // 이름 유지 (로그인 시 설정됨)
         }
         return newDate;
       });
@@ -420,7 +426,7 @@ function StudentApp(){
             </div>
           );
         })}
-        <button onClick={()=>{setStep("subject");setAnswers({});setResult(null);setShowSol({});setName("");}} style={{width:"100%",background:"#ffffff",border:"2px solid #334155",borderRadius:14,color:"#718096",padding:"13px 0",fontSize:14,cursor:"pointer",marginTop:4}}>← 처음으로</button>
+        <button onClick={()=>{setStep("subject");setAnswers({});setResult(null);setShowSol({});}} style={{width:"100%",background:"#ffffff",border:"2px solid #334155",borderRadius:14,color:"#718096",padding:"13px 0",fontSize:14,cursor:"pointer",marginTop:4}}>← 처음으로</button>
       </div>
     );
   }
