@@ -205,7 +205,7 @@ function StudentApp(){
         const probs=Object.values(quiz.problems);
         let score=0;
         const graded=probs.map((p,i)=>{
-          const ua=String(existing.answers?.[i]||"").trim();
+          const ua=String((existing.answers||{})[i]||"").trim();
           const correct=p.type==="객관식"?ua===String(p.answer):ua.replace(/\s/g,"")===String(p.answer).replace(/\s/g,"");
           if(correct)score++;
           return{...p,userAnswer:ua,correct};
@@ -230,7 +230,8 @@ function StudentApp(){
       if(correct)score++;
       return{...p,userAnswer:ua,correct};
     });
-    await saveSubmission(availDate,selSubject.key,name,answers);
+    const submitName=window._od4pStudentName&&window._od4pStudentName!=="__teacher__"?window._od4pStudentName:(name||"학생");
+    await saveSubmission(availDate,selSubject.key,submitName,answers);
     setResult({graded,score,total:probs.length});
     setStep("result");
   };
