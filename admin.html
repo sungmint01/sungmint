@@ -2,6 +2,9 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>관리자 — 성민T</title>
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Gothic+A1:wght@300;400;700;900&family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -1329,17 +1332,21 @@ function setEval(v){
   });
 }
 function getPrevSessionDate(dateStr){
-  const d=new Date(dateStr+'T00:00:00');
-  const dow=d.getDay(); // 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
+  // 로컬 날짜 파싱 (타임존 버그 방지)
+  const parts=dateStr.split('-');
+  const y=parseInt(parts[0]),m=parseInt(parts[1])-1,d=parseInt(parts[2]);
+  const dow=new Date(y,m,d).getDay(); // 0=Sun,1=Mon,...,6=Sat
   // 수(3)←월(1), 목(4)←화(2), 금(5)←수(3), 토(6)←목(4): -2일
   // 월(1)←금(5): -3일, 화(2)←토(6): -3일
   let back=0;
   if(dow===3||dow===4||dow===5||dow===6) back=2;
-  else if(dow===1) back=3;
-  else if(dow===2) back=3;
-  else return null;
-  const prev=new Date(d);prev.setDate(prev.getDate()-back);
-  return prev.toISOString().split('T')[0];
+  else if(dow===1||dow===2) back=3;
+  else return null; // 일요일
+  const prev=new Date(y,m,d-back);
+  const py=prev.getFullYear();
+  const pm=String(prev.getMonth()+1).padStart(2,'0');
+  const pd=String(prev.getDate()).padStart(2,'0');
+  return `${py}-${pm}-${pd}`;
 }
 
 function openRM(sid=null,dateStr=null){

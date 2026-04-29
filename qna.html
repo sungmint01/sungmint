@@ -474,9 +474,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   if(typeof firebase==='undefined') return;
   var VK='smv';
   function initFB(){
+    // 이미 초기화된 경우(inline config) 바로 true
+    if(typeof firebase!=='undefined'&&firebase.apps&&firebase.apps.length>0) return true;
     if(typeof SM_CONFIG==='undefined'||!SM_CONFIG.apiKey||SM_CONFIG.apiKey.includes('여기에')) return false;
     try{if(!firebase.apps.length)firebase.initializeApp(SM_CONFIG);}catch(e){}
-    return true;
+    return firebase.apps.length>0;
   }
   function doCheck(){
     if(!firebase.apps.length) return;

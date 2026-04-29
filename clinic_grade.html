@@ -95,6 +95,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);background-image:radial-gradient(circle at 20% 20%,rgba(55,100,191,.12) 0%,transparent 50%),radial-gradient(circle at 80% 80%,rgba(90,138,224,.1) 0%,transparent 50%)}
 .login-box{background:var(--bg);border-radius:24px;padding:44px 36px 36px;width:320px;box-shadow:8px 8px 20px var(--sh1),-6px -6px 16px var(--sh2);text-align:center}
 .login-ico{width:58px;height:58px;background:linear-gradient(135deg,var(--acc2),var(--acc));border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 18px;box-shadow:3px 3px 10px rgba(55,100,191,.4),-2px -2px 6px rgba(255,255,255,.6)}
+.pdf-download{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:12px;padding:13px 16px;margin-top:12px;box-shadow:3px 3px 8px var(--sh1),-2px -2px 6px var(--sh2);text-decoration:none;color:var(--txt);transition:.15s}
+.pdf-download:hover{box-shadow:4px 4px 10px var(--sh1),-3px -3px 8px var(--sh2)}
+.pdf-icon{width:40px;height:40px;background:linear-gradient(135deg,#ef4444,#b91c1c);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.pdf-info{flex:1}
+.pdf-title{font-family:'Gothic A1',sans-serif;font-weight:700;font-size:13px;margin-bottom:2px}
+.pdf-hint{font-size:11px;color:var(--txt2)}
 .back-link{display:block;text-align:center;margin-top:20px;font-size:11px;color:#8a96b4;text-decoration:none;font-family:'Space Mono',monospace;letter-spacing:1px}
 .back-link:hover{color:var(--txt2)}
 </style>
@@ -205,6 +211,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
         </div>
       </div>
     </div>
+    <div id="pdfDownloadWrap" style="display:none"></div>
     <button class="nm-btn" id="submitBtn" onclick="submitGrade()">채점하기 →</button>
     <div class="err" id="err3"></div>
     <a href="#" onclick="goBack(3)" class="back-link">← 이전</a>
@@ -240,6 +247,20 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 </div></div>
 
 <script>
+
+async function findOrCreateSession(stuId, date){
+  const snap = await db.ref('smSessions/'+stuId).get();
+  const sessions = snap.val() || {};
+  // Find session for this date (prefer one with hwC or most recent)
+  const dateMatches = Object.entries(sessions).filter(([,s])=>s.date===date);
+  if(dateMatches.length){
+    // prefer the one with hwC (bulk HW session), or most recent
+    const withHwC = dateMatches.find(([,s])=>s.hwC);
+    return withHwC || dateMatches.sort(([,a],[,b])=>((b.upd||b.at||0)-(a.upd||a.at||0)))[0];
+  }
+  return null;
+}
+
 async function clinicLogin(){
   const pw=document.getElementById('clinicPwInp').value;
   const err=document.getElementById('clinicLoginErr');
@@ -353,6 +374,19 @@ function goStep3(){
   resetAttend();
   buildAnsGrid();
   document.getElementById('step3Title').textContent='📝 '+currentStuName+' 채점';
+  // Show PDF if available
+  var pdfWrap=document.getElementById('pdfDownloadWrap');
+  if(selectedClinic.pdfData){
+    pdfWrap.innerHTML='<a class="pdf-download" href="'+selectedClinic.pdfData+'" download="'+(selectedClinic.pdfName||'해설.pdf')+'">'
+      +'<div class="pdf-icon">📄</div>'
+      +'<div class="pdf-info"><div class="pdf-title">해설 PDF 다운로드</div>'
+      +'<div class="pdf-hint">'+(selectedClinic.pdfName||'해설.pdf')+'</div></div>'
+      +'<span style="color:var(--acc);font-weight:700;font-size:18px">↓</span></a>';
+    pdfWrap.style.display='';
+  }else{
+    pdfWrap.innerHTML='';
+    pdfWrap.style.display='none';
+  }
   setStep(3);
 }
 
@@ -453,14 +487,20 @@ async function submitGrade(){
   // Auto-save to student session — cli 필드에만 기록
   const isAbsent=document.getElementById('chkAbsent').checked;
   const isLate=document.getElementById('chkLate').checked;
-  const sessionData={
-    date:new Date().toISOString().split('T')[0],
-    num:Object.keys((await db.ref('smSessions/'+currentStuId).get()).val()||{}).length+1,
-    cli:selectedClinic.title+', '+score+'/'+total+'점',
-    absent:isAbsent, late:isLate,
-    eval:null, at:Date.now(), upd:Date.now()
-  };
-  await db.ref('smSessions/'+currentStuId).push(sessionData);
+  const todayStr=new Date().toISOString().split('T')[0];
+  const cliText=selectedClinic.title+', '+score+'/'+total+'점';
+  // cli/absent/late만 업데이트 (다른 필드 건드리지 않음)
+  const existingSes=await findOrCreateSession(currentStuId, todayStr);
+  if(existingSes){
+    await db.ref('smSessions/'+currentStuId+'/'+existingSes[0]).update({
+      cli:cliText, absent:isAbsent, late:isLate, upd:Date.now()
+    });
+  }else{
+    await db.ref('smSessions/'+currentStuId).push({
+      date:todayStr, cli:cliText, absent:isAbsent, late:isLate,
+      eval:null, at:Date.now(), upd:Date.now()
+    });
+  }
   // Show result
   document.getElementById('resultName').textContent=currentStuName;
   document.getElementById('resultScore').textContent=score;
@@ -525,9 +565,11 @@ async function regrade(){
   const sesSnap=await db.ref('smSessions/'+currentStuId).get();
   const sessions=sesSnap.val()||{};
   // find the session we created
-  const sesEntry=Object.entries(sessions).find(([,s])=>s.cli&&s.cli.startsWith(selectedClinic.title));
+  const allSes=Object.entries(sessions);
+  let sesEntry=allSes.find(([,s])=>s.cli&&s.cli.startsWith(selectedClinic.title));
+  if(!sesEntry){const d=new Date().toISOString().split('T')[0];sesEntry=allSes.find(([,s])=>s.date===d&&s.hwC)||allSes.sort(([,a],[,b])=>((b.upd||b.at||0)-(a.upd||a.at||0)))[0];}
   if(sesEntry){
-    await db.ref('smSessions/'+currentStuId+'/'+sesEntry[0]+'/cli').set(selectedClinic.title+', '+score+'/'+total+'점');
+    await db.ref('smSessions/'+currentStuId+'/'+sesEntry[0]).update({cli:selectedClinic.title+', '+score+'/'+total+'점',upd:Date.now()});
   }
   // Update display
   document.getElementById('resultScore').textContent=score;
