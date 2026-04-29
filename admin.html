@@ -196,6 +196,27 @@ textarea.inp{resize:vertical;min-height:68px}
 .od-score{font-weight:700;color:#3764bf}
 .od-answers{font-size:10px;color:#64748b;font-family:'Space Mono',monospace}
 .od-not{color:#94a3b8;font-style:italic}
+.od4p-wrap{padding:16px}
+.od4p-dates{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.od4p-date-btn{padding:5px 12px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;background:#f1f5f9;color:#5a6e96;transition:.15s;font-family:inherit}
+.od4p-date-btn.on{background:linear-gradient(135deg,#5a8ae0,#3764bf);color:#fff}
+.od4p-subj-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.od4p-subj-btn{padding:6px 14px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:#f1f5f9;color:#5a6e96;transition:.15s;font-family:inherit}
+.od4p-subj-btn.on{background:linear-gradient(135deg,#5a8ae0,#3764bf);color:#fff}
+.od4p-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.od4p-stat{background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;padding:10px 12px}
+.od4p-stat-label{font-size:10px;color:#8a96b4;margin-bottom:2px}
+.od4p-stat-val{font-weight:800;font-size:18px}
+.od4p-row{background:#fff;border-radius:10px;border:1px solid #e2e8f0;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.od4p-name{font-weight:700;font-size:13px;color:#1a2840}
+.od4p-time{font-size:10px;color:#94a3b8}
+.od4p-ans-badge{width:28px;height:28px;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;flex-shrink:0}
+.od4p-score{font-weight:800;font-size:16px;min-width:36px;text-align:right}
+.od4p-edit-row{width:100%;margin-top:6px;display:none}
+.od4p-edit-row.open{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start}
+.od4p-edit-inp{border:none;border-radius:8px;padding:6px 4px;font-size:12px;text-align:center;width:46px;background:#e4e8f4;box-shadow:inset 2px 2px 4px rgba(145,165,210,.5),inset -1px -1px 3px rgba(255,255,255,.8);outline:none;color:#1a2840}
+.od4p-edit-inp.ok{background:#dcfce7;border:1px solid #86efac}
+.od4p-edit-inp.ng{background:#fee2e2;border:1px solid #fca5a5}
 /* Clinic */
 .cl-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:16px;margin-bottom:12px}
 .cl-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
@@ -252,7 +273,7 @@ textarea.inp{resize:vertical;min-height:68px}
         <span class="sb-consult-label">📸 플래너 현황</span>
       </div>
       <div class="sb-consult" id="sbOd4p" onclick="showOd4pStatus()">
-        <span class="sb-consult-label">📝 OD4P 응시 현황</span>
+        <span class="sb-consult-label">📝 OD4P 현황/수정</span>
       </div>
       <div class="sb-consult" id="sbClinic" onclick="showClinicMgr()">
         <span class="sb-consult-label">📋 클리닉 관리</span>
@@ -340,14 +361,16 @@ textarea.inp{resize:vertical;min-height:68px}
         </div>
       </div>
       <div id="od4pStatus" style="display:none;padding:22px">
-        <div style="font-size:16px;font-weight:700;margin-bottom:16px">📝 OD4P 응시 현황</div>
-        <div class="od-date-nav">
-          <button class="ps-nav-btn" onclick="changeOdDate(-1)">‹</button>
-          <span class="od-date-label" id="odDateLabel"></span>
-          <button class="ps-nav-btn" onclick="changeOdDate(1)">›</button>
+        <div style="font-size:16px;font-weight:700;margin-bottom:16px">📝 OD4P 현황 / 수정</div>
+        <div class="od4p-wrap" style="padding:0">
+          <div class="od4p-dates" id="od4pDates"></div>
+          <div class="od4p-subj-btns" id="od4pSubjBtns"></div>
+          <div class="od4p-summary" id="od4pSummary" style="display:none"></div>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:8px" id="od4pDelAllWrap" style="display:none">
+            <button class="lnk ld" onclick="od4pDeleteAll()">🗑 전체 기록 삭제</button>
+          </div>
+          <div id="od4pRows"><div class="ps-empty">날짜와 과목을 선택하세요</div></div>
         </div>
-        <div class="od-subj-tabs" id="odSubjTabs"></div>
-        <div id="odContent"><div class="ps-empty">로딩 중...</div></div>
       </div>
       <div id="plannerStatus" style="display:none;padding:22px">
         <div style="font-size:16px;font-weight:700;margin-bottom:16px">📸 플래너 제출 현황</div>
@@ -842,95 +865,134 @@ async function deleteClinic(cid){
 }
 // ════ END CLINIC ════
 
-var _odDate = null, _odSubj = null, _od4pData = {};
+var _od4pAllData={}, _od4pSelDate=null, _od4pSelSubj=null, _od4pFocused=null;
 
 function showOd4pStatus(){
   mode='od4p';uid_=null;
-  ['empty','detail','consultView','plannerStatus','clinicMgr'].forEach(id=>document.getElementById(id).style.display='none');
+  ['empty','detail','consultView','plannerStatus','clinicMgr'].forEach(function(id){document.getElementById(id).style.display='none';});
   document.getElementById('od4pStatus').style.display='';
   renderSidebar();
-  if(!_odDate) _odDate = new Date().toISOString().split('T')[0];
-  // load od4p data for this date
-  loadOd4pDate(_odDate);
-}
-
-function changeOdDate(dir){
-  const [y,m,d] = _odDate.split('-').map(Number);
-  const dt = new Date(y, m-1, d+dir);
-  _odDate = dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
-  _odSubj = null;
-  loadOd4pDate(_odDate);
-}
-
-function loadOd4pDate(date){
-  const parts = date.split('-');
-  document.getElementById('odDateLabel').textContent = parts[0]+'년 '+parseInt(parts[1])+'월 '+parseInt(parts[2])+'일';
-  db.ref('od4p/'+date).get().then(snap=>{
-    _od4pData = snap.val()||{};
-    renderOdSubjTabs();
-  }).catch(()=>{
-    _od4pData={};
-    renderOdSubjTabs();
+  db.ref('od4p').once('value',function(s){
+    _od4pAllData=s.val()||{};
+    renderOd4pDates();
+  });
+  db.ref('od4p').on('value',function(s){
+    _od4pAllData=s.val()||{};
+    if(_od4pSelDate&&_od4pSelSubj) renderOd4pRows();
   });
 }
 
-function renderOdSubjTabs(){
-  const tabs = document.getElementById('odSubjTabs');
-  const keys = Object.keys(_od4pData);
-  if(!keys.length){
-    tabs.innerHTML='';
-    document.getElementById('odContent').innerHTML='<div class="ps-empty">해당 날짜에 문제가 없습니다</div>';
-    return;
-  }
-  if(!_odSubj || !_od4pData[_odSubj]) _odSubj = keys[0];
-  tabs.innerHTML='';
-  keys.forEach(function(k){
-    const btn=document.createElement('button');
-    btn.className='od-subj-tab'+(k===_odSubj?' on':'');
-    btn.textContent=k.replace(/_/g,' ');
-    btn.onclick=function(){selectOdSubj(k);};
-    tabs.appendChild(btn);
+function renderOd4pDates(){
+  var dates=Object.keys(_od4pAllData).sort(function(a,b){return b.localeCompare(a);}).slice(0,14);
+  var el=document.getElementById('od4pDates');
+  el.innerHTML='';
+  if(!dates.length){el.innerHTML='<div class="ps-empty">데이터가 없습니다</div>';return;}
+  dates.forEach(function(d){
+    var btn=document.createElement('button');
+    btn.className='od4p-date-btn'+(d===_od4pSelDate?' on':'');
+    var parts=d.split('-');
+    btn.textContent=d===new Date().toISOString().split('T')[0]?'오늘':(+parts[1])+'월'+(+parts[2])+'일';
+    btn.onclick=(function(date){return function(){_od4pSelDate=date;_od4pSelSubj=null;renderOd4pDates();renderOd4pSubjs();};})(d);
+    el.appendChild(btn);
   });
-  renderOdTable();
+  if(_od4pSelDate) renderOd4pSubjs();
 }
 
-function selectOdSubj(key){
-  _odSubj = key;
-  renderOdSubjTabs();
-}
-
-function renderOdTable(){
-  const el = document.getElementById('odContent');
-  const subj = _od4pData[_odSubj]||{};
-  const subs = subj.submissions||{};
-  const subArr = Object.entries(subs).sort(([,a],[,b])=>(a.ts||0)-(b.ts||0));
-  // Build student lookup by name
-  const stuNames = Object.values(students).map(s=>s.name||'');
-  const total = stuNames.filter(n=>n).length;
-  const submitted = subArr.length;
-  let html = '<div class="od-summary">';
-  html += '<div class="od-stat">응시 <strong>'+submitted+'명</strong></div>';
-  html += '<div class="od-stat">전체 <strong>'+total+'명</strong></div>';
-  html += '<div class="od-stat">미응시 <strong>'+(total-submitted)+'명</strong></div>';
-  html += '</div>';
-  if(!subArr.length){
-    html += '<div class="ps-empty">응시한 학생이 없습니다</div>';
-    el.innerHTML=html;return;
-  }
-  html += '<table class="od-table"><thead><tr><th>이름</th><th>제출 시각</th><th>답안</th></tr></thead><tbody>';
-  subArr.forEach(([,s])=>{
-    const time = new Date(s.ts||0).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
-    const ans = s.answers ? Object.values(s.answers).join(' · ') : '-';
-    html += '<tr>';
-    html += '<td><span class="od-name">'+(s.name||'?')+'</span></td>';
-    html += '<td><span class="od-time">'+time+'</span></td>';
-    html += '<td><span class="od-answers">'+ans+'</span></td>';
-    html += '</tr>';
+function renderOd4pSubjs(){
+  var el=document.getElementById('od4pSubjBtns');
+  el.innerHTML='';
+  if(!_od4pSelDate||!_od4pAllData[_od4pSelDate]){document.getElementById('od4pRows').innerHTML='<div class="ps-empty">해당 날짜에 데이터가 없습니다</div>';return;}
+  var subjs=Object.entries(_od4pAllData[_od4pSelDate]);
+  subjs.forEach(function([key,sub]){
+    var btn=document.createElement('button');
+    btn.className='od4p-subj-btn'+(_od4pSelSubj===key?' on':'');
+    btn.textContent=sub.title||key;
+    btn.onclick=(function(k){return function(){_od4pSelSubj=k;renderOd4pSubjs();renderOd4pRows();};})(key);
+    el.appendChild(btn);
   });
-  html += '</tbody></table>';
-  el.innerHTML = html;
+  if(_od4pSelSubj) renderOd4pRows();
 }
 
+function renderOd4pRows(){
+  var el=document.getElementById('od4pRows');
+  var sumEl=document.getElementById('od4pSummary');
+  var delWrap=document.getElementById('od4pDelAllWrap');
+  if(!_od4pSelDate||!_od4pSelSubj){el.innerHTML='<div class="ps-empty">과목을 선택하세요</div>';return;}
+  var subData=(_od4pAllData[_od4pSelDate]||{})[_od4pSelSubj]||{};
+  var probs=subData.problems?Object.values(subData.problems):[];
+  var subs=subData.submissions?Object.entries(subData.submissions):[];
+  // summary
+  if(subs.length&&probs.length){
+    sumEl.style.display='';
+    delWrap.style.display='flex';
+    var scores=subs.map(function([,s]){var sc=0;probs.forEach(function(p,i){var ua=String((s.answers||{})[i]||'').trim();var ok=p.type==='객관식'?ua===String(p.answer):ua.split(' ').join('')===String(p.answer).split(' ').join('');if(ok)sc++;});return sc;});
+    var total=subs.length;
+    var avg=total?Math.round(scores.reduce(function(a,b){return a+b;},0)/total*10)/10:0;
+    var perfect=scores.filter(function(s){return s===probs.length;}).length;
+    sumEl.innerHTML=[
+      {l:'제출 인원',v:total+'명',c:'#3764bf'},
+      {l:'평균 점수',v:avg+'점',c:'#059669'},
+      {l:'만점자',v:perfect+'명',c:'#f59e0b'}
+    ].map(function(s){return'<div class="od4p-stat"><div class="od4p-stat-label">'+s.l+'</div><div class="od4p-stat-val" style="color:'+s.c+'">'+s.v+'</div></div>';}).join('');
+  }else{sumEl.style.display='none';delWrap.style.display='none';}
+  if(!subs.length){el.innerHTML='<div class="ps-empty">제출자가 없습니다</div>';return;}
+  el.innerHTML='';
+  subs.sort(function([,a],[,b]){return(b.ts||0)-(a.ts||0);}).forEach(function([subId,sub]){
+    var score=0;
+    var graded=probs.map(function(p,i){var ua=String((sub.answers||{})[i]||'').trim();var ok=p.type==='객관식'?ua===String(p.answer):ua.split(' ').join('')===String(p.answer).split(' ').join('');if(ok)score++;return{ok:ok,ua:ua,ans:String(p.answer),num:i+1};});
+    var row=document.createElement('div');
+    row.className='od4p-row';
+    var badgesHtml=graded.map(function(g){
+      return'<div class="od4p-ans-badge" style="background:'+(g.ok?'#064e3b':'#450a0a')+';border:1px solid '+(g.ok?'#059669':'#dc2626')+'">'
+        +'<span style="font-size:8px;color:#8a96b4">'+g.num+'번</span>'
+        +'<span style="font-size:11px;font-weight:700;color:'+(g.ok?'#4ade80':'#f87171')+'">'+(g.ok?'O':'X')+'</span></div>';
+    }).join('');
+    var scoreColor=probs.length&&score===probs.length?'#f59e0b':score>=probs.length/2?'#059669':'#ef4444';
+    row.innerHTML='<div style="width:32px;height:32px;border-radius:9px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">👤</div>'
+      +'<div style="flex:1;min-width:60px"><div class="od4p-name">'+(sub.name||'?')+'</div>'
+      +'<div class="od4p-time">'+new Date(sub.ts||0).toLocaleString('ko-KR',{hour:'2-digit',minute:'2-digit'})+'</div></div>'
+      +'<div style="display:flex;gap:4px;flex-wrap:wrap">'+badgesHtml+'</div>'
+      +'<div class="od4p-score" style="color:'+scoreColor+'">'+score+'/'+probs.length+'</div>'
+      +'<button class="lnk le" id="od4pEdit_'+subId+'" style="font-size:11px">수정</button>'
+      +'<button class="lnk ld" id="od4pDel_'+subId+'" style="font-size:11px">삭제</button>'
+      +'<div class="od4p-edit-row" id="od4pEditRow_'+subId+'">'
+      +'<div style="display:grid;grid-template-columns:repeat(10,1fr);gap:4px;width:100%">'
+      +graded.map(function(g){
+        return'<div style="text-align:center"><div style="font-size:9px;color:#94a3b8">'+g.num+'번</div>'
+          +'<input class="od4p-edit-inp '+(g.ok?'ok':'ng')+'" id="od4pInp_'+subId+'_'+g.num+'" type="text" value="'+g.ua+'" maxlength="6" onfocus="od4pFocused=this.id">'
+          +'</div>';
+      }).join('')
+      +'</div>'
+      +'<button class="btn-sv" onclick="od4pSaveEdit(&quot;"+subId+"&quot;)" style="margin-top:6px;font-size:11px;padding:6px 14px">저장</button>'
+      +'</div>';
+    el.appendChild(row);
+    // bind
+    document.getElementById('od4pEdit_'+subId).onclick=(function(id){return function(){var r=document.getElementById('od4pEditRow_'+id);r.classList.toggle('open');if(r.classList.contains('open')){var f=document.getElementById('od4pInp_'+id+'_1');if(f)setTimeout(function(){f.focus();},50);}};})(subId);
+    document.getElementById('od4pDel_'+subId).onclick=(function(id,nm){return function(){od4pDeleteOne(id,nm);};})(subId,sub.name||'?');
+  });
+}
+
+async function od4pDeleteOne(subId,name){
+  if(!confirm(name+'의 제출을 삭제하시겠습니까?'))return;
+  await db.ref('od4p/'+_od4pSelDate+'/'+_od4pSelSubj+'/submissions/'+subId).remove();
+  toast(name+' 기록 삭제됨');
+}
+async function od4pDeleteAll(){
+  if(!confirm('전체 제출 기록을 삭제하시겠습니까?'))return;
+  await db.ref('od4p/'+_od4pSelDate+'/'+_od4pSelSubj+'/submissions').remove();
+  toast('전체 기록 삭제됨');
+}
+async function od4pSaveEdit(subId){
+  var subData=(_od4pAllData[_od4pSelDate]||{})[_od4pSelSubj]||{};
+  var probs=subData.problems?Object.values(subData.problems):[];
+  var newAnswers={};
+  probs.forEach(function(p,i){
+    var inp=document.getElementById('od4pInp_'+subId+'_'+(i+1));
+    newAnswers[i]=inp?inp.value.trim():'';
+  });
+  await db.ref('od4p/'+_od4pSelDate+'/'+_od4pSelSubj+'/submissions/'+subId+'/answers').set(newAnswers);
+  toast('수정 저장됨');
+}
 function showPlannerStatus(){
   mode='planner';uid_=null;
   document.getElementById('empty').style.display='none';
