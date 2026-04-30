@@ -690,7 +690,13 @@ function renderHwMgrList(){
     var results=hwResults[hid]||{};
     var resArr=Object.entries(results).sort(function([,a],[,b]){return(a.gradedAt||0)-(b.gradedAt||0);});
     var ansCnt=Object.keys(hw.answers||{}).length;
-    var target=hw.targetType==='all'?'전체':hw.targetType==='class'?'반: '+(hw.targetCls||''):'학생별';
+    var target;
+    if(hw.targetType==='all') target='전체';
+    else if(hw.targetType==='class') target='반: '+(hw.targetCls||'');
+    else{
+      var names=(hw.targetStudents||[]).map(function(sid){return(students[sid]&&students[sid].name)||'?';}).filter(Boolean);
+      target=names.length?names.join(', '):'학생별';
+    }
     var hwPdfBadge=hw.pdfData?'<span style="background:#fee2e2;color:#b91c1c;border-radius:6px;padding:1px 7px;font-size:10px;font-weight:600;margin-left:6px">📄 PDF</span>':'';
     var div=document.createElement('div');
     div.className='cl-card';
@@ -869,7 +875,13 @@ function renderClinicList(){
     var results=clinicResults[cid]||{};
     var resArr=Object.entries(results).sort(function([,a],[,b]){return(a.gradedAt||0)-(b.gradedAt||0);});
     var ansCnt=Object.keys(cs.answers||{}).length;
-    var target=cs.targetType==='all'?'전체':cs.targetType==='class'?'반: '+(cs.targetCls||''):'학생별';
+    var target;
+    if(cs.targetType==='all') target='전체';
+    else if(cs.targetType==='class') target='반: '+(cs.targetCls||'');
+    else{
+      var names=(cs.targetStudents||[]).map(function(sid){return(students[sid]&&students[sid].name)||'?';}).filter(Boolean);
+      target=names.length?names.join(', '):'학생별';
+    }
     var dateStr=cs.date?cs.date+' · ':'';
     var div=document.createElement('div');
     div.className='cl-card';
