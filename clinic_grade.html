@@ -14,7 +14,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#e4e8f4;--sh1:rgba(145,165,210,.6);--sh2:rgba(255,255,255,.9);--acc:#3764bf;--acc2:#5a8ae0;--txt:#1a2840;--txt2:#5a6e96}
-body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh;
+body{font-family:'MaruBuri, Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh;
   background-image:radial-gradient(circle at 15% 15%,rgba(55,100,191,.1) 0%,transparent 50%),
     radial-gradient(circle at 85% 85%,rgba(90,138,224,.08) 0%,transparent 50%)}
 .wrap{max-width:560px;margin:0 auto;padding:28px 16px 60px}
@@ -108,6 +108,15 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .back-link{display:block;text-align:center;margin-top:20px;font-size:11px;color:#8a96b4;text-decoration:none;font-family:'Space Mono',monospace;letter-spacing:1px}
 .back-link:hover{color:var(--txt2)}
 </style>
+  <style>
+    @font-face {
+      font-family: 'MaruBuri';
+      src: url('./MaruBuri-Regular.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+  </style>
 </head>
 <body>
 <div class="login-page" id="loginPage">
@@ -252,7 +261,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
       </div>
       <!-- 답 입력 방식 -->
       <div id="ansMode">
-        <div style="background:#eff4ff;border-left:3px solid #3764bf;border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#1a2840;line-height:1.8;font-family:'Noto Sans KR',sans-serif">
+        <div style="background:#eff4ff;border-left:3px solid #3764bf;border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#1a2840;line-height:1.8;font-family:'MaruBuri','Noto Sans KR',sans-serif">
           📌 <strong>답 작성 안내</strong> · 공란은 오답 처리됩니다<br>
           루트는 √버튼을 누른 후 작성해주세요.<br>
           파이(π)는 답 제일 마지막에 작성해주세요.<br>

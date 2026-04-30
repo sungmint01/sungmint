@@ -10,8 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Gothic+A1:wght@300;400;700;900&family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Noto Sans KR',sans-serif;background:#f8faff;color:#1a202c;min-height:100vh}
-    input,textarea,button,select{font-family:'Noto Sans KR',sans-serif}
+    body{font-family:'MaruBuri, Noto Sans KR',sans-serif;background:#f8faff;color:#1a202c;min-height:100vh}
+    input,textarea,button,select{font-family:'MaruBuri','Noto Sans KR',sans-serif}
     ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#f0f4f8}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
   
   .back-home{
@@ -20,10 +20,19 @@
     border:1px solid #e9d5ff;border-radius:10px;
     color:#7c3aed;padding:7px 14px;cursor:pointer;
     font-size:12px;font-weight:700;text-decoration:none;
-    font-family:'Noto Sans KR',sans-serif;
+    font-family:'MaruBuri','Noto Sans KR',sans-serif;
   }
   .back-home:hover{background:#f5f3ff}
 </style>
+  <style>
+    @font-face {
+      font-family: 'MaruBuri';
+      src: url('./MaruBuri-Regular.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+  </style>
 </head>
 <body>
 
@@ -33,10 +42,10 @@
     <div style="font-family:'Nanum Myeongjo',serif;font-size:24px;font-weight:800;color:#1a2840;margin-bottom:4px">오늘의 문제</div>
     <div style="font-family:'Space Mono',monospace;font-size:10px;color:#8a96b4;letter-spacing:2px;margin-bottom:26px;text-transform:uppercase">OD4P</div>
     <input id="od4pPwInput" type="password" placeholder="비밀번호 입력"
-      style="width:100%;border:none;border-radius:12px;padding:12px 14px;font-size:15px;font-family:'Noto Sans KR',sans-serif;outline:none;background:#e4e8f4;letter-spacing:4px;margin-bottom:12px;box-shadow:inset 3px 3px 7px rgba(145,165,210,.55),inset -3px -3px 7px rgba(255,255,255,.85);color:#1a2840;text-align:center"
+      style="width:100%;border:none;border-radius:12px;padding:12px 14px;font-size:15px;font-family:'MaruBuri','Noto Sans KR',sans-serif;outline:none;background:#e4e8f4;letter-spacing:4px;margin-bottom:12px;box-shadow:inset 3px 3px 7px rgba(145,165,210,.55),inset -3px -3px 7px rgba(255,255,255,.85);color:#1a2840;text-align:center"
       onkeydown="if(event.key==='Enter')od4pLogin()">
     <button onclick="od4pLogin()"
-      style="width:100%;background:linear-gradient(135deg,#5a8ae0,#3764bf);color:#fff;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;box-shadow:3px 3px 10px rgba(55,100,191,.35)">
+      style="width:100%;background:linear-gradient(135deg,#5a8ae0,#3764bf);color:#fff;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:'MaruBuri','Noto Sans KR',sans-serif;box-shadow:3px 3px 10px rgba(55,100,191,.35)">
       확인 →
     </button>
     <div id="od4pErr" style="color:#ef4444;font-size:12px;margin-top:8px;min-height:16px;font-family:'Space Mono',monospace"></div>
@@ -309,7 +318,7 @@ function StudentApp(){
           </div>
         ):(
           <div style={{background:"#e4e8f4",borderRadius:20,boxShadow:"6px 6px 14px rgba(145,165,210,.6),-4px -4px 10px rgba(255,255,255,.85)",padding:28}}>
-            <div style={{fontSize:13,color:"#5a6e96",marginBottom:20,fontFamily:"'Noto Sans KR',sans-serif"}}>학생 비밀번호를 입력하고 시작해요</div>
+            <div style={{fontSize:13,color:"#5a6e96",marginBottom:20,fontFamily:"'MaruBuri','Noto Sans KR',sans-serif"}}>학생 비밀번호를 입력하고 시작해요</div>
             <input value={authPw} onChange={e=>setAuthPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doAuth()} placeholder="비밀번호"
               type="password"
               style={{width:"100%",background:"#e4e8f4",border:"none",borderRadius:12,padding:"13px 16px",fontSize:16,color:"#1a2840",outline:"none",textAlign:"center",marginBottom:8,boxShadow:"inset 3px 3px 7px rgba(145,165,210,.55),inset -3px -3px 7px rgba(255,255,255,.85)",letterSpacing:4}}/>

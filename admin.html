@@ -13,7 +13,7 @@
 <script src="config.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Noto Sans KR',sans-serif;background:#f0f4f8;color:#1e293b}
+body{font-family:'MaruBuri, Noto Sans KR',sans-serif;background:#f0f4f8;color:#1e293b}
 :root{--bl:#74B3D8;--bld:#5a9ec7;--ro:#ED9499}
 #loginPage{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#e4e8f4;background-image:radial-gradient(circle at 20% 20%,rgba(55,100,191,.12) 0%,transparent 50%),radial-gradient(circle at 80% 80%,rgba(90,138,224,.1) 0%,transparent 50%)}
 .lbox{background:#e4e8f4;border-radius:24px;padding:44px 36px 36px;width:340px;box-shadow:8px 8px 20px rgba(145,165,210,.6),-6px -6px 16px rgba(255,255,255,.9);text-align:center}
@@ -254,6 +254,15 @@ textarea.inp{resize:vertical;min-height:68px}
 .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:500;z-index:200;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1}
 </style>
+  <style>
+    @font-face {
+      font-family: 'MaruBuri';
+      src: url('./MaruBuri-Regular.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+  </style>
 </head>
 <body>
 <div id="loginPage">

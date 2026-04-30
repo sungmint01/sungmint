@@ -13,7 +13,7 @@
 <script src="config.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Noto Sans KR',sans-serif;background:#f0f4f8;color:#1e293b;min-height:100vh}
+body{font-family:'MaruBuri, Noto Sans KR',sans-serif;background:#f0f4f8;color:#1e293b;min-height:100vh}
 :root{--bl:#74B3D8;--bld:#5a9ec7}
 #load{min-height:100vh;display:flex;align-items:center;justify-content:center}
 .sp{width:38px;height:38px;border:3px solid #e2e8f0;border-top-color:var(--bl);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px}
@@ -29,7 +29,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f0f4f8;color:#1e293b;min-
 .lbox .lsub{font-family:'Space Mono',monospace;font-size:10px;color:#94a3b8;letter-spacing:2px;margin-bottom:28px;text-transform:uppercase}
 .linp{width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px 14px;font-size:15px;font-family:inherit;outline:none;transition:.2s;background:#f8faff;letter-spacing:4px;margin-bottom:12px}
 .linp:focus{box-shadow:inset 4px 4px 9px rgba(145,165,210,.6),inset -3px -3px 8px rgba(255,255,255,.9)}
-.lbtn{width:100%;background:linear-gradient(135deg,#5a8ae0,#3764bf);color:#fff;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:.2s;box-shadow:3px 3px 10px rgba(55,100,191,.35)}
+.lbtn{width:100%;background:linear-gradient(135deg,#5a8ae0,#3764bf);color:#fff;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:'MaruBuri','Noto Sans KR',sans-serif;transition:.2s;box-shadow:3px 3px 10px rgba(55,100,191,.35)}
 .lbtn:hover{opacity:.9}.lbtn:disabled{background:#cbd5e1;cursor:not-allowed}
 .lerr{color:#ef4444;font-size:12px;margin-top:8px;min-height:16px;font-family:'Space Mono',monospace}
 .lback{display:block;margin-top:18px;font-size:12px;color:#94a3b8;text-decoration:none;font-family:'Space Mono',monospace;letter-spacing:1px}
@@ -178,6 +178,15 @@ footer{text-align:center;padding:24px 0 12px;color:#cbd5e1;font-size:12px}
 .lightbox-v img{max-width:100%;max-height:90vh;border-radius:10px;object-fit:contain}
 .lbv-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer}
 </style>
+  <style>
+    @font-face {
+      font-family: 'MaruBuri';
+      src: url('./MaruBuri-Regular.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+  </style>
 </head>
 <body>
 <div id="loginPage">

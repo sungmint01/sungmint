@@ -13,14 +13,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Gothic+A1:wght@300;400;700;900&family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Noto Sans KR',sans-serif;background:#e4e8f4;color:#1a2840;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 20px;background-image:radial-gradient(circle at 15% 15%,rgba(55,100,191,.1) 0%,transparent 50%),radial-gradient(circle at 85% 85%,rgba(90,138,224,.08) 0%,transparent 50%)}
+    body{font-family:'MaruBuri, Noto Sans KR',sans-serif;background:#e4e8f4;color:#1a2840;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 20px;background-image:radial-gradient(circle at 15% 15%,rgba(55,100,191,.1) 0%,transparent 50%),radial-gradient(circle at 85% 85%,rgba(90,138,224,.08) 0%,transparent 50%)}
     .wrap{width:100%;max-width:520px;display:flex;flex-direction:column;align-items:center;gap:32px}
     .logo-badge{display:inline-flex;align-items:center;gap:7px;background:#d2dcf0;border-radius:99px;padding:6px 16px;font-family:'Space Mono',monospace;font-size:9px;font-weight:700;letter-spacing:3px;color:#3764bf;box-shadow:3px 3px 8px rgba(145,165,210,.6),-2px -2px 6px rgba(255,255,255,.9);margin-bottom:14px;text-transform:uppercase}
     .logo-badge-dot{width:5px;height:5px;border-radius:50%;background:#3764bf;display:inline-block}
     .logo-text{font-family:'Nanum Myeongjo',serif;font-size:52px;font-weight:800;color:#1a2840;line-height:1.05}
     .logo-text-em{color:#3764bf;font-style:italic}
     .logo-divider{width:36px;height:2px;background:linear-gradient(90deg,#3764bf,transparent);margin:12px auto}
-    .logo-sub{font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:300;color:#5a6e96}
+    .logo-sub{font-family:'MaruBuri','Noto Sans KR',sans-serif;font-size:13px;font-weight:300;color:#5a6e96}
     .cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%}
     .card{display:block;text-decoration:none;background:#e4e8f4;border-radius:20px;padding:22px 18px 42px;position:relative;overflow:hidden;box-shadow:5px 5px 14px rgba(145,165,210,.6),-4px -4px 12px rgba(255,255,255,.9);transition:box-shadow .2s,transform .2s}
     .card:hover{transform:translateY(-3px);box-shadow:8px 8px 20px rgba(145,165,210,.65),-5px -5px 14px rgba(255,255,255,.9)}
@@ -33,7 +33,7 @@
     .card-wide:hover{transform:translateY(-2px);box-shadow:7px 7px 18px rgba(145,165,210,.65),-5px -5px 12px rgba(255,255,255,.9)}
     .wide-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:3px 3px 8px rgba(145,165,210,.55),-2px -2px 6px rgba(255,255,255,.85)}
     .wide-title{font-family:'Gothic A1',sans-serif;font-weight:700;font-size:14px;color:#1a2840;margin-bottom:2px}
-    .wide-desc{font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:300;color:#6a7e9e}
+    .wide-desc{font-family:'MaruBuri','Noto Sans KR',sans-serif;font-size:11px;font-weight:300;color:#6a7e9e}
     .wide-pill{margin-left:auto;background:linear-gradient(135deg,#5a8ae0,#3764bf);border-radius:99px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;box-shadow:2px 2px 6px rgba(55,100,191,.4);flex-shrink:0}
     .footer{font-family:'Space Mono',monospace;font-size:9px;color:#8a96b4;letter-spacing:3px}
     .admin-link{position:fixed;top:14px;right:16px;background:#d2dcf0;border:none;border-radius:8px;padding:5px 12px;font-family:'Space Mono',monospace;font-size:10px;color:#3764bf;text-decoration:none;box-shadow:2px 2px 6px rgba(145,165,210,.5),-1px -1px 4px rgba(255,255,255,.8);letter-spacing:1px;transition:.15s}
@@ -41,6 +41,15 @@
     @media(max-width:400px){.cards{grid-template-columns:1fr}.logo-text{font-size:42px}}
   .clinic-link{position:fixed;top:14px;right:100px;background:#d2dcf0;border:none;border-radius:8px;padding:5px 12px;font-family:'Space Mono',monospace;font-size:10px;color:#3764bf;text-decoration:none;box-shadow:2px 2px 6px rgba(145,165,210,.5),-1px -1px 4px rgba(255,255,255,.8);letter-spacing:1px;transition:.15s}
   .clinic-link:hover{box-shadow:3px 3px 8px rgba(145,165,210,.6),-2px -2px 5px rgba(255,255,255,.9)}
+  </style>
+  <style>
+    @font-face {
+      font-family: 'MaruBuri';
+      src: url('./MaruBuri-Regular.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
   </style>
 </head>
 <body>
