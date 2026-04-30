@@ -868,9 +868,11 @@ window._od4pRoot.render(<App/>);
 
 
 
+
+
 <script>
 (function(){
-  // URL에 _v 파라미터 있으면 제거 (새로 받아온 것)
+  // URL에 _v 파라미터 있으면 제거 (이미 새로 받아온 것)
   var url=new URL(location.href);
   var urlVer=url.searchParams.get('_v');
   if(urlVer){
@@ -898,29 +900,28 @@ window._od4pRoot.render(<App/>);
       var lv=sessionStorage.getItem('smv')||'';
       if(!lv){sessionStorage.setItem('smv',sv);return;}
       if(sv===lv) return;
-      // 버전 다름 → fetch로 새 파일 강제 다운로드 후 이동
       sessionStorage.setItem('smv',sv);
-      var newUrl=location.pathname+'?_v='+sv;
-      fetch(newUrl,{cache:'no-store',credentials:'same-origin'})
-        .then(function(r){
-          if(r.ok) location.replace(newUrl);
-          else location.replace(location.pathname+'?nocache='+Date.now());
+      // fetch로 새 HTML 직접 받아서 document.write로 교체 → CDN 캐시 완전 우회
+      var freshUrl=location.pathname+'?_v='+sv;
+      fetch(freshUrl,{cache:'no-store',credentials:'same-origin'})
+        .then(function(r){return r.text();})
+        .then(function(html){
+          document.open('text/html','replace');
+          document.write(html);
+          document.close();
         })
         .catch(function(){
-          location.replace(location.pathname+'?nocache='+Date.now());
+          location.replace(freshUrl);
         });
     });
   }
 
-  // 페이지 로드 시 즉시
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded',function(){doCheck();});
   }else{doCheck();}
-  // 탭 포커스 시
   document.addEventListener('visibilitychange',function(){
     if(document.visibilityState==='visible') doCheck();
   });
-  // 30초마다
   setInterval(doCheck,30000);
 })();
 </script>
