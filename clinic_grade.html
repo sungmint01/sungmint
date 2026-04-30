@@ -208,6 +208,7 @@ body{font-family:'MaruBuri','Noto Sans KR',sans-serif;background:var(--bg);min-h
             </div>
           </div>
         </div>
+        <div id="hwPdfDownloadWrap" style="display:none"></div>
         <button class="nm-btn" onclick="hwSubmit()">채점하기 →</button>
         <div class="err" id="hwErr3"></div>
         <a href="#" onclick="hwBack()" class="back-link">← 이전</a>
@@ -440,6 +441,18 @@ function hwGoGrade(){
   err.textContent='';document.getElementById('hwSugg2').textContent='';
   currentHwStuId=entry[0];currentHwStuName=entry[1].name;
   document.getElementById('hwStep3Title').textContent='📝 '+currentHwStuName+' 답안 입력';
+  // Show PDF if available
+  var hwPdfWrap=document.getElementById('hwPdfDownloadWrap');
+  if(selectedHw.pdfData){
+    hwPdfWrap.innerHTML='<a class="pdf-download" href="'+selectedHw.pdfData+'" download="'+(selectedHw.pdfName||'답안지.pdf')+'">'
+      +'<div class="pdf-icon">📄</div>'
+      +'<div class="pdf-info"><div class="pdf-title">답안지 PDF 다운로드</div>'
+      +'<div class="pdf-hint">'+(selectedHw.pdfName||'답안지.pdf')+'</div></div>'
+      +'<span style="color:var(--acc);font-weight:700;font-size:18px">↓</span></a>';
+    hwPdfWrap.style.display='';
+  }else{
+    hwPdfWrap.innerHTML='';hwPdfWrap.style.display='none';
+  }
   hwBuildGrid();
   document.getElementById('hwStep3').style.display='';
 }
