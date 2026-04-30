@@ -137,7 +137,6 @@ body{font-family:'MaruBuri','Noto Sans KR',sans-serif;background:var(--bg);min-h
     <div class="page-sub">조교용 채점 시스템</div>
   </div>
 
-  <!-- Step indicator -->
   <div class="step-indicator">
     <div class="step-dot active" id="sd1"></div>
     <div class="step-line"></div>
@@ -146,143 +145,61 @@ body{font-family:'MaruBuri','Noto Sans KR',sans-serif;background:var(--bg);min-h
     <div class="step-dot" id="sd3"></div>
   </div>
 
-  <!-- Step 1: 클리닉 선택 -->
+  <!-- Step 1: 학생 이름 -->
   <div id="step1">
     <div class="card">
-      <div class="card-title">📋 클리닉 선택</div>
-      <div id="clinicItems"><div style="text-align:center;padding:24px;color:#94a3b8;font-size:13px">로딩 중...</div></div>
-    </div>
-    <button class="nm-btn" onclick="goStep2()" style="margin-top:4px">다음 →</button>
-    <div class="err" id="err1"></div>
-    <!-- 숙제 채점 -->
-    <div class="hw-section">
-      <div class="hw-divider"><div class="hw-divider-line"></div><div class="hw-divider-label">HOMEWORK GRADING</div><div class="hw-divider-line"></div></div>
-      <div class="card" id="hwCard">
-        <div class="card-title">📖 숙제 채점</div>
-        <div id="hwClinicItems"><div style="text-align:center;padding:16px;color:#94a3b8;font-size:12px">로딩 중...</div></div>
-      </div>
-      <!-- 숙제 학생 이름 -->
-      <div id="hwStep2" style="display:none">
-        <div class="card" style="margin-top:12px">
-          <div class="card-title">✏️ 학생 이름</div>
-          <input class="nm-inp" type="text" id="hwStuNameInp" placeholder="이름을 입력하세요" onkeydown="if(event.key==='Enter')hwGoGrade()">
-          <div class="err" id="hwErr2"></div>
-          <div class="sugg" id="hwSugg2"></div>
-        </div>
-        <button class="nm-btn" onclick="hwGoGrade()">다음 →</button>
-        <a href="#" onclick="hwBack()" class="back-link">← 숙제 선택으로</a>
-      </div>
-      <!-- 숙제 답안 입력 -->
-      <div id="hwStep3" style="display:none">
-        <div class="card" style="margin-top:12px">
-          <div class="card-title" id="hwStep3Title">📝 답안 입력</div>
-          <div class="grade-toggle">
-            <button class="grade-tab on" id="hwTabAns" onclick="hwSwitchTab('ans')">📝 답 입력</button>
-            <button class="grade-tab" id="hwTabDirect" onclick="hwSwitchTab('direct')">🔢 점수 직접 입력</button>
-          </div>
-          <div id="hwAnsMode">
-            <div style="background:#eff4ff;border-left:3px solid #3764bf;border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#1a2840;line-height:1.8">
-              📌 <strong>답 작성 안내</strong> · 공란은 오답 처리됩니다<br>
-              루트는 √버튼을 누른 후 작성해주세요. 나눗셈은 <strong>a/b</strong>, 지수는 <strong>2^3</strong>처럼 작성합니다.
-            </div>
-            <div class="math-toolbar">
-              <span class="math-hint">기호 클릭 → 현재 입력칸에 삽입</span>
-              <button class="math-btn" onclick="insertMathHw('√')">√</button>
-              <button class="math-btn" onclick="insertMathHw('^2')">^2</button>
-              <button class="math-btn" onclick="insertMathHw('^3')">^3</button>
-              <button class="math-btn" onclick="insertMathHw('π')">π</button>
-              <button class="math-btn" onclick="insertMathHw('±')">±</button>
-              <button class="math-btn" onclick="insertMathHw('/')">  /  </button>
-            </div>
-            <div class="ans-grid" id="hwAnsGrid"></div>
-          </div>
-          <div id="hwDirectMode" style="display:none">
-            <div class="direct-score-wrap">
-              <div class="score-hint" style="margin-bottom:16px">맞은 개수와 푼 개수를 입력하세요</div>
-              <div class="direct-score-row">
-                <input class="score-inp" type="number" id="hwDirectScore" min="0" placeholder="0">
-                <span class="score-slash">/</span>
-                <input class="score-inp" type="number" id="hwDirectTotal" min="0" placeholder="0">
-              </div>
-              <div class="score-hint">맞은 개수 / 푼 개수</div>
-            </div>
-          </div>
-        </div>
-        <div id="hwPdfDownloadWrap" style="display:none"></div>
-        <button class="nm-btn" onclick="hwSubmit()">채점하기 →</button>
-        <div class="err" id="hwErr3"></div>
-        <a href="#" onclick="hwBack()" class="back-link">← 이전</a>
-      </div>
-      <!-- 숙제 결과 -->
-      <div id="hwStep4" style="display:none">
-        <div class="result-box" style="margin-top:12px">
-          <div style="font-size:14px;color:#5a6e96;margin-bottom:8px;font-family:'Gothic A1',sans-serif" id="hwResultName"></div>
-          <div class="result-score" id="hwResultScore"></div>
-          <div class="result-total" id="hwResultTotal"></div>
-          <div id="hwResultWrong"></div>
-          <div class="result-saved" id="hwResultSaved"></div>
-        </div>
-        <button class="nm-btn" onclick="hwReset()" style="margin-top:12px">다른 학생 채점</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Step 2: 학생 이름 입력 -->
-  <div id="step2" style="display:none">
-    <div class="card">
       <div class="card-title">✏️ 학생 이름 입력</div>
-      <input class="nm-inp" type="text" id="stuNameInp" placeholder="이름을 입력하세요 (예: 홍길동)" onkeydown="if(event.key==='Enter')goStep3()">
-      <div class="err" id="err2"></div>
-      <div class="sugg" id="sugg2"></div>
+      <input class="nm-inp" type="text" id="stuNameInp" placeholder="이름을 입력하세요 (예: 홍길동)" onkeydown="if(event.key==='Enter')goStep2()">
+      <div class="err" id="err1"></div>
+      <div class="sugg" id="sugg1"></div>
     </div>
-    <button class="nm-btn" onclick="goStep3()">다음 →</button>
-    <a href="#" onclick="goBack(2)" class="back-link">← 이전</a>
+    <button class="nm-btn" onclick="goStep2()">확인 →</button>
   </div>
 
-  <!-- Step 3: 답안 입력 -->
+  <!-- Step 2: 클리닉 / 숙제 선택 -->
+  <div id="step2" style="display:none">
+    <div class="card" id="clinicSelectCard">
+      <div class="card-title">📋 클리닉 선택</div>
+      <div id="clinicItems"><div class="ps-empty">해당 클리닉이 없습니다</div></div>
+    </div>
+    <div class="card" style="margin-top:12px" id="hwSelectCard">
+      <div class="card-title">📖 숙제 채점 선택</div>
+      <div id="hwClinicItems"><div class="ps-empty">해당 숙제가 없습니다</div></div>
+    </div>
+    <div class="err" id="err2"></div>
+    <a href="#" onclick="backToStep1()" class="back-link">← 이름 다시 입력</a>
+  </div>
+
+  <!-- Step 3: 답안 입력 (클리닉) -->
   <div id="step3" style="display:none">
     <div class="card">
-      <div class="card-title" id="step3Title">📝 채점</div>
+      <div class="card-title" id="step3Title">📝 답안 입력</div>
       <!-- 출결 체크 -->
       <div class="attend-row">
-        <label class="attend-label">
-          <input type="checkbox" id="chkAbsent" onchange="if(this.checked)document.getElementById('chkLate').checked=false">
-          <span>🚫 결석</span>
-        </label>
-        <label class="attend-label late">
-          <input type="checkbox" id="chkLate" onchange="if(this.checked)document.getElementById('chkAbsent').checked=false">
-          <span>⏰ 지각</span>
-        </label>
+        <label class="attend-label"><input type="checkbox" id="chkAbsent" onchange="if(this.checked)document.getElementById('chkLate').checked=false"><span>🚫 결석</span></label>
+        <label class="attend-label late"><input type="checkbox" id="chkLate" onchange="if(this.checked)document.getElementById('chkAbsent').checked=false"><span>⏰ 지각</span></label>
         <span class="attend-hint">달력에 자동 반영됩니다</span>
       </div>
-      <!-- 채점 방식 토글 -->
       <div class="grade-toggle">
         <button class="grade-tab on" id="tabAns" onclick="switchGradeTab('ans')">📝 답 입력</button>
         <button class="grade-tab" id="tabDirect" onclick="switchGradeTab('direct')">🔢 점수 직접 입력</button>
       </div>
-      <!-- 답 입력 방식 -->
       <div id="ansMode">
-        <div style="background:#eff4ff;border-left:3px solid #3764bf;border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#1a2840;line-height:1.8;font-family:'MaruBuri','Noto Sans KR',sans-serif">
+        <div style="background:#eff4ff;border-left:3px solid #3764bf;border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#1a2840;line-height:1.8">
           📌 <strong>답 작성 안내</strong> · 공란은 오답 처리됩니다<br>
-          루트는 √버튼을 누른 후 작성해주세요.<br>
-          파이(π)는 답 제일 마지막에 작성해주세요.<br>
-          단위는 생략합니다. 나눗셈은 <strong>a/b</strong>, 지수는 <strong>2^3</strong>처럼 작성합니다.
+          루트는 √버튼을 누른 후 작성해주세요. 나눗셈은 <strong>a/b</strong>, 지수는 <strong>2^3</strong>처럼 작성합니다.
         </div>
         <div class="math-toolbar" id="mathToolbar">
-        <span class="math-hint">기호 클릭 → 현재 입력칸에 삽입</span>
-        <button class="math-btn" onclick="insertMath('√')">√</button>
-        <button class="math-btn" onclick="insertMath('^2')">^2</button>
-        <button class="math-btn" onclick="insertMath('^3')">^3</button>
-        <button class="math-btn" onclick="insertMath('π')">π</button>
-        <button class="math-btn" onclick="insertMath('∞')">∞</button>
-        <button class="math-btn" onclick="insertMath('±')">±</button>
-        <button class="math-btn" onclick="insertMath('/')">  /  </button>
-        <button class="math-btn" onclick="insertMath('(')"> ( </button>
-        <button class="math-btn" onclick="insertMath(')')"> ) </button>
+          <span class="math-hint">기호 클릭 → 현재 입력칸에 삽입</span>
+          <button class="math-btn" onclick="insertMath('√')">√</button>
+          <button class="math-btn" onclick="insertMath('^2')">^2</button>
+          <button class="math-btn" onclick="insertMath('^3')">^3</button>
+          <button class="math-btn" onclick="insertMath('π')">π</button>
+          <button class="math-btn" onclick="insertMath('±')">±</button>
+          <button class="math-btn" onclick="insertMath('/')">  /  </button>
+        </div>
+        <div class="ans-grid" id="ansGrid"></div>
       </div>
-      <div class="ans-grid" id="ansGrid"></div>
-      </div><!-- end ansMode -->
-      <!-- 점수 직접 입력 방식 -->
       <div id="directMode" style="display:none">
         <div class="direct-score-wrap">
           <div class="score-hint" style="margin-bottom:16px">맞은 개수와 푼 개수를 입력하세요</div>
@@ -298,10 +215,10 @@ body{font-family:'MaruBuri','Noto Sans KR',sans-serif;background:var(--bg);min-h
     <div id="pdfDownloadWrap" style="display:none"></div>
     <button class="nm-btn" id="submitBtn" onclick="submitGrade()">채점하기 →</button>
     <div class="err" id="err3"></div>
-    <a href="#" onclick="goBack(3)" class="back-link">← 이전</a>
+    <a href="#" onclick="backToStep2()" class="back-link">← 이전</a>
   </div>
 
-  <!-- Step 4: 결과 + 수정 -->
+  <!-- Step 4: 결과 + 수정 (클리닉) -->
   <div id="step4" style="display:none">
     <div class="result-box">
       <div style="font-size:14px;color:#5a6e96;margin-bottom:8px;font-family:'Gothic A1',sans-serif" id="resultName"></div>
@@ -327,8 +244,61 @@ body{font-family:'MaruBuri','Noto Sans KR',sans-serif;background:var(--bg);min-h
     <button class="nm-btn" onclick="resetAll()" style="margin-top:12px;background:#f1f5f9;color:#5a6e96;box-shadow:3px 3px 8px var(--sh1),-2px -2px 6px var(--sh2)">새 학생 채점</button>
   </div>
 
+  <!-- 숙제 답안 입력 -->
+  <div id="hwStep3" style="display:none">
+    <div class="card">
+      <div class="card-title" id="hwStep3Title">📝 답안 입력</div>
+      <div class="grade-toggle">
+        <button class="grade-tab on" id="hwTabAns" onclick="hwSwitchTab('ans')">📝 답 입력</button>
+        <button class="grade-tab" id="hwTabDirect" onclick="hwSwitchTab('direct')">🔢 점수 직접 입력</button>
+      </div>
+      <div id="hwAnsMode">
+        <div style="background:#eff4ff;border-left:3px solid #3764bf;border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#1a2840;line-height:1.8">
+          📌 <strong>답 작성 안내</strong> · 공란은 오답 처리됩니다<br>
+          루트는 √버튼을 누른 후 작성해주세요. 나눗셈은 <strong>a/b</strong>, 지수는 <strong>2^3</strong>처럼 작성합니다.
+        </div>
+        <div class="math-toolbar">
+          <span class="math-hint">기호 클릭 → 현재 입력칸에 삽입</span>
+          <button class="math-btn" onclick="insertMathHw('√')">√</button>
+          <button class="math-btn" onclick="insertMathHw('^2')">^2</button>
+          <button class="math-btn" onclick="insertMathHw('^3')">^3</button>
+          <button class="math-btn" onclick="insertMathHw('π')">π</button>
+          <button class="math-btn" onclick="insertMathHw('±')">±</button>
+          <button class="math-btn" onclick="insertMathHw('/')">  /  </button>
+        </div>
+        <div class="ans-grid" id="hwAnsGrid"></div>
+      </div>
+      <div id="hwDirectMode" style="display:none">
+        <div class="direct-score-wrap">
+          <div class="score-hint" style="margin-bottom:16px">맞은 개수와 푼 개수를 입력하세요</div>
+          <div class="direct-score-row">
+            <input class="score-inp" type="number" id="hwDirectScore" min="0" placeholder="0">
+            <span class="score-slash">/</span>
+            <input class="score-inp" type="number" id="hwDirectTotal" min="0" placeholder="0">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="hwPdfDownloadWrap" style="display:none"></div>
+    <button class="nm-btn" onclick="hwSubmit()">채점하기 →</button>
+    <div class="err" id="hwErr3"></div>
+    <a href="#" onclick="backToStep2()" class="back-link">← 이전</a>
+  </div>
+
+  <!-- 숙제 결과 -->
+  <div id="hwStep4" style="display:none">
+    <div class="result-box" style="margin-top:12px">
+      <div style="font-size:14px;color:#5a6e96;margin-bottom:8px;font-family:'Gothic A1',sans-serif" id="hwResultName"></div>
+      <div class="result-score" id="hwResultScore"></div>
+      <div class="result-total" id="hwResultTotal"></div>
+      <div id="hwResultWrong"></div>
+      <div class="result-saved" id="hwResultSaved"></div>
+    </div>
+    <button class="nm-btn" onclick="resetAll()" style="margin-top:12px">새 학생 채점</button>
+  </div>
+
   <a class="back-link" href="./main.html">← 홈으로</a>
-</div></div>
+</div></div></div>
 
 <script>
 
@@ -578,25 +548,29 @@ function renderClinicList(){
 function selectClinic(cid){
   selectedClinicId=cid;
   selectedClinic=clinicData[cid];
-  renderClinicList();
+  renderFilteredClinicList(currentStuId, allStudents[currentStuId]||{});
+  // Go to step3
+  resetAttend();
+  buildAnsGrid();
+  document.getElementById('step3Title').textContent='📝 '+currentStuName+' 채점';
+  var pdfWrap=document.getElementById('pdfDownloadWrap');
+  if(selectedClinic.pdfData){
+    pdfWrap.innerHTML='<a class="pdf-download" href="'+selectedClinic.pdfData+'" download="'+(selectedClinic.pdfName||'해설.pdf')+'">'
+      +'<div class="pdf-icon">📄</div><div class="pdf-info"><div class="pdf-title">해설 PDF 다운로드</div>'
+      +'<div class="pdf-hint">'+(selectedClinic.pdfName||'해설.pdf')+'</div></div>'
+      +'<span style="color:var(--acc);font-weight:700;font-size:18px">↓</span></a>';
+    pdfWrap.style.display='';
+  }else{pdfWrap.innerHTML='';pdfWrap.style.display='none';}
+  ['step2','step4','hwStep3','hwStep4'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('step3').style.display='';
+  setStepDot(3);
 }
 
 function goStep2(){
-  if(!selectedClinicId){document.getElementById('err1').textContent='클리닉을 선택하세요';return;}
-  document.getElementById('err1').textContent='';
-  setStep(2);
-  document.getElementById('stuNameInp').value='';
-  document.getElementById('err2').textContent='';
-  document.getElementById('sugg2').textContent='';
-  setTimeout(()=>document.getElementById('stuNameInp').focus(),100);
-}
-
-function goStep3(){
   const name=document.getElementById('stuNameInp').value.trim();
-  const err=document.getElementById('err2');
-  const sugg=document.getElementById('sugg2');
+  const err=document.getElementById('err1');
+  const sugg=document.getElementById('sugg1');
   if(!name){err.textContent='이름을 입력하세요';return;}
-  // Find student
   const entry=Object.entries(allStudents).find(([,s])=>s.name===name);
   if(!entry){
     err.textContent='등록된 학생이 아닙니다';
@@ -604,25 +578,92 @@ function goStep3(){
     if(similar.length) sugg.textContent='혹시 이 학생인가요? '+similar.slice(0,3).join(', ');
     return;
   }
-  // Check class restriction
-  const cs=selectedClinic;
-  if(cs.targetType==='class'){
-    const stuCls=entry[1].cls||'미지정';
-    if(stuCls!==cs.targetCls){
-      err.textContent=`이 클리닉은 "${cs.targetCls}" 반만 응시 가능합니다`;
-      sugg.textContent=`현재 학생 반: ${stuCls}`;
-      return;
-    }
-  }else if(cs.targetType==='student'){
-    const allowed=cs.targetStudents||[];
-    if(!allowed.includes(entry[0])){
-      err.textContent='이 클리닉 대상에 포함되지 않은 학생입니다';
-      return;
-    }
-  }
   err.textContent=''; sugg.textContent='';
-  currentStuId=entry[0];
-  currentStuName=entry[1].name;
+  currentStuId=entry[0]; currentStuName=entry[1].name;
+  // Filter clinics/hw for this student
+  renderFilteredClinicList(entry[0],entry[1]);
+  renderFilteredHwList(entry[0],entry[1]);
+  setStep(2);
+}
+
+function renderFilteredClinicList(stuId, stu){
+  const el=document.getElementById('clinicItems');
+  const todayDate=today();
+  const active=Object.entries(clinicData).filter(([,c])=>{
+    if(!c.active||!((!c.date)||c.date===todayDate)) return false;
+    if(c.targetType==='all') return true;
+    if(c.targetType==='class') return stu.cls===c.targetCls;
+    if(c.targetType==='student') return (c.targetStudents||[]).includes(stuId);
+    return true;
+  });
+  if(!active.length){el.innerHTML='<div class="ps-empty">오늘 해당 클리닉이 없습니다</div>';return;}
+  el.innerHTML=active.map(([cid,cs])=>{
+    const cnt=Object.keys(cs.answers||{}).length;
+    return`<div class="clinic-item ${cid===selectedClinicId?'sel':''}" onclick="selectClinic('${cid}')">
+      <div class="clinic-name">${cs.title}</div>
+      <div class="clinic-meta">${cnt}문제</div>
+    </div>`;
+  }).join('');
+}
+
+function renderFilteredHwList(stuId, stu){
+  const el=document.getElementById('hwClinicItems');
+  const todayDate=today();
+  const active=Object.entries(hwSets).filter(([,h])=>{
+    if(!h.active||(h.date&&h.date!==todayDate)) return false;
+    if(h.targetType==='all') return true;
+    if(h.targetType==='class') return stu.cls===h.targetCls;
+    if(h.targetType==='student') return (h.targetStudents||[]).includes(stuId);
+    return true;
+  });
+  if(!active.length){el.innerHTML='<div class="ps-empty">오늘 해당 숙제가 없습니다</div>';return;}
+  el.innerHTML=active.map(([hid,h])=>{
+    const cnt=Object.keys(h.answers||{}).length;
+    return`<div class="clinic-item ${hid===selectedHwId?'sel':''}" onclick="selectHwDirect('${hid}')">
+      <div class="clinic-name">${h.title}</div>
+      <div class="clinic-meta">${cnt}문제</div>
+    </div>`;
+  }).join('');
+}
+
+function selectHwDirect(hid){
+  selectedHwId=hid; selectedHw=hwSets[hid];
+  currentHwStuId=currentStuId; currentHwStuName=currentStuName;
+  document.getElementById('hwStep3Title').textContent='📝 '+currentHwStuName+' 답안 입력';
+  // PDF
+  var hwPdfWrap=document.getElementById('hwPdfDownloadWrap');
+  if(selectedHw.pdfData){
+    hwPdfWrap.innerHTML='<a class="pdf-download" href="'+selectedHw.pdfData+'" download="'+(selectedHw.pdfName||'답안지.pdf')+'">'
+      +'<div class="pdf-icon">📄</div><div class="pdf-info"><div class="pdf-title">답안지 PDF 다운로드</div>'
+      +'<div class="pdf-hint">'+(selectedHw.pdfName||'답안지.pdf')+'</div></div>'
+      +'<span style="color:var(--acc);font-weight:700;font-size:18px">↓</span></a>';
+    hwPdfWrap.style.display='';
+  }else{hwPdfWrap.innerHTML='';hwPdfWrap.style.display='none';}
+  hwBuildGrid();
+  ['step2','step3','step4','hwStep4'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('hwStep3').style.display='';
+}
+
+function backToStep1(){
+  selectedClinicId=null; selectedHwId=null; selectedHw=null;
+  currentStuId=null; currentStuName='';
+  setStep(1);
+  document.getElementById('stuNameInp').value='';
+  document.getElementById('err1').textContent='';
+  document.getElementById('sugg1').textContent='';
+}
+function backToStep2(){
+  ['step3','step4','hwStep3','hwStep4'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('step2').style.display='';
+  setStepDot(2);
+}
+
+function goStep3(){
+  const err=document.getElementById('err2');
+  const sugg=document.getElementById('sugg2');
+  if(!currentStuId){err.textContent='학생을 먼저 선택하세요';return;}
+  // Student already identified in step1
+  err.textContent=''; sugg.textContent='';
   resetAttend();
   buildAnsGrid();
   document.getElementById('step3Title').textContent='📝 '+currentStuName+' 채점';
@@ -843,13 +884,19 @@ function goBack(step){
   else if(step===3) setStep(2);
 }
 
+function setStepDot(n){
+  [1,2,3].forEach(i=>{
+    const d=document.getElementById('sd'+i);
+    if(d) d.className='step-dot'+(i<=n?' active':'');
+  });
+}
 function setStep(n){
   [1,2,3,4].forEach(i=>{
-    document.getElementById('step'+i).style.display=i===n?'':'none';
+    const el=document.getElementById('step'+i);
+    if(el) el.style.display=i===n?'':'none';
   });
-  [1,2,3].forEach(i=>{
-    document.getElementById('sd'+i).className='step-dot'+(i<=n?' active':'');
-  });
+  ['hwStep3','hwStep4'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  setStepDot(n);
 }
 
 function resetAll(){
