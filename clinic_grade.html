@@ -395,8 +395,8 @@ let currentHwStuId=null, currentHwStuName='', _hwGradeTab='ans', hwFocused=null;
 
 function renderHwList(){
   const el=document.getElementById('hwClinicItems');
-  const today_=today();
-  const active=Object.entries(hwSets).filter(([,h])=>h.active&&(!h.date||h.date===today_));
+  const todayDate_=today();
+  const active=Object.entries(hwSets).filter(([,h])=>h.active&&(!h.date||h.date===todayDate_));
   if(!active.length){el.innerHTML='<div style="text-align:center;padding:16px;color:#94a3b8;font-size:12px">오늘 활성화된 숙제 채점이 없습니다</div>';return;}
   el.innerHTML=active.map(([hid,h])=>{
     const cnt=Object.keys(h.answers||{}).length;
@@ -549,8 +549,8 @@ async function loadData(){
 
 function renderClinicList(){
   const el=document.getElementById('clinicItems');
-  const today=today();
-  const active=Object.entries(clinicData).filter(([,c])=>c.active&&(!c.date||c.date===today));
+  const todayDate=today();
+  const active=Object.entries(clinicData).filter(([,c])=>c.active&&(!c.date||c.date===todayDate));
   if(!active.length){el.innerHTML='<div style="text-align:center;padding:24px;color:#94a3b8;font-size:13px">활성화된 클리닉이 없습니다</div>';return;}
   el.innerHTML=active.map(([cid,cs])=>{
     const cnt=Object.keys(cs.answers||{}).length;
