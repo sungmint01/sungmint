@@ -369,9 +369,12 @@ function starsLabel(n,absent){
 }
 
 function renderStats(){
-  // 현재 보고 있는 달의 기록만 필터
   const monthStr=calYear+'-'+String(calMonth+1).padStart(2,'0');
-  const monthRecs=Object.values(recData).filter(r=>r.date&&r.date.startsWith(monthStr));
+  // 의미 있는 데이터가 있는 세션만 카운트 (recMap과 동일 기준)
+  const monthRecs=Object.values(recData).filter(r=>{
+    if(!r.date||!r.date.startsWith(monthStr)) return false;
+    return r.eval!=null||r.prog||r.hwC||r.cli||r.comment||r.special||r.absent||r.late||r.prevHw||r.note;
+  });
   // 총 수업 횟수: 해당 월 기록 중 가장 큰 회차
   const maxNum=monthRecs.length?Math.max(...monthRecs.map(r=>r.num||0)):0;
   document.getElementById('sTot').textContent=maxNum||'-';
