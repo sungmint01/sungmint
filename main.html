@@ -86,35 +86,49 @@
 
 
 
+
+
 <script>
 (function(){
   if(typeof firebase==='undefined') return;
-  var VK='smv';
+  // 버전 파라미터가 이미 있으면 제거 후 저장 (새로 받아온 것)
+  var url=new URL(location.href);
+  var urlVer=url.searchParams.get('_v');
+  if(urlVer){
+    sessionStorage.setItem('smv',urlVer);
+    url.searchParams.delete('_v');
+    history.replaceState(null,'',url.toString());
+  }
   function initFB(){
+    if(typeof firebase==='undefined') return false;
+    if(firebase.apps&&firebase.apps.length>0) return true;
     if(typeof SM_CONFIG==='undefined'||!SM_CONFIG.apiKey||SM_CONFIG.apiKey.includes('여기에')) return false;
     try{if(!firebase.apps.length)firebase.initializeApp(SM_CONFIG);}catch(e){}
-    return true;
+    return firebase.apps.length>0;
   }
   function doCheck(){
-    if(!firebase.apps.length) return;
+    if(!initFB()) return;
     firebase.database().ref('smAppVersion').once('value',function(s){
       var sv=s.val();
       if(!sv) return;
-      var lv=sessionStorage.getItem(VK);
-      if(lv===null){sessionStorage.setItem(VK,sv);return;}
-      if(sv!==lv){sessionStorage.setItem(VK,sv);location.reload(true);}
+      var lv=sessionStorage.getItem('smv');
+      if(!lv){sessionStorage.setItem('smv',sv);return;}
+      if(sv!==lv){
+        sessionStorage.setItem('smv',sv);
+        // URL에 버전 파라미터 붙여서 리다이렉트 → 브라우저 캐시 완전 우회
+        var u=new URL(location.href);
+        u.searchParams.set('_v',sv);
+        location.replace(u.toString());
+      }
     });
   }
-  // 페이지 최초 로드 시 즉시 체크
   if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',function(){if(initFB())doCheck();});
-  }else{if(initFB())doCheck();}
-  // 탭이 포커스될 때마다 체크
+    document.addEventListener('DOMContentLoaded',function(){setTimeout(doCheck,500);});
+  }else{setTimeout(doCheck,500);}
   document.addEventListener('visibilitychange',function(){
-    if(document.visibilityState==='visible'&&initFB())doCheck();
+    if(document.visibilityState==='visible') doCheck();
   });
-  // 30초마다 백그라운드 체크
-  setInterval(function(){if(initFB())doCheck();},30000);
+  setInterval(doCheck,30000);
 })();
 </script>
 
