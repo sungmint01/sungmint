@@ -13,7 +13,7 @@
 <script src="config.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'MaruBuri, Noto Sans KR',sans-serif;background:#f8faff;color:#1a202c;min-height:100vh}
+body{font-family:'MaruBuri','Noto Sans KR',sans-serif;background:#f8faff;color:#1a202c;min-height:100vh}
 :root{--bl:#74B3D8;--bld:#5a9ec7;--pu:#5a8ae0;--pud:#3764bf}
 
 /* Login */
@@ -621,7 +621,7 @@ function closeLightbox() {
   document.body.style.overflow = '';
 }
 
-function today() { return today(); }
+// today() defined above
 
 // Auto-login if session exists
 window.addEventListener('DOMContentLoaded', async () => {
