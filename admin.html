@@ -182,12 +182,24 @@ textarea.inp{resize:vertical;min-height:68px}
 .ps-empty{text-align:center;padding:32px;color:#94a3b8;font-size:13px}
 .ps-badge.ps-done.clickable{cursor:pointer;transition:.15s}
 .ps-badge.ps-done.clickable:hover{background:#bbf7d0;color:#14532d}
-#plannerPreviewOv{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:none;align-items:center;justify-content:center;padding:20px}
+#plannerPreviewOv{position:fixed;inset:0;background:rgba(10,20,40,.55);backdrop-filter:blur(4px);z-index:300;display:none;align-items:center;justify-content:center;padding:20px}
 #plannerPreviewOv.open{display:flex}
-.planner-preview-box{background:#fff;border-radius:16px;padding:20px;max-width:500px;width:100%;max-height:90vh;overflow-y:auto;position:relative}
-.planner-preview-title{font-size:14px;font-weight:700;color:#1a2840;margin-bottom:14px}
-.planner-preview-img{width:100%;border-radius:10px;margin-bottom:10px;display:block;cursor:pointer}
-.planner-preview-close{position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;color:#8a96b4;cursor:pointer}
+.planner-preview-box{background:#e4e8f4;border-radius:22px;padding:0;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+.pp-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid #d2dcf0}
+.pp-title{font-family:'Nanum Myeongjo',serif;font-size:16px;font-weight:700;color:#1a2840}
+.pp-close{background:none;border:none;font-size:20px;color:#8a96b4;cursor:pointer;line-height:1;padding:2px}
+.pp-body{padding:18px 22px}
+.pp-img-wrap{margin-bottom:14px}
+.planner-preview-img{width:100%;border-radius:12px;display:block;cursor:zoom-in;box-shadow:0 4px 16px rgba(0,0,0,.12);transition:.2s}
+.planner-preview-img:hover{transform:scale(1.01)}
+.pp-comment-box{background:#fff;border-radius:14px;padding:14px 16px;margin-top:8px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.pp-comment-label{font-size:11px;font-weight:700;color:#8a96b4;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.pp-existing-comment{font-size:13px;color:#374151;line-height:1.7;padding:10px 12px;background:#f8fafc;border-radius:8px;margin-bottom:10px}
+.pp-comment-ta{width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;font-family:inherit;resize:vertical;min-height:70px;outline:none;transition:.2s;color:#1a2840;background:#fff}
+.pp-comment-ta:focus{border-color:#3764bf;box-shadow:0 0 0 3px rgba(55,100,191,.1)}
+.pp-save-btn{margin-top:8px;background:linear-gradient(135deg,#5a8ae0,#3764bf);color:#fff;border:none;border-radius:10px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;float:right;transition:.2s}
+.pp-save-btn:hover{opacity:.9}
+.pp-no-img{text-align:center;padding:30px;color:#94a3b8;font-size:13px}
 /* OD4P status */
 .od-date-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .od-date-label{font-size:13px;font-weight:700;color:#1a2840}
@@ -563,9 +575,11 @@ textarea.inp{resize:vertical;min-height:68px}
 <div class="toast" id="toast"></div>
 <div id="plannerPreviewOv" onclick="if(event.target===this)closePlannerPreview()">
   <div class="planner-preview-box">
-    <button class="planner-preview-close" onclick="closePlannerPreview()">✕</button>
-    <div class="planner-preview-title" id="ppTitle"></div>
-    <div id="ppImgs"></div>
+    <div class="pp-header">
+      <div class="pp-title" id="ppTitle"></div>
+      <button class="pp-close" onclick="closePlannerPreview()">✕</button>
+    </div>
+    <div class="pp-body" id="ppBody"></div>
   </div>
 </div>
 <div class="lightbox" id="lightbox" onclick="if(event.target===this)closeLightbox()"><button class="lightbox-close" onclick="closeLightbox()">✕</button><img id="lbImg" style="max-width:100%;max-height:90vh;border-radius:10px"></div>
@@ -1392,7 +1406,7 @@ function renderPsTable(){
       const badge=document.createElement('span');
       badge.className='ps-badge ps-done clickable';
       badge.textContent='✓ 제출';
-      badge.onclick=(function(name,items){return function(){openPlannerPreview(name,'📋 계획 플래너',items);};})(stu.name,planItems);
+      badge.onclick=(function(name,items,sid){return function(){openPlannerPreview(name,'📋 계획 플래너',items,sid);};})(stu.name,planItems,sid);
       tdPlan.appendChild(badge);
     }else{
       tdPlan.innerHTML='<span class="ps-badge ps-missing">미제출</span>';
@@ -1404,7 +1418,7 @@ function renderPsTable(){
       const badge=document.createElement('span');
       badge.className='ps-badge ps-done clickable';
       badge.textContent='✓ 제출';
-      badge.onclick=(function(name,items){return function(){openPlannerPreview(name,'✅ 완료 플래너',items);};})(stu.name,doneItems);
+      badge.onclick=(function(name,items,sid){return function(){openPlannerPreview(name,'✅ 완료 플래너',items,sid);};})(stu.name,doneItems,sid);
       tdDone.appendChild(badge);
     }else{
       tdDone.innerHTML='<span class="ps-badge ps-missing">미제출</span>';
@@ -1417,28 +1431,80 @@ function renderPsTable(){
   el.appendChild(table);
 }
 
-function openPlannerPreview(stuName, type, items){
+function openPlannerPreview(stuName, type, items, stuId){
   document.getElementById('ppTitle').textContent=stuName+' · '+type;
-  const container=document.getElementById('ppImgs');
-  container.innerHTML='';
-  items.forEach(function(p){
+  const body=document.getElementById('ppBody');
+  body.innerHTML='';
+  if(!items||!items.length){
+    body.innerHTML='<div class="pp-no-img">이미지가 없습니다</div>';
+    document.getElementById('plannerPreviewOv').classList.add('open');
+    return;
+  }
+  items.forEach(function(p,idx){
+    const wrap=document.createElement('div');
+    wrap.className='pp-img-wrap';
+    // Image
     if(p.imageData||p.imageUrl){
       const img=document.createElement('img');
       img.className='planner-preview-img';
       img.src=p.imageData||p.imageUrl||'';
       img.onclick=function(){openLightbox(this.src);};
-      container.appendChild(img);
+      wrap.appendChild(img);
     }
+    // Comment box
+    const cbox=document.createElement('div');
+    cbox.className='pp-comment-box';
+    const lbl=document.createElement('div');
+    lbl.className='pp-comment-label';
+    lbl.innerHTML='💬 코멘트';
+    cbox.appendChild(lbl);
     if(p.comment){
-      const div=document.createElement('div');
-      div.style.cssText='font-size:12px;color:#374151;padding:8px 10px;background:#f8fafc;border-radius:8px;margin-bottom:8px';
-      div.textContent='💬 '+p.comment;
-      container.appendChild(div);
+      const existing=document.createElement('div');
+      existing.className='pp-existing-comment';
+      existing.textContent=p.comment;
+      cbox.appendChild(existing);
     }
+    const ta=document.createElement('textarea');
+    ta.className='pp-comment-ta';
+    ta.placeholder='코멘트를 입력하세요...';
+    ta.value=p.comment||'';
+    ta.id='ppCmt_'+idx;
+    cbox.appendChild(ta);
+    const btn=document.createElement('button');
+    btn.className='pp-save-btn';
+    btn.textContent='저장';
+    btn.onclick=(function(plannerObj, taEl, nameStr){
+      return async function(){
+        const val=taEl.value.trim();
+        // Find plannerObj pid in Firebase
+        const stuPlanners=planners[stuId]||{};
+        const pid=Object.keys(stuPlanners).find(function(k){
+          const sp=stuPlanners[k];
+          return sp.date===plannerObj.date&&sp.type===plannerObj.type&&(sp.ts||0)===(plannerObj.ts||0);
+        });
+        if(pid){
+          await db.ref('smPlanners/'+stuId+'/'+pid+'/comment').set(val);
+          // Update existing comment display
+          const existing=taEl.previousSibling;
+          if(existing&&existing.className==='pp-existing-comment'){
+            existing.textContent=val||'';
+          }else if(val){
+            const newEx=document.createElement('div');
+            newEx.className='pp-existing-comment';
+            newEx.textContent=val;
+            taEl.parentNode.insertBefore(newEx,taEl);
+          }
+          toast(nameStr+' 코멘트 저장됨');
+        }
+      };
+    })(p, ta, stuName);
+    cbox.appendChild(btn);
+    const clear=document.createElement('div');
+    clear.style.clear='both';
+    cbox.appendChild(clear);
+    wrap.appendChild(cbox);
+    body.appendChild(wrap);
   });
-  if(!container.children.length){
-    container.innerHTML='<div style="text-align:center;padding:20px;color:#94a3b8;font-size:13px">이미지가 없습니다</div>';
-  }
   document.getElementById('plannerPreviewOv').classList.add('open');
 }
 
