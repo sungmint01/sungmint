@@ -2002,38 +2002,51 @@ async function saveBulkHW(){
       const snap=await db.ref('smSessions/'+stuId).get();
       const existing=snap.val()||{};
       const num=parseInt(document.getElementById('bmNum').value)||1;
-      // 같은 날짜 세션이 있으면 hwC/note만 업데이트 (cli 등 기존 데이터 보존)
-      // 같은 날짜의 세션 찾기 (종류 무관 - 어떤 세션이든 hwC/prog/note만 업데이트)
+      // 같은 날짜 세션 찾기
       const dateRecs = Object.entries(existing).filter(([,r])=>r.date===date);
-      // 중복 세션이면 병합 후 단일 세션에 업데이트
-      if(dateRecs.length>1){
-        // 가장 많은 필드를 가진 세션을 기준으로 병합
-        const filledCount=([,r])=>Object.values(r).filter(v=>v!==null&&v!==''&&v!==undefined).length;
+      let targetKey = null;
+
+      if(dateRecs.length > 1){
+        // 중복 세션 병합: 가장 많은 데이터를 가진 것을 기준으로
+        const filledCount=([,r])=>Object.values(r).filter(v=>v!==null&&v!==''&&v!==undefined&&v!==false).length;
         dateRecs.sort((a,b)=>filledCount(b)-filledCount(a));
         const base=dateRecs[0];
+        targetKey = base[0]; // 병합 후 남길 세션 키 (merge 전에 기록)
         let merged_={...base[1]};
-        for(const [sid,r] of dateRecs.slice(1)){
+        for(const [sesKey,r] of dateRecs.slice(1)){
           for(const [k,v] of Object.entries(r)){
-            if(v!==null&&v!==undefined&&v!==''&&!merged_[k]) merged_[k]=v;
+            // 기존 값이 없거나 falsy일 때만 병합 (단 false/0은 유의미한 값이므로 null/''만 제외)
+            const existing_val = merged_[k];
+            if(existing_val===null||existing_val===undefined||existing_val===''){
+              if(v!==null&&v!==undefined&&v!=='') merged_[k]=v;
+            }
           }
-          await db.ref('smSessions/'+stuId+'/'+sid).remove();
+          await db.ref('smSessions/'+stuId+'/'+sesKey).remove();
         }
-        await db.ref('smSessions/'+stuId+'/'+base[0]).update(merged_);
+        // null 값은 제외하고 업데이트 (Firebase에서 null은 삭제를 의미)
+        const cleanMerged = Object.fromEntries(Object.entries(merged_).filter(([,v])=>v!==null&&v!==undefined));
+        await db.ref('smSessions/'+stuId+'/'+base[0]).update(cleanMerged);
+      } else if(dateRecs.length === 1){
+        targetKey = dateRecs[0][0];
       }
-      const existingRec = dateRecs.find(([,r])=>r.hwC) ||
-                          dateRecs[0] || null;
+
       const bmProg = document.getElementById('bmProg').value;
       const bmNote = document.getElementById('bmNote').value;
-      // 입력된 칸만 반영
+      // 입력된 칸만 반영 (기존 데이터 절대 건드리지 않음)
       const updateData = {upd:Date.now()};
       if(hwC) updateData.hwC = hwC;
       if(num) updateData.num = num;
       if(bmProg) updateData.prog = bmProg;
       if(bmNote) updateData.note = bmNote;
-      if(existingRec){
-        await db.ref('smSessions/'+stuId+'/'+existingRec[0]).update(updateData);
+
+      if(targetKey){
+        // 기존 세션에 지정 필드만 update
+        await db.ref('smSessions/'+stuId+'/'+targetKey).update(updateData);
       }else{
-        updateData.date = date; updateData.eval = null; updateData.at = Date.now();
+        // 해당 날짜 세션 없음 → 새로 생성
+        updateData.date = date;
+        updateData.eval = null;
+        updateData.at = Date.now();
         await db.ref('smSessions/'+stuId).push(updateData);
       }
     }));
