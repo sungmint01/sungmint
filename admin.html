@@ -1598,15 +1598,15 @@ function starsHtml(n,absent,late){
 function renderCal(){
   const data=sessions[uid_]||{};
   const recMap={};
+  const recScore=r=>(r.eval!=null?8:0)+(r.prog?4:0)+(r.cli?4:0)+(r.hwC?2:0)+(r.comment?2:0)+(r.prevHw?2:0)+(r.special?1:0)+(r.absent||r.late?1:0);
   Object.entries(data).forEach(([sid,r])=>{
     if(!r.date)return;
     const prev=recMap[r.date];
     if(!prev){recMap[r.date]={...r,sid};return;}
-    // 우선순위: cli 있는 것 > 최신 업데이트
-    const rHasCli=!!(r.cli&&r.cli.trim());
-    const pHasCli=!!(prev.cli&&prev.cli.trim());
-    if(rHasCli&&!pHasCli) recMap[r.date]={...r,sid};
-    else if(!rHasCli&&pHasCli) {/* keep prev */}
+    // 우선순위: 데이터 많은 것 > 최신
+    const rs=recScore(r), ps=recScore(prev);
+    if(rs>ps) recMap[r.date]={...r,sid};
+    else if(rs<ps){/* keep prev */}
     else if((r.upd||0)>(prev.upd||0)) recMap[r.date]={...r,sid};
   });
   const mn=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
@@ -1843,8 +1843,26 @@ async function saveRecord(){
   const[y,m]=date.split('-');calYear=parseInt(y);calMonth=parseInt(m)-1;
   const data={date,num:parseInt(document.getElementById('rmNum').value)||1,prog:document.getElementById('rmProg').value,eval:(()=>{const v=parseInt(document.getElementById('rmEval').value);return v<0?null:v;})(),absent:document.getElementById('rmAbsent').checked,late:document.getElementById('rmLate').checked,prevHw:document.getElementById('rmPrevHw').value,comment:document.getElementById('rmComment').value,special:document.getElementById('rmSpecial').value,hwC:document.getElementById('rmHwC').value,cli:document.getElementById('rmCli').value,note:document.getElementById('rmNote').value,upd:Date.now()};
   const sid=document.getElementById('rmId').value;
-  if(sid){await db.ref(`smSessions/${uid_}/${sid}`).update(data);toast('수정되었습니다');}
-  else{data.at=Date.now();await db.ref(`smSessions/${uid_}`).push(data);toast('기록이 추가되었습니다');}
+  // eval이 null이면 update에서 제외 (Firebase에서 null = 필드 삭제)
+  const safeData=Object.fromEntries(Object.entries(data).filter(([,v])=>v!==null&&v!==undefined));
+  if(data.eval===null) safeData.eval=null; // eval 의도적 해제는 별도 set
+  if(sid){
+    // null 값 필드는 개별 remove, 나머지는 update
+    const updates={};
+    for(const [k,v] of Object.entries(data)){
+      if(v===null||v===undefined) updates[k]=null; // Firebase에서 삭제
+      else updates[k]=v;
+    }
+    await db.ref(`smSessions/${uid_}/${sid}`).update(updates);
+    toast('수정되었습니다');
+  }else{
+    data.at=Date.now();
+    // 새 세션: null 필드 제외하고 push
+    const pushData=Object.fromEntries(Object.entries(data).filter(([,v])=>v!==null&&v!==undefined&&v!==''));
+    pushData.at=Date.now();
+    await db.ref(`smSessions/${uid_}`).push(pushData);
+    toast('기록이 추가되었습니다');
+  }
   closeRM();
 }
 async function delCurrentRec(){
@@ -2007,47 +2025,44 @@ async function saveBulkHW(){
       let targetKey = null;
 
       if(dateRecs.length > 1){
-        // 중복 세션 병합: 가장 많은 데이터를 가진 것을 기준으로
-        const filledCount=([,r])=>Object.values(r).filter(v=>v!==null&&v!==''&&v!==undefined&&v!==false).length;
-        dateRecs.sort((a,b)=>filledCount(b)-filledCount(a));
-        const base=dateRecs[0];
-        targetKey = base[0]; // 병합 후 남길 세션 키 (merge 전에 기록)
-        let merged_={...base[1]};
+        // 중복: 가장 많은 데이터를 가진 세션을 target으로 선정
+        const score=([,r])=>(r.eval!=null?10:0)+(r.prevHw?5:0)+(r.prog?3:0)+(r.cli?4:0)+(r.hwC?2:0)+(r.comment?2:0)+(r.special?1:0);
+        dateRecs.sort((a,b)=>score(b)-score(a));
+        targetKey = dateRecs[0][0]; // 남길 세션 (이 키에만 update)
+        // 나머지 세션의 유의미한 필드를 target에 병합 (field별 set, 전체 update 아님)
         for(const [sesKey,r] of dateRecs.slice(1)){
-          for(const [k,v] of Object.entries(r)){
-            // 기존 값이 없거나 falsy일 때만 병합 (단 false/0은 유의미한 값이므로 null/''만 제외)
-            const existing_val = merged_[k];
-            if(existing_val===null||existing_val===undefined||existing_val===''){
-              if(v!==null&&v!==undefined&&v!=='') merged_[k]=v;
+          const fields=['prevHw','eval','prog','cli','comment','special','note','absent','late','num'];
+          for(const k of fields){
+            if(r[k]!=null&&r[k]!==''&&r[k]!==false){
+              // target에 해당 필드가 없을 때만 복사
+              const snapField=await db.ref('smSessions/'+stuId+'/'+targetKey+'/'+k).get();
+              if(snapField.val()==null||snapField.val()===''){
+                await db.ref('smSessions/'+stuId+'/'+targetKey+'/'+k).set(r[k]);
+              }
             }
           }
           await db.ref('smSessions/'+stuId+'/'+sesKey).remove();
         }
-        // null 값은 제외하고 업데이트 (Firebase에서 null은 삭제를 의미)
-        const cleanMerged = Object.fromEntries(Object.entries(merged_).filter(([,v])=>v!==null&&v!==undefined));
-        await db.ref('smSessions/'+stuId+'/'+base[0]).update(cleanMerged);
       } else if(dateRecs.length === 1){
         targetKey = dateRecs[0][0];
       }
 
       const bmProg = document.getElementById('bmProg').value;
       const bmNote = document.getElementById('bmNote').value;
-      // 입력된 칸만 반영 (기존 데이터 절대 건드리지 않음)
-      const updateData = {upd:Date.now()};
-      if(hwC) updateData.hwC = hwC;
-      if(num) updateData.num = num;
-      if(bmProg) updateData.prog = bmProg;
-      if(bmNote) updateData.note = bmNote;
-
+      // 입력한 칸만 개별 set (update()가 아닌 set per field → 다른 필드 절대 영향 없음)
       if(targetKey){
-        // 기존 세션에 지정 필드만 update
-        await db.ref('smSessions/'+stuId+'/'+targetKey).update(updateData);
+        if(hwC) await db.ref('smSessions/'+stuId+'/'+targetKey+'/hwC').set(hwC);
+        if(num) await db.ref('smSessions/'+stuId+'/'+targetKey+'/num').set(num);
+        if(bmProg) await db.ref('smSessions/'+stuId+'/'+targetKey+'/prog').set(bmProg);
+        if(bmNote) await db.ref('smSessions/'+stuId+'/'+targetKey+'/note').set(bmNote);
+        await db.ref('smSessions/'+stuId+'/'+targetKey+'/upd').set(Date.now());
       }else{
-        // 해당 날짜 세션 없음 → 새로 생성
-        updateData.date = date;
-        updateData.eval = null;
-        updateData.at = Date.now();
-        await db.ref('smSessions/'+stuId).push(updateData);
+        // 해당 날짜 세션 없음 → 새로 생성 (최소 필드만)
+        const newSes={date,hwC,eval:null,at:Date.now(),upd:Date.now()};
+        if(num) newSes.num=num;
+        if(bmProg) newSes.prog=bmProg;
+        if(bmNote) newSes.note=bmNote;
+        await db.ref('smSessions/'+stuId).push(newSes);
       }
     }));
     toast(`${bmSelectedClass} 학생 ${targets.length}명 숙제 등록 완료 (기존 기록 유지)`);
