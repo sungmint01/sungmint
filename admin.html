@@ -649,7 +649,7 @@ async function cleanOldPlanners(){
       Object.entries(stuPlanners).forEach(function([pid,p]){
         if((p.ts||0)<limit){
           deletes.push(db.ref('smPlanners/'+stuId+'/'+pid).remove());
-          deletes.push(db.ref('smPlannerImages/'+pid).remove()); // 분리 저장 이미지도 삭제
+          deletes.push(db.ref('smPlannerImages/'+pid).remove());
         }
       });
     });
@@ -1074,14 +1074,8 @@ async function saveClinicSet(){
     if(!checked.length){alert('학생을 선택하세요');return;}
     data.targetStudents=checked;
   }
-  // PDF 첨부
-  if(_clPdfData){data.pdfData=_clPdfData;data.pdfName=_clPdfName;data.pdfUploadedAt=Date.now();}
-  if(_clEditId){
-    if(!_clPdfData){delete data.pdfData;delete data.pdfName;delete data.pdfUploadedAt;}
-    await db.ref('smClinicSets/'+_clEditId).update(data);
-  }else{
-    await db.ref('smClinicSets').push(data);
-  }
+  if(_clEditId) await db.ref('smClinicSets/'+_clEditId).update(data);
+  else await db.ref('smClinicSets').push(data);
   toast('클리닉이 저장되었습니다');
   closeClinicForm();
 }
@@ -1454,26 +1448,26 @@ function openPlannerPreview(stuName, type, items, stuId){
     wrap.className='pp-img-wrap';
     // Image
     if(p.imageData||p.imageUrl){
-      if(p.imageData||p.imageUrl){
+      var thumbSrc2=p.thumbData||p.imageData||p.imageUrl||'';
+      if(thumbSrc2){
         const img=document.createElement('img');
         img.className='planner-preview-img';
-        img.src=p.imageData||p.imageUrl||'';
-        img.onclick=function(){openLightbox(this.src);};
+        img.src=thumbSrc2;
+        img.style.cursor='zoom-in';
+        if(p.thumbData){
+          // 클릭 시 원본 로드
+          img.onclick=(function(el,pid_){return function(){
+            if(el.dataset.fullSrc){openLightbox(el.dataset.fullSrc);return;}
+            el.style.opacity='0.6';
+            db.ref('smPlannerImages/'+pid_).once('value').then(function(snap){
+              el.style.opacity='1';
+              var src=snap.val();
+              if(src){el.dataset.fullSrc=src;openLightbox(src);}
+              else{openLightbox(el.src);}
+            });
+          };})(img,pid);
+        }else{img.onclick=function(){openLightbox(this.src);};}
         wrap.appendChild(img);
-      }else if(p.hasImage){
-        const ld=document.createElement('div');
-        ld.style.cssText='background:#d2dcf0;border-radius:12px;height:140px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:#5a6e96;margin-bottom:10px';
-        ld.textContent='📷 탭하여 이미지 로드';
-        const pid_=(function(pp){return pp;})(Object.keys(planners[stuId]||{}).find(k=>{const pl=planners[stuId][k];return pl&&pl.ts===p.ts&&pl.type===p.type;})||'');
-        ld.onclick=function(){
-          ld.textContent='로딩 중...';
-          db.ref('smPlannerImages/'+pid_).once('value').then(function(snap){
-            const src=snap.val();
-            if(src){const img2=document.createElement('img');img2.className='planner-preview-img';img2.src=src;img2.onclick=function(){openLightbox(src);};ld.parentNode.replaceChild(img2,ld);}
-            else{ld.textContent='이미지 없음';}
-          });
-        };
-        wrap.appendChild(ld);
       }
     }
     // Comment box
@@ -1972,16 +1966,6 @@ async function savePlannerComment(sid,pid){
   if(!ta)return;
   await db.ref(`smPlanners/${sid}/${pid}/comment`).set(ta.value.trim());
   toast('코멘트가 저장되었습니다');
-}
-
-
-function adminLoadPlanImg(el, pid){
-  el.textContent='로딩 중...';
-  db.ref('smPlannerImages/'+pid).once('value').then(function(snap){
-    var src=snap.val();
-    if(src){var img=document.createElement('img');img.className='rm-planner-img';img.src=src;img.onclick=function(){openLightbox(src);};img.loading='lazy';el.parentNode.replaceChild(img,el);}
-    else{el.textContent='이미지 없음';}
-  });
 }
 
 function openLightbox(src){

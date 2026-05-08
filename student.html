@@ -416,16 +416,19 @@ async function uploadPlanner() {
   msg.textContent = '';
 
   try {
-    // Compress to small base64 — no Storage needed
-    const base64 = await compressToBase64(selectedFile, 900, 0.75);
+    // 썸네일(표시용) + 원본(클릭시) 분리 생성
+    const thumbData = await compressToBase64(selectedFile, 400, 0.4); // ~15KB 썸네일
+    fill.style.width = '50%';
+    const fullData  = await compressToBase64(selectedFile, 800, 0.65); // ~100KB 원본
     fill.style.width = '70%';
     btn.innerHTML = '저장 중...';
 
-    // 메타데이터와 이미지 분리 저장 (다운로드 절감)
     const newRef = db.ref(`smPlanners/${stuId}`).push();
     const pid = newRef.key;
-    await newRef.set({ date, type: planType, ts: Date.now(), hasImage: true });
-    await db.ref(`smPlannerImages/${pid}`).set(base64);
+    // 썸네일만 smPlanners에 저장 (목록 로드 시 작은 용량)
+    await newRef.set({ date, type: planType, thumbData, ts: Date.now() });
+    // 원본은 별도 경로 (클릭 시만 로드)
+    await db.ref(`smPlannerImages/${pid}`).set(fullData);
 
     fill.style.width = '100%';
     const label = planType === 'plan' ? '계획' : '완료';
@@ -450,25 +453,8 @@ async function uploadPlanner() {
   }
 }
 
-
-async function loadPlannerImg(el, pid){
-  el.textContent = '로딩 중...';
-  const snap = await db.ref('smPlannerImages/' + pid).get();
-  const src = snap.val();
-  if(src){
-    const img = document.createElement('img');
-    img.className = 'pdm-img';
-    img.src = src;
-    img.onclick = () => openLightbox(src);
-    img.loading = 'lazy';
-    el.replaceWith(img);
-  } else {
-    el.textContent = '이미지 없음';
-  }
-}
-
-// Compress image and return base64 string
-function compressToBase64(file, maxWidth, quality) {
+// 이미지 압축 (가로/세로 모두 maxDim 이하)
+function compressToBase64(file, maxDim, quality) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = reject;
@@ -478,10 +464,10 @@ function compressToBase64(file, maxWidth, quality) {
       img.onload = () => {
         const canvas = document.createElement('canvas');
         let w = img.width, h = img.height;
-        if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+        const max = Math.max(w, h);
+        if (max > maxDim) { w = Math.round(w * maxDim / max); h = Math.round(h * maxDim / max); }
         canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
         resolve(canvas.toDataURL('image/jpeg', quality));
       };
       img.src = e.target.result;
@@ -615,10 +601,10 @@ function openPlanDetail(ds, plans) {
       : '<div class="pdm-no-comment">⏳ 코멘트 대기 중</div>';
     html += '<div class="pdm-item">';
     html += '<div class="pdm-item-head">' + badge + '</div>';
-    if(p.imageData||p.imageUrl){
-        html += '<img class="pdm-img" src="' + (p.imageData||p.imageUrl||'') + '" onclick="openLightbox(this.src)" loading="lazy">';
-      }else if(p.hasImage){
-        html += '<div class="pdm-img-lazy" data-pid="'+pid+'" onclick="loadPlannerImg(this,\''+pid+'\')" style="background:#d2dcf0;border-radius:10px;height:120px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:#5a6e96">📷 탭하여 이미지 보기</div>';
+    const thumbSrc = p.thumbData || p.imageData || p.imageUrl || '';
+      if(thumbSrc){
+        // 썸네일로 즉시 표시, 클릭 시 원본 로드
+        html += '<img class="pdm-img" src="' + thumbSrc + '" data-pid="'+pid+'" data-has-full="'+(p.thumbData?'1':'0')+'" onclick="plannerImgClick(this)" loading="lazy" style="cursor:zoom-in">';
       }
     html += commentHtml + '</div>';
   });
