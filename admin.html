@@ -1395,9 +1395,11 @@ function renderPsTable(){
   const tbody=document.createElement('tbody');
   stuArr.forEach(function([sid,stu]){
     const sp=(planners[sid]||{});
-    const dayPlanners=Object.values(sp).filter(function(p){return p.date===_psDate;});
-    const planItems=dayPlanners.filter(function(p){return p.type!=='done';});
-    const doneItems=dayPlanners.filter(function(p){return p.type==='done';});
+    // dayPlanners → dayEntries로 대체됨
+    // pid를 각 item에 포함 (이미지 로드 시 필요)
+    const dayEntries=Object.entries(sp).filter(function([,p]){return p.date===_psDate;});
+    const planItems=dayEntries.filter(function([,p]){return p.type!=='done';}).map(function([pid,p]){return Object.assign({},p,{_pid:pid});});
+    const doneItems=dayEntries.filter(function([,p]){return p.type==='done';}).map(function([pid,p]){return Object.assign({},p,{_pid:pid});});
     const tr=document.createElement('tr');
     // Name cell
     const tdName=document.createElement('td');
@@ -1444,31 +1446,40 @@ function openPlannerPreview(stuName, type, items, stuId){
     return;
   }
   items.forEach(function(p,idx){
+    // pid 찾기 (썸네일 원본 로드용)
+    const stuPlanners2=planners[stuId]||{};
+    const pid=Object.keys(stuPlanners2).find(function(k){
+      const sp=stuPlanners2[k];
+      return sp&&sp.type===p.type&&(sp.ts||0)===(p.ts||0);
+    })||'';
+
     const wrap=document.createElement('div');
     wrap.className='pp-img-wrap';
-    // Image
-    if(p.imageData||p.imageUrl){
-      var thumbSrc2=p.thumbData||p.imageData||p.imageUrl||'';
-      if(thumbSrc2){
-        const img=document.createElement('img');
-        img.className='planner-preview-img';
-        img.src=thumbSrc2;
-        img.style.cursor='zoom-in';
-        if(p.thumbData){
-          // 클릭 시 원본 로드
-          img.onclick=(function(el,pid_){return function(){
-            if(el.dataset.fullSrc){openLightbox(el.dataset.fullSrc);return;}
-            el.style.opacity='0.6';
-            db.ref('smPlannerImages/'+pid_).once('value').then(function(snap){
-              el.style.opacity='1';
-              var src=snap.val();
-              if(src){el.dataset.fullSrc=src;openLightbox(src);}
-              else{openLightbox(el.src);}
-            });
-          };})(img,pid);
-        }else{img.onclick=function(){openLightbox(this.src);};}
-        wrap.appendChild(img);
+    // Image — thumbData(새형식) 또는 imageData(구형식) 모두 처리
+    var thumbSrc2=p.thumbData||p.imageData||p.imageUrl||'';
+    var itemPid=p._pid||'';
+    if(thumbSrc2){
+      var img=document.createElement('img');
+      img.className='planner-preview-img';
+      img.src=thumbSrc2;
+      img.style.cursor='zoom-in';
+      if(p.thumbData&&itemPid){
+        // 새형식: 클릭 시 원본(smPlannerImages) 로드
+        img.onclick=(function(el,pid_){return function(){
+          if(el.dataset.fullSrc){openLightbox(el.dataset.fullSrc);return;}
+          el.style.opacity='0.6';
+          db.ref('smPlannerImages/'+pid_).once('value').then(function(snap){
+            el.style.opacity='1';
+            var src=snap.val();
+            if(src){el.dataset.fullSrc=src;openLightbox(src);}
+            else{openLightbox(el.src);}
+          });
+        };})(img,itemPid);
+      }else{
+        // 구형식: imageData 그대로 lightbox
+        img.onclick=function(){openLightbox(this.src);};
       }
+      wrap.appendChild(img);
     }
     // Comment box
     const cbox=document.createElement('div');
