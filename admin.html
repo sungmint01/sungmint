@@ -1074,8 +1074,14 @@ async function saveClinicSet(){
     if(!checked.length){alert('학생을 선택하세요');return;}
     data.targetStudents=checked;
   }
-  if(_clEditId) await db.ref('smClinicSets/'+_clEditId).update(data);
-  else await db.ref('smClinicSets').push(data);
+  // PDF 첨부
+  if(_clPdfData){data.pdfData=_clPdfData;data.pdfName=_clPdfName;data.pdfUploadedAt=Date.now();}
+  if(_clEditId){
+    if(!_clPdfData){delete data.pdfData;delete data.pdfName;delete data.pdfUploadedAt;}
+    await db.ref('smClinicSets/'+_clEditId).update(data);
+  }else{
+    await db.ref('smClinicSets').push(data);
+  }
   toast('클리닉이 저장되었습니다');
   closeClinicForm();
 }
