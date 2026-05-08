@@ -357,7 +357,7 @@ function loadStudentData(stuId, stu){
       }
     }catch(e){console.error('session render error:',e);}
   });
-  db.ref('smPlanners/'+sid_).on('value',function(s){try{renderViewPlanners(s.val()||{});}catch(e){console.error('planner render error:',e);}});
+  db.ref('smPlanners/'+sid_).once('value').then(function(s){try{renderViewPlanners(s.val()||{});}catch(e){console.error('planner render error:',e);}});
   const stored=localStorage.getItem('smSent_'+sid_);
   if(stored)try{sent=JSON.parse(stored);}catch(e){}
   db.ref('smConsultations/'+sid_).on('value',function(s){try{consultData=s.val()||{};renderSent();}catch(e){console.error('consult render error:',e);}});
@@ -554,7 +554,14 @@ function openVPlanDetail(ds,plans){
   plans.sort(function(a,b){return(a.ts||0)-(b.ts||0);}).forEach(function(p){
     var badge=p.type==='done'?'<span class="plan-type-badge badge-done">✅ 완료</span>':'<span class="plan-type-badge badge-plan">📋 계획</span>';
     var cmt=p.comment?'<div class="vpdm-comment"><div class="vpdm-comment-head">✏️ 선생님 코멘트</div>'+p.comment.split('\n').join('<br>')+'</div>':'<div class="vpdm-no-comment">⏳ 코멘트 대기 중</div>';
-    html+='<div class="vpdm-item"><div class="vpdm-head2">'+badge+'</div><img class="vpdm-img" src="'+(p.imageData||p.imageUrl||'')+'" onclick="openLbV(this.src)" loading="lazy">'+cmt+'</div>';
+    var imgHtml;
+    if(p.imageData||p.imageUrl){
+      imgHtml='<img class="vpdm-img" src="'+(p.imageData||p.imageUrl||'')+'" onclick="openLbV(this.src)" loading="lazy">';
+    }else if(p.hasImage){
+      var safePid=pid.replace(/[^a-zA-Z0-9_-]/g,'');
+      imgHtml='<div class="vpdm-img-lazy" id="vli_'+safePid+'" onclick="vLoadImg(this,\''+safePid+'\')" style="background:#d2dcf0;border-radius:12px;height:140px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:#5a6e96">📷 탭하여 이미지 보기</div>';
+    }else{imgHtml='';}
+    html+='<div class="vpdm-item"><div class="vpdm-head2">'+badge+'</div>'+imgHtml+cmt+'</div>';
   });
   document.getElementById('vpdmBody').innerHTML=html||'<p style="text-align:center;color:#94a3b8;padding:20px">없음</p>';
   document.getElementById('vPlanDetailOv').classList.add('open');
@@ -570,6 +577,21 @@ window.addEventListener('focus', function(){
 });
 
 function closeVPlanDetail(){document.getElementById('vPlanDetailOv').classList.remove('open');document.body.style.overflow='';}
+
+function vLoadImg(el, pid){
+  el.textContent='로딩 중...';
+  db.ref('smPlannerImages/'+pid).once('value').then(function(snap){
+    var src=snap.val();
+    if(src){
+      var img=document.createElement('img');
+      img.className='vpdm-img';img.src=src;
+      img.onclick=function(){openLbV(src);};
+      img.loading='lazy';
+      el.parentNode.replaceChild(img,el);
+    }else{el.textContent='이미지 없음';}
+  });
+}
+
 function openLbV(src){document.getElementById('lbVImg').src=src;document.getElementById('lbV').classList.add('open');document.body.style.overflow='hidden';}
 function closeLbV(){document.getElementById('lbV').classList.remove('open');document.body.style.overflow='';}
 

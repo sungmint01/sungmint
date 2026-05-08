@@ -421,12 +421,11 @@ async function uploadPlanner() {
     fill.style.width = '70%';
     btn.innerHTML = '저장 중...';
 
-    await db.ref(`smPlanners/${stuId}`).push({
-      date,
-      type: planType,
-      imageData: base64,   // base64 stored in RTDB
-      ts: Date.now()
-    });
+    // 메타데이터와 이미지 분리 저장 (다운로드 절감)
+    const newRef = db.ref(`smPlanners/${stuId}`).push();
+    const pid = newRef.key;
+    await newRef.set({ date, type: planType, ts: Date.now(), hasImage: true });
+    await db.ref(`smPlannerImages/${pid}`).set(base64);
 
     fill.style.width = '100%';
     const label = planType === 'plan' ? '계획' : '완료';
@@ -448,6 +447,23 @@ async function uploadPlanner() {
     prog.style.display = 'none';
     btn.disabled = false;
     btn.innerHTML = '📤 플래너 제출하기';
+  }
+}
+
+
+async function loadPlannerImg(el, pid){
+  el.textContent = '로딩 중...';
+  const snap = await db.ref('smPlannerImages/' + pid).get();
+  const src = snap.val();
+  if(src){
+    const img = document.createElement('img');
+    img.className = 'pdm-img';
+    img.src = src;
+    img.onclick = () => openLightbox(src);
+    img.loading = 'lazy';
+    el.replaceWith(img);
+  } else {
+    el.textContent = '이미지 없음';
   }
 }
 
@@ -599,7 +615,11 @@ function openPlanDetail(ds, plans) {
       : '<div class="pdm-no-comment">⏳ 코멘트 대기 중</div>';
     html += '<div class="pdm-item">';
     html += '<div class="pdm-item-head">' + badge + '</div>';
-    html += '<img class="pdm-img" src="' + (p.imageData||p.imageUrl||'') + '" onclick="openLightbox(this.src)" loading="lazy">';
+    if(p.imageData||p.imageUrl){
+        html += '<img class="pdm-img" src="' + (p.imageData||p.imageUrl||'') + '" onclick="openLightbox(this.src)" loading="lazy">';
+      }else if(p.hasImage){
+        html += '<div class="pdm-img-lazy" data-pid="'+pid+'" onclick="loadPlannerImg(this,\''+pid+'\')" style="background:#d2dcf0;border-radius:10px;height:120px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:#5a6e96">📷 탭하여 이미지 보기</div>';
+      }
     html += commentHtml + '</div>';
   });
   document.getElementById('pdmBody').innerHTML = html || '<div class="pdm-empty">기록이 없습니다</div>';
