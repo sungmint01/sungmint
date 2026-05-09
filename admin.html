@@ -1431,101 +1431,67 @@ function renderPsTable(){
   el.appendChild(table);
 }
 
-function openPlannerPreview(stuName, type, items, stuId){
+async function openPlannerPreview(stuName, type, items, stuId){
   document.getElementById('ppTitle').textContent=stuName+' · '+type;
   const body=document.getElementById('ppBody');
+  body.innerHTML='<div style="text-align:center;padding:20px;color:#8a96b4;font-size:13px">로딩 중...</div>';
+  document.getElementById('plannerPreviewOv').classList.add('open');
+
+  // Firebase에서 직접 최신 플래너 데이터 fetch
+  const snap=await db.ref('smPlanners/'+stuId).get();
+  const freshData=snap.val()||{};
   body.innerHTML='';
-  if(!items||!items.length){
-    body.innerHTML='<div class="pp-no-img">이미지가 없습니다</div>';
-    document.getElementById('plannerPreviewOv').classList.add('open');
+
+  const freshItems=items.map(function(p){
+    const pid=p._pid||'';
+    return Object.assign({},p,pid&&freshData[pid]?freshData[pid]:{},{_pid:pid});
+  }).filter(function(p){return p._pid;});
+
+  if(!freshItems.length){
+    body.innerHTML='<div style="text-align:center;padding:20px;color:#94a3b8">이미지가 없습니다</div>';
     return;
   }
-  items.forEach(function(p,idx){
-    const wrap=document.createElement('div');
-    wrap.className='pp-img-wrap';
-    // imageData(구형식) 또는 thumbData(신형식) 표시
-    var ppImgSrc=p.imageData||p.thumbData||p.imageUrl||'';
-    var ppHasFull=!!p.thumbData&&!p.imageData;
-    if(ppImgSrc){
+
+  freshItems.forEach(function(p){
+    const wrap=document.createElement('div');wrap.className='pp-img-wrap';
+    const imgSrc=p.imageData||p.thumbData||p.imageUrl||'';
+    const hasFull=!!p.thumbData&&!p.imageData;
+    const pid=p._pid||'';
+    if(imgSrc){
       const img=document.createElement('img');
-      img.className='planner-preview-img';
-      img.src=ppImgSrc;
-      img.style.cursor='zoom-in';
-      if(ppHasFull){
-        // 신형식: 클릭 시 smPlannerImages에서 원본 로드
-        const ppid=p._pid||'';
-        img.onclick=(function(el,pid_){return function(){
-          if(el.dataset.fullSrc){openLightbox(el.dataset.fullSrc);return;}
+      img.className='planner-preview-img';img.src=imgSrc;img.style.cursor='zoom-in';
+      if(hasFull&&pid){
+        img.onclick=(function(el,id){return function(){
+          if(el.dataset.fs){openLightbox(el.dataset.fs);return;}
           el.style.opacity='0.6';
-          db.ref('smPlannerImages/'+pid_).once('value').then(function(snap){
+          db.ref('smPlannerImages/'+id).once('value').then(function(s){
             el.style.opacity='1';
-            var src=snap.val();
-            if(src){el.dataset.fullSrc=src;openLightbox(src);}
-            else{openLightbox(el.src);}
+            var src=s.val();
+            if(src){el.dataset.fs=src;openLightbox(src);}else{openLightbox(el.src);}
           });
-        };})(img,ppid);
-      }else{
-        img.onclick=function(){openLightbox(this.src);};
-      }
+        };})(img,pid);
+      }else{img.onclick=function(){openLightbox(this.src);};}
       wrap.appendChild(img);
     }
-    // Comment box
-    const cbox=document.createElement('div');
-    cbox.className='pp-comment-box';
-    const lbl=document.createElement('div');
-    lbl.className='pp-comment-label';
-    lbl.innerHTML='💬 코멘트';
-    cbox.appendChild(lbl);
-    if(p.comment){
-      const existing=document.createElement('div');
-      existing.className='pp-existing-comment';
-      existing.textContent=p.comment;
-      cbox.appendChild(existing);
-    }
+    const cbox=document.createElement('div');cbox.className='pp-comment-box';
+    const lbl=document.createElement('div');lbl.style.cssText='font-size:11px;font-weight:700;color:#8a96b4;margin-bottom:8px';
+    lbl.textContent='코멘트';cbox.appendChild(lbl);
     const ta=document.createElement('textarea');
-    ta.className='pp-comment-ta';
-    ta.placeholder='코멘트를 입력하세요...';
-    ta.value=p.comment||'';
-    ta.id='ppCmt_'+idx;
-    cbox.appendChild(ta);
+    ta.style.cssText='width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;font-family:inherit;resize:vertical;min-height:70px;outline:none;color:#1a2840;box-sizing:border-box';
+    ta.placeholder='코멘트를 입력하세요...';ta.value=p.comment||'';cbox.appendChild(ta);
     const btn=document.createElement('button');
-    btn.className='pp-save-btn';
+    btn.style.cssText='margin-top:8px;background:linear-gradient(135deg,#5a8ae0,#3764bf);color:#fff;border:none;border-radius:10px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;float:right;font-family:inherit';
     btn.textContent='저장';
-    btn.onclick=(function(plannerObj, taEl, nameStr){
-      return async function(){
-        const val=taEl.value.trim();
-        // Find plannerObj pid in Firebase
-        const stuPlanners=planners[stuId]||{};
-        const pid=Object.keys(stuPlanners).find(function(k){
-          const sp=stuPlanners[k];
-          return sp.date===plannerObj.date&&sp.type===plannerObj.type&&(sp.ts||0)===(plannerObj.ts||0);
-        });
-        if(pid){
-          await db.ref('smPlanners/'+stuId+'/'+pid+'/comment').set(val);
-          // Update existing comment display
-          const existing=taEl.previousSibling;
-          if(existing&&existing.className==='pp-existing-comment'){
-            existing.textContent=val||'';
-          }else if(val){
-            const newEx=document.createElement('div');
-            newEx.className='pp-existing-comment';
-            newEx.textContent=val;
-            taEl.parentNode.insertBefore(newEx,taEl);
-          }
-          toast(nameStr+' 코멘트 저장됨');
-        }
-      };
-    })(p, ta, stuName);
+    btn.onclick=(function(taEl,id,nm){return async function(){
+      var val=taEl.value.trim();
+      await db.ref('smPlanners/'+stuId+'/'+id+'/comment').set(val);
+      toast(nm+' 코멘트 저장됨');
+    };})(ta,pid,stuName);
     cbox.appendChild(btn);
-    const clear=document.createElement('div');
-    clear.style.clear='both';
-    cbox.appendChild(clear);
-    wrap.appendChild(cbox);
-    body.appendChild(wrap);
+    const clr=document.createElement('div');clr.style.clear='both';cbox.appendChild(clr);
+    wrap.appendChild(cbox);body.appendChild(wrap);
   });
-  document.getElementById('plannerPreviewOv').classList.add('open');
 }
-
 function closePlannerPreview(){
   document.getElementById('plannerPreviewOv').classList.remove('open');
 }
@@ -1774,6 +1740,14 @@ function openRM(sid=null,dateStr=null){
     document.getElementById('rmHwC').value=r.hwC||'';
     document.getElementById('rmCli').value=r.cli||'';
     document.getElementById('rmNote').value=r.note||'';
+    // prevHw 자동채움: 기존 값 없을 때만
+    if(!r.prevHw){
+      const prevDateE = getPrevSessionDate(r.date||'');
+      if(prevDateE){
+        const prevRecE = Object.values(sessions[uid_]||{}).find(rv=>rv.date===prevDateE&&rv.hwC);
+        if(prevRecE) document.getElementById('rmPrevHw').value = prevRecE.hwC;
+      }
+    }
   }else{
     document.getElementById('rmTitle').textContent='수업 기록 추가';
     const targetDate=dateStr||today();
@@ -1783,13 +1757,11 @@ function openRM(sid=null,dateStr=null){
     document.getElementById('rmAbsent').checked=false;
     document.getElementById('rmLate').checked=false;
     setEval(-1); // 기본값 없음
-    // 자동 채우기: 기존 prevHw 없을 때만 (저장된 값 덮어쓰기 금지)
-    if(!r||!r.prevHw){
-      const prevDate = getPrevSessionDate(targetDate);
-      if(prevDate){
-        const prevRec = Object.values(sessions[uid_]||{}).find(r=>r.date===prevDate&&r.hwC);
-        if(prevRec) document.getElementById('rmPrevHw').value = prevRec.hwC;
-      }
+    // 자동 채우기: 새 기록이므로 항상 auto-fill
+    const prevDate = getPrevSessionDate(targetDate);
+    if(prevDate){
+      const prevRec = Object.values(sessions[uid_]||{}).find(rv=>rv.date===prevDate&&rv.hwC);
+      if(prevRec) document.getElementById('rmPrevHw').value = prevRec.hwC;
     }
   }
   document.getElementById('rm').classList.add('open');
