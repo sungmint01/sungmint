@@ -94,16 +94,24 @@ function compressImage(file, cb){
 }
 
 function listenQs(cb){
-  const ref=db.ref("questions");
+  const ref=db.ref("questions").orderByChild("ts").limitToLast(50);
   ref.on("value", snap=>{
     const val=snap.val()||{};
     cb(Object.values(val).sort((a,b)=>b.ts-a.ts));
   });
   return ()=>ref.off();
 }
-function pushQ(q){ return db.ref("questions/"+q.id).set(q); }
+async function pushQ(q){
+  const photo=q.photo||"";
+  const qData=Object.assign({},q,{photo:"",hasPhoto:!!photo});
+  await db.ref("questions/"+q.id).set(qData);
+  if(photo) await db.ref("qnaImages/"+q.id).set(photo);
+}
 function updateQ(id,data){ return db.ref("questions/"+id).update(data); }
-function deleteQ(id){ return db.ref("questions/"+id).remove(); }
+async function deleteQ(id){
+  await db.ref("questions/"+id).remove();
+  await db.ref("qnaImages/"+id).remove();
+}
 
 // 과목 뱃지
 function SubjectBadge({subject}){
@@ -118,6 +126,11 @@ function SubjectBadge({subject}){
 // 질문 카드
 function QCard({q,num,isTeacher,replyTarget,setReplyTarget,videoUrl,setVideoUrl,replyComment,setReplyComment,onReply,onDelete}){
   const [big,setBig]=useState(false);
+  const [imgSrc,setImgSrc]=useState(q.photo||null);
+  const loadImg=()=>{
+    if(imgSrc) return;
+    db.ref("qnaImages/"+q.id).once("value").then(s=>{if(s.val())setImgSrc(s.val());});
+  };
   const [editSub,setEditSub]=useState(false);
   const ytId=getYtId(q.videoUrl);
   const timeStr = new Date(q.ts).toLocaleDateString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});
@@ -157,9 +170,12 @@ function QCard({q,num,isTeacher,replyTarget,setReplyTarget,videoUrl,setVideoUrl,
       </div>
 
       {/* 사진 */}
-      {q.photo&&(
-        <div style={{background:"#f8fafc",cursor:"pointer"}} onClick={()=>setBig(!big)}>
-          <img src={q.photo} alt="질문" style={{width:"100%",maxHeight:big?9999:220,objectFit:big?"contain":"cover",display:"block"}}/>
+      {(q.hasPhoto||q.photo)&&(
+        <div style={{background:"#f8fafc",cursor:"pointer"}} onClick={()=>{loadImg();setBig(!big);}}>
+          {imgSrc
+            ?<img src={imgSrc} alt="질문" style={{width:"100%",maxHeight:big?9999:220,objectFit:big?"contain":"cover",display:"block"}}/>
+            :<div style={{height:80,display:"flex",alignItems:"center",justifyContent:"center",color:"#94a3b8",fontSize:13}}>📷 사진 보기</div>
+          }
           <div style={{textAlign:"center",fontSize:11,color:"#94a3b8",padding:"6px 0"}}>{big?"▲ 접기":"▼ 전체보기"}</div>
         </div>
       )}
@@ -211,9 +227,9 @@ function QCard({q,num,isTeacher,replyTarget,setReplyTarget,videoUrl,setVideoUrl,
       )}
 
       {/* 사진 전체보기 모달 */}
-      {big&&q.photo&&(
+      {big&&imgSrc&&(
         <div onClick={()=>setBig(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,cursor:"zoom-out"}}>
-          <img src={q.photo} alt="전체" style={{maxWidth:"95vw",maxHeight:"90vh",borderRadius:12}}/>
+          <img src={imgSrc} alt="전체" style={{maxWidth:"95vw",maxHeight:"90vh",borderRadius:12}}/>
         </div>
       )}
     </div>
