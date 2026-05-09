@@ -1392,7 +1392,7 @@ function renderPsTable(){
   const tbody=document.createElement('tbody');
   stuArr.forEach(function([sid,stu]){
     const sp=(planners[sid]||{});
-    const dayPlanners=Object.values(sp).filter(function(p){return p.date===_psDate;});
+    const dayPlanners=Object.entries(sp).map(function([pid,p]){return Object.assign({},p,{_pid:pid});}).filter(function(p){return p.date===_psDate;});
     const planItems=dayPlanners.filter(function(p){return p.type!=='done';});
     const doneItems=dayPlanners.filter(function(p){return p.type==='done';});
     const tr=document.createElement('tr');
