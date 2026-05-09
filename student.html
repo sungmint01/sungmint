@@ -416,19 +416,14 @@ async function uploadPlanner() {
   msg.textContent = '';
 
   try {
-    // 썸네일(표시용) + 원본(클릭시) 분리 생성
-    const thumbData = await compressToBase64(selectedFile, 400, 0.4); // ~15KB 썸네일
-    fill.style.width = '50%';
-    const fullData  = await compressToBase64(selectedFile, 800, 0.65); // ~100KB 원본
+    // 중간 화질 단일 이미지로 저장
+    const imageData = await compressToBase64(selectedFile, 1200, 0.75);
     fill.style.width = '70%';
     btn.innerHTML = '저장 중...';
 
     const newRef = db.ref(`smPlanners/${stuId}`).push();
     const pid = newRef.key;
-    // 썸네일만 smPlanners에 저장 (목록 로드 시 작은 용량)
-    await newRef.set({ date, type: planType, thumbData, ts: Date.now() });
-    // 원본은 별도 경로 (클릭 시만 로드)
-    await db.ref(`smPlannerImages/${pid}`).set(fullData);
+    await newRef.set({ date, type: planType, imageData, ts: Date.now() });
 
     fill.style.width = '100%';
     const label = planType === 'plan' ? '계획' : '완료';
@@ -604,7 +599,7 @@ function openPlanDetail(ds, plans) {
     const thumbSrc = p.thumbData || p.imageData || p.imageUrl || '';
       if(thumbSrc){
         // 썸네일로 즉시 표시, 클릭 시 원본 로드
-        html += '<img class="pdm-img" src="' + thumbSrc + '" data-pid="'+pid+'" data-has-full="'+(p.thumbData?'1':'0')+'" onclick="plannerImgClick(this)" loading="lazy" style="cursor:zoom-in">';
+        html += '<img class="pdm-img" src="' + thumbSrc + '" data-pid="'+pid+'" loading="lazy">';
       }
     html += commentHtml + '</div>';
   });

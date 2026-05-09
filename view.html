@@ -554,11 +554,11 @@ function openVPlanDetail(ds,plans){
   plans.sort(function(a,b){return(a.ts||0)-(b.ts||0);}).forEach(function(p){
     var badge=p.type==='done'?'<span class="plan-type-badge badge-done">✅ 완료</span>':'<span class="plan-type-badge badge-plan">📋 계획</span>';
     var cmt=p.comment?'<div class="vpdm-comment"><div class="vpdm-comment-head">✏️ 선생님 코멘트</div>'+p.comment.split('\n').join('<br>')+'</div>':'<div class="vpdm-no-comment">⏳ 코멘트 대기 중</div>';
-    var thumbSrc=p.thumbData||p.imageData||p.imageUrl||'';
+    var thumbSrc=p.imageData||p.thumbData||p.imageUrl||'';
     var imgPart='';
     if(thumbSrc){
       var hasFull=p.thumbData?'1':'0';
-      imgPart='<img class="vpdm-img" src="'+thumbSrc+'" data-pid="'+pid+'" data-has-full="'+hasFull+'" onclick="vPlanImgClick(this)" loading="lazy" style="cursor:zoom-in">';
+      imgPart='<img class="vpdm-img" src="'+thumbSrc+'" loading="lazy">';
     }
     html+='<div class="vpdm-item"><div class="vpdm-head2">'+badge+'</div>'+imgPart+cmt+'</div>';
   });

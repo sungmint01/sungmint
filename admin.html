@@ -1455,22 +1455,9 @@ async function openPlannerPreview(stuName, type, items, stuId){
   freshItems.forEach(function(p){
     const wrap=document.createElement('div');wrap.className='pp-img-wrap';
     const imgSrc=p.imageData||p.thumbData||p.imageUrl||'';
-    const hasFull=!!p.thumbData&&!p.imageData;
-    const pid=p._pid||'';
     if(imgSrc){
       const img=document.createElement('img');
-      img.className='planner-preview-img';img.src=imgSrc;img.style.cursor='zoom-in';
-      if(hasFull&&pid){
-        img.onclick=(function(el,id){return function(){
-          if(el.dataset.fs){openLightbox(el.dataset.fs);return;}
-          el.style.opacity='0.6';
-          db.ref('smPlannerImages/'+id).once('value').then(function(s){
-            el.style.opacity='1';
-            var src=s.val();
-            if(src){el.dataset.fs=src;openLightbox(src);}else{openLightbox(el.src);}
-          });
-        };})(img,pid);
-      }else{img.onclick=function(){openLightbox(this.src);};}
+      img.className='planner-preview-img';img.src=imgSrc;
       wrap.appendChild(img);
     }
     const cbox=document.createElement('div');cbox.className='pp-comment-box';
