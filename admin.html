@@ -1474,6 +1474,17 @@ async function openPlannerPreview(stuName, type, items, stuId){
       await db.ref('smPlanners/'+stuId+'/'+id+'/comment').set(val);
       toast(nm+' 코멘트 저장됨');
     };})(ta,p._pid,stuName);
+    const delBtn=document.createElement('button');
+    delBtn.style.cssText='margin-top:8px;margin-right:8px;background:#fee2e2;color:#dc2626;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;float:right;font-family:inherit';
+    delBtn.textContent='삭제';
+    delBtn.onclick=(function(id,wrapEl,nm){return async function(){
+      if(!confirm(nm+' 플래너를 삭제할까요?')) return;
+      await db.ref('smPlanners/'+stuId+'/'+id).remove();
+      await db.ref('smPlannerImages/'+id).remove();
+      wrapEl.remove();
+      toast(nm+' 플래너 삭제됨');
+    };})(p._pid,wrap,stuName);
+    cbox.appendChild(delBtn);
     cbox.appendChild(btn);
     const clr=document.createElement('div');clr.style.clear='both';cbox.appendChild(clr);
     wrap.appendChild(cbox);body.appendChild(wrap);
