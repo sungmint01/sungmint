@@ -1473,7 +1473,7 @@ async function openPlannerPreview(stuName, type, items, stuId){
       var val=taEl.value.trim();
       await db.ref('smPlanners/'+stuId+'/'+id+'/comment').set(val);
       toast(nm+' 코멘트 저장됨');
-    };})(ta,pid,stuName);
+    };})(ta,p._pid,stuName);
     cbox.appendChild(btn);
     const clr=document.createElement('div');clr.style.clear='both';cbox.appendChild(clr);
     wrap.appendChild(cbox);body.appendChild(wrap);
