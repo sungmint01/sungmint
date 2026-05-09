@@ -1443,12 +1443,30 @@ function openPlannerPreview(stuName, type, items, stuId){
   items.forEach(function(p,idx){
     const wrap=document.createElement('div');
     wrap.className='pp-img-wrap';
-    // Image
-    if(p.imageData||p.imageUrl){
+    // imageData(구형식) 또는 thumbData(신형식) 표시
+    var ppImgSrc=p.imageData||p.thumbData||p.imageUrl||'';
+    var ppHasFull=!!p.thumbData&&!p.imageData;
+    if(ppImgSrc){
       const img=document.createElement('img');
       img.className='planner-preview-img';
-      img.src=p.imageData||p.imageUrl||'';
-      img.onclick=function(){openLightbox(this.src);};
+      img.src=ppImgSrc;
+      img.style.cursor='zoom-in';
+      if(ppHasFull){
+        // 신형식: 클릭 시 smPlannerImages에서 원본 로드
+        const ppid=p._pid||'';
+        img.onclick=(function(el,pid_){return function(){
+          if(el.dataset.fullSrc){openLightbox(el.dataset.fullSrc);return;}
+          el.style.opacity='0.6';
+          db.ref('smPlannerImages/'+pid_).once('value').then(function(snap){
+            el.style.opacity='1';
+            var src=snap.val();
+            if(src){el.dataset.fullSrc=src;openLightbox(src);}
+            else{openLightbox(el.src);}
+          });
+        };})(img,ppid);
+      }else{
+        img.onclick=function(){openLightbox(this.src);};
+      }
       wrap.appendChild(img);
     }
     // Comment box
@@ -1748,7 +1766,6 @@ function openRM(sid=null,dateStr=null){
     document.getElementById('rmNum').value=r.num||'';
     document.getElementById('rmProg').value=r.prog||'';
     setEval(r.eval!=null&&r.eval>=0?r.eval:-1);
-    window._rmInitEval = parseInt(document.getElementById('rmEval').value); // 모달 열 때의 초기 eval 값
     document.getElementById('rmAbsent').checked=!!r.absent;
     document.getElementById('rmLate').checked=!!r.late;
     document.getElementById('rmPrevHw').value=r.prevHw||'';
@@ -1766,8 +1783,8 @@ function openRM(sid=null,dateStr=null){
     document.getElementById('rmAbsent').checked=false;
     document.getElementById('rmLate').checked=false;
     setEval(-1); // 기본값 없음
-    // 자동 채우기: 기존 prevHw가 없을 때만 (저장된 값 덮어쓰기 금지)
-    if(!r.prevHw){
+    // 자동 채우기: 기존 prevHw 없을 때만 (저장된 값 덮어쓰기 금지)
+    if(!r||!r.prevHw){
       const prevDate = getPrevSessionDate(targetDate);
       if(prevDate){
         const prevRec = Object.values(sessions[uid_]||{}).find(r=>r.date===prevDate&&r.hwC);
@@ -1796,14 +1813,21 @@ function loadRmPlanners(date) {
       ? '<span class="rm-ptype rm-ptype-done">✅ 완료</span>'
       : '<span class="rm-ptype rm-ptype-plan">📋 계획</span>';
     var t = new Date(p.ts||0).toLocaleTimeString('ko-KR');
-    var img = (p.imageData || p.imageUrl || '');
+    var imgSrc = p.imageData || p.thumbData || p.imageUrl || '';
+    var hasFull = !!p.thumbData && !p.imageData; // 신형식: thumbData만 있으면 원본은 smPlannerImages에
     var commentBody = p.comment
       ? '<div class="rm-pcomment"><div class="rm-pcomment-head">✏️ 코멘트</div>' + p.comment.split('\n').join('<br>') + '</div>'
       : '<div class="rm-pno-comment">⏳ 코멘트 없음</div>';
     var btnEdit = p.comment ? '코멘트 수정' : '코멘트 달기';
     html += '<div class="rm-pitem">';
     html += '<div class="rm-pitem-head"><span>' + badge + '</span><span style="font-size:10px;color:#94a3b8">' + t + '</span></div>';
-    html += '<img class="rm-pimg" src="' + img + '" onclick="openLightbox(this.src)" loading="lazy">';
+    if(imgSrc){
+      if(hasFull){
+        html += '<img class="rm-pimg" src="' + imgSrc + '" data-pid="' + pid + '" onclick="rmImgClick(this)" loading="lazy" style="cursor:zoom-in">';
+      }else{
+        html += '<img class="rm-pimg" src="' + imgSrc + '" onclick="openLightbox(this.src)" loading="lazy" style="cursor:zoom-in">';
+      }
+    }
     html += commentBody;
     html += '<div class="rm-pcomment-form" id="rpcf_' + pid + '">';
     html += '<textarea id="rpct_' + pid + '" placeholder="코멘트 입력">' + (p.comment||'') + '</textarea>';
@@ -1850,19 +1874,12 @@ async function saveRecord(){
   const safeData=Object.fromEntries(Object.entries(data).filter(([,v])=>v!==null&&v!==undefined));
   if(data.eval===null) safeData.eval=null; // eval 의도적 해제는 별도 set
   if(sid){
-    const initEval=window._rmInitEval!=null?window._rmInitEval:-1;
+    // eval: 사용자가 바꾸지 않았으면 기존 값 유지 (null 전송 → Firebase 삭제 방지)
+    const curSes=(sessions[uid_]||{})[sid]||{};
     const updates={};
     for(const [k,v] of Object.entries(data)){
-      // eval: null인데 초기값도 -1(미설정)이었던 경우만 null 전송, 아니면 보존
-      if(k==='eval'){
-        if(v===null&&initEval>=0){
-          // 사용자가 eval을 건드리지 않았는데 null → 기존 값 보존
-          updates[k]=initEval;
-        }else if(v===null){
-          updates[k]=null; // 명시적으로 해제
-        }else{
-          updates[k]=v;
-        }
+      if(k==='eval'&&v===null&&curSes.eval!=null){
+        updates[k]=curSes.eval; // 기존 eval 보존
       }else if(v===null||v===undefined){
         updates[k]=null;
       }else{
@@ -1963,6 +1980,19 @@ async function savePlannerComment(sid,pid){
   if(!ta)return;
   await db.ref(`smPlanners/${sid}/${pid}/comment`).set(ta.value.trim());
   toast('코멘트가 저장되었습니다');
+}
+
+
+function rmImgClick(el){
+  if(el.dataset.fullSrc){openLightbox(el.dataset.fullSrc);return;}
+  var pid=el.dataset.pid;
+  el.style.opacity='0.6';
+  db.ref('smPlannerImages/'+pid).once('value').then(function(snap){
+    el.style.opacity='1';
+    var src=snap.val();
+    if(src){el.dataset.fullSrc=src;openLightbox(src);}
+    else{openLightbox(el.src);}
+  });
 }
 
 function openLightbox(src){
