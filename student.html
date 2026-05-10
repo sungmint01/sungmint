@@ -599,7 +599,7 @@ function openPlanDetail(ds, plans) {
     const thumbSrc = p.thumbData || p.imageData || p.imageUrl || '';
       if(thumbSrc){
         // 썸네일로 즉시 표시, 클릭 시 원본 로드
-        html += '<img class="pdm-img" src="' + thumbSrc + '" data-pid="'+pid+'" loading="lazy">';
+        html += '<img class="pdm-img" src="' + thumbSrc + '" loading="lazy">';
       }
     html += commentHtml + '</div>';
   });
