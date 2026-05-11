@@ -24,6 +24,14 @@
   }
   .back-home:hover{background:#f5f3ff}
 </style>
+  <script>
+  window.MathJax = {
+    loader: {load: ['input/asciimath','output/chtml']},
+    asciimath: {delimiters: [['`','`']]},
+    startup: {typeset: false}
+  };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/startup.js" crossorigin="anonymous"></script>
   <style>
     @font-face {
       font-family: 'MaruBuri';
@@ -105,6 +113,19 @@ async function od4pLogin() {
 <script type="text/babel" data-presets="react">
 const {useState,useEffect,useRef,useMemo}=React;
 const TEACHER_PW="1340";
+// ── 수식 렌더링 컴포넌트 ─────────────────────────────
+function MathText({text, style}){
+  const ref=useRef();
+  useEffect(()=>{
+    if(!ref.current) return;
+    ref.current.innerHTML=text||'';
+    if(window.MathJax&&window.MathJax.typesetPromise){
+      window.MathJax.typesetPromise([ref.current]).catch(()=>{});
+    }
+  },[text]);
+  return <span ref={ref} style={style}>{text}</span>;
+}
+
 const SUBJECTS=[{label:"공통수학1",key:"gongmath1"},{label:"공통수학2",key:"gongmath2"},{label:"대수(수1)",key:"daesoo1"},{label:"미적분1(수2)",key:"mij1"}];
 
 // ── 시간 로직 ─────────────────────────────────────────
@@ -362,13 +383,13 @@ function StudentApp(){
             </div>
             <div style={{padding:"14px 16px"}}>
               {p.image&&<img src={p.image} style={{width:"100%",borderRadius:10,marginBottom:12,maxHeight:300,objectFit:"contain",background:"#fff"}}/>}
-              {p.question&&<div style={{fontSize:15,lineHeight:1.8,color:"#1a2840",marginBottom:14,whiteSpace:"pre-wrap"}}>{p.question}</div>}
+              {p.question&&<div style={{fontSize:15,lineHeight:1.8,color:"#1a2840",marginBottom:14}}><MathText text={p.question}/></div>}
               {p.type==="객관식"?(
                 <div style={{display:"flex",flexDirection:"column",gap:7}}>
                   {p.options.map((opt,oi)=>(
                     <div key={oi} onClick={()=>setAnswers(a=>({...a,[i]:String(oi+1)}))} style={{padding:"11px 14px",borderRadius:10,cursor:"pointer",border:"2px solid "+(answers[i]===String(oi+1)?"#5a8ae0":"#e2e8f0"),background:answers[i]===String(oi+1)?"#eff4ff":"#ffffff",display:"flex",alignItems:"center",gap:10,transition:"all 0.12s"}}>
                       <div style={{width:24,height:24,borderRadius:"50%",flexShrink:0,background:answers[i]===String(oi+1)?"linear-gradient(135deg,#5a8ae0,#3764bf)":"#e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:answers[i]===String(oi+1)?"#fff":"#718096"}}>{oi+1}</div>
-                      <span style={{fontSize:14,color:"#1a2840"}}>{opt}</span>
+                      <MathText text={opt} style={{fontSize:14,color:"#1a2840"}}/>
                     </div>
                   ))}
                   <div onClick={()=>setAnswers(a=>({...a,[i]:"모름"}))} style={{padding:"11px 14px",borderRadius:10,cursor:"pointer",border:"2px solid "+(answers[i]==="모름"?"#f59e0b":"#e2e8f0"),background:answers[i]==="모름"?"#fffbeb":"#ffffff",display:"flex",alignItems:"center",gap:10,transition:"all 0.12s"}}>
@@ -421,7 +442,7 @@ function StudentApp(){
                 </button>
                 {showSol[i]&&(
                   <div style={{background:"#f8faff",borderRadius:10,padding:14}}>
-                    {p.solutionText&&<div style={{fontSize:13,color:"#2d3748",lineHeight:1.8,marginBottom:p.solutionImage?12:0,whiteSpace:"pre-wrap"}}>{p.solutionText}</div>}
+                    {p.solutionText&&<div style={{fontSize:13,color:"#2d3748",lineHeight:1.8,marginBottom:p.solutionImage?12:0}}><MathText text={p.solutionText}/></div>}
                     {p.solutionImage&&<img src={p.solutionImage} style={{width:"100%",borderRadius:8,objectFit:"contain",background:"#fff"}}/>}
                   </div>
                 )}
@@ -629,8 +650,9 @@ function TeacherApp(){
                 {/* 텍스트 */}
                 <div>
                   <div style={{fontSize:11,color:"#8a96b4",marginBottom:5}}>문제 텍스트 (선택)</div>
-                  <textarea value={p.question} onChange={e=>updateProb(i,"question",e.target.value)} rows={2} placeholder="문제 내용 입력"
+                  <textarea value={p.question} onChange={e=>updateProb(i,"question",e.target.value)} rows={2} placeholder={"문제 내용 입력 (수식: `1/2`, `x^2`, `sqrt(x)`, `root(3)(x)`)"}
                     style={{width:"100%",background:"#f8faff",border:"2px solid #e2e8f0",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#1a2840",outline:"none",resize:"vertical"}}/>
+                  {p.question&&<MathText text={p.question} style={{fontSize:13,color:"#4b5563",display:"block",padding:"6px 4px"}}/>}
                 </div>
                 {/* 객관식 보기 */}
                 {p.type==="객관식"&&(
@@ -639,8 +661,11 @@ function TeacherApp(){
                     {p.options.map((opt,oi)=>(
                       <div key={oi} style={{display:"flex",gap:7,alignItems:"center",marginBottom:5}}>
                         <div onClick={()=>updateProb(i,"answer",String(oi+1))} style={{width:26,height:26,borderRadius:"50%",flexShrink:0,cursor:"pointer",background:p.answer===String(oi+1)?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#334155",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#718096"}}>{oi+1}</div>
-                        <input value={opt} onChange={e=>updateOpt(i,oi,e.target.value)} placeholder={`${oi+1}번 보기`}
-                          style={{flex:1,background:"#f8faff",border:"2px solid "+(p.answer===String(oi+1)?"#6366f1":"#334155"),borderRadius:7,padding:"7px 11px",fontSize:12,color:"#1a2840",outline:"none"}}/>
+                        <div style={{flex:1,display:"flex",flexDirection:"column",gap:3}}>
+                          <input value={opt} onChange={e=>updateOpt(i,oi,e.target.value)} placeholder={`${oi+1}번 보기 (수식: \`1/2\`, \`x^2\`, \`sqrt(x)\`)`}
+                            style={{width:"100%",background:"#f8faff",border:"2px solid "+(p.answer===String(oi+1)?"#6366f1":"#334155"),borderRadius:7,padding:"7px 11px",fontSize:12,color:"#1a2840",outline:"none"}}/>
+                          {opt&&<MathText text={opt} style={{fontSize:12,color:"#4b5563",paddingLeft:4}}/>}
+                        </div>
                       </div>
                     ))}
                     <div style={{fontSize:11,color:"#6366f1",marginTop:3}}>✓ 정답: {p.answer}번</div>
