@@ -598,6 +598,20 @@ window.addEventListener('DOMContentLoaded',()=>{
   if(sessionStorage.getItem('smAdmin')==='1')showApp();
 });
 
+function answersEqual(val,correct){
+  var v=(val||'').trim(),cr=(correct||'').trim();
+  if(!v||!cr) return false;
+  if(v===cr) return true;
+  function toNum(s){
+    s=s.trim();
+    var m=s.match(/^(-?\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
+    if(m) return parseFloat(m[1])/parseFloat(m[2]);
+    return parseFloat(s);
+  }
+  var vn=toNum(v),cn=toNum(cr);
+  if(!isNaN(vn)&&!isNaN(cn)&&isFinite(vn)&&isFinite(cn)) return Math.abs(vn-cn)<1e-9;
+  return false;
+}
 async function doLogin(){
   const pw=document.getElementById('pwIn').value;if(!pw)return;
   const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pw));
@@ -2025,21 +2039,7 @@ function updateBMStudentList(cls){
   document.getElementById('bmStuList').innerHTML=stus.map(s=>`<span class="bm-stu-tag">${s.name||'?'}</span>`).join('');
 }
 function closeBM(){document.getElementById('bm').classList.remove('open');}
-async function answersEqual(val,correct){
-  var v=(val||'').trim(),cr=(correct||'').trim();
-  if(!v||!cr) return false;
-  if(v===cr) return true;
-  function toNum(s){
-    s=s.trim();
-    var m=s.match(/^(-?\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
-    if(m) return parseFloat(m[1])/parseFloat(m[2]);
-    return parseFloat(s);
-  }
-  var vn=toNum(v),cn=toNum(cr);
-  if(!isNaN(vn)&&!isNaN(cn)&&isFinite(vn)&&isFinite(cn)) return Math.abs(vn-cn)<1e-9;
-  return false;
-}
-function saveBulkHW(){
+async function saveBulkHW(){
   if(!bmSelectedClass){alert('반을 선택하세요');return;}
   const date=document.getElementById('bmDate').value;
   if(!date){alert('날짜를 입력하세요');return;}
