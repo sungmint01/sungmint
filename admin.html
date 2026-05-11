@@ -821,6 +821,9 @@ function openHwForm(editId){
       });
     },60);
   }
+  // 기존 PDF 표시
+  var existHwPdf=editId&&hwSets[editId]&&hwSets[editId].pdfData;
+  document.getElementById('hwPdfStatus').textContent=existHwPdf?'✓ 현재 업로드됨: '+(hwSets[editId].pdfName||'PDF')+'  (새 파일 선택 시 교체됨)':'';
   document.getElementById('hwModal').classList.add('open');
 }
 
@@ -951,7 +954,8 @@ function renderClinicList(){
     }else{
       resHtml='<div style="font-size:11px;color:#94a3b8;margin-top:6px">아직 채점 결과가 없습니다</div>';
     }
-    div.innerHTML='<div class="cl-card-head"><span class="cl-card-title">'+cs.title+'</span>'
+    var clPdfBadge=cs.pdfData?'<span style="background:#fee2e2;color:#b91c1c;border-radius:6px;padding:1px 7px;font-size:10px;font-weight:600;margin-left:6px">📄 PDF</span>':'';
+    div.innerHTML='<div class="cl-card-head"><span class="cl-card-title">'+cs.title+clPdfBadge+'</span>'
       +'<div style="display:flex;gap:6px;align-items:center">'
       +'<span class="cl-badge '+(cs.active?'cl-active':'cl-closed')+'">'+(cs.active?'활성':'종료')+'</span>'
       +'<button class="lnk le" id="editSetBtn_'+cid+'">수정</button>'
@@ -1022,6 +1026,9 @@ function openClinicForm(editId){
       if(inp) inp.value=val;
     });
   }
+  // 기존 PDF 표시
+  var existPdf=editId&&clinicSets[editId]&&clinicSets[editId].pdfData;
+  document.getElementById('clPdfStatus').textContent=existPdf?'✓ 현재 업로드됨: '+(clinicSets[editId].pdfName||'PDF')+'  (새 파일 선택 시 교체됨)':'';
   document.getElementById('clinicModal').classList.add('open');
 }
 
