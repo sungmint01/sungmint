@@ -1071,8 +1071,13 @@ async function saveClinicSet(){
     if(!checked.length){alert('학생을 선택하세요');return;}
     data.targetStudents=checked;
   }
-  if(_clEditId) await db.ref('smClinicSets/'+_clEditId).update(data);
-  else await db.ref('smClinicSets').push(data);
+  if(_clPdfData){data.pdfData=_clPdfData;data.pdfName=_clPdfName;data.pdfUploadedAt=Date.now();}
+  if(_clEditId){
+    if(!_clPdfData){delete data.pdfData;delete data.pdfName;delete data.pdfUploadedAt;}
+    await db.ref('smClinicSets/'+_clEditId).update(data);
+  }else{
+    await db.ref('smClinicSets').push(data);
+  }
   toast('클리닉이 저장되었습니다');
   closeClinicForm();
 }
@@ -1106,8 +1111,8 @@ function openClinicResultEdit(cid, sid){
   for(var i=1;i<=maxNum;i++){
     var val=(r.answers&&(r.answers[String(i)]||r.answers[i]))||'';
     var correct=answers[String(i)]||'';
-    var isOk=val&&correct&&val===correct;
-    var isWrong=val&&correct&&val!==correct;
+    var isOk=val&&correct&&answersEqual(val,correct);
+    var isWrong=val&&correct&&!answersEqual(val,correct);
     var cell=document.createElement('div');
     cell.style.textAlign='center';
     var lbl=document.createElement('div');
@@ -1155,7 +1160,7 @@ async function adminRegrade(cid,sid){
     stuAnswers[i]=val;
     var correct=answers[String(i)]||'';
     if(val&&correct){
-      if(val===correct)score++;
+      if(answersEqual(val,correct))score++;
       else wrong.push(i);
     }
   }
@@ -2020,7 +2025,21 @@ function updateBMStudentList(cls){
   document.getElementById('bmStuList').innerHTML=stus.map(s=>`<span class="bm-stu-tag">${s.name||'?'}</span>`).join('');
 }
 function closeBM(){document.getElementById('bm').classList.remove('open');}
-async function saveBulkHW(){
+async function answersEqual(val,correct){
+  var v=(val||'').trim(),cr=(correct||'').trim();
+  if(!v||!cr) return false;
+  if(v===cr) return true;
+  function toNum(s){
+    s=s.trim();
+    var m=s.match(/^(-?\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
+    if(m) return parseFloat(m[1])/parseFloat(m[2]);
+    return parseFloat(s);
+  }
+  var vn=toNum(v),cn=toNum(cr);
+  if(!isNaN(vn)&&!isNaN(cn)&&isFinite(vn)&&isFinite(cn)) return Math.abs(vn-cn)<1e-9;
+  return false;
+}
+function saveBulkHW(){
   if(!bmSelectedClass){alert('반을 선택하세요');return;}
   const date=document.getElementById('bmDate').value;
   if(!date){alert('날짜를 입력하세요');return;}

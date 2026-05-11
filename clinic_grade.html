@@ -494,7 +494,7 @@ async function hwSubmit(){
       stuAnswers[num]=val;
       const correct=answers[String(num)]||'';
       if(correct){
-        if(val&&val===correct){score++;if(inp)inp.className='ans-inp correct';}
+        if(val&&answersEqual(val,correct)){score++;if(inp)inp.className='ans-inp correct';}
         else{wrong.push(num);if(inp)inp.className='ans-inp wrong';}
       }
     });
@@ -767,7 +767,7 @@ async function submitGrade(){
       stuAnswers[i]=val;
       const correct=answers[String(i)]||'';
       if(correct){
-        if(val&&val===correct){score=(score||0)+1;if(inp)inp.className='ans-inp correct';}
+        if(val&&answersEqual(val,correct)){score=(score||0)+1;if(inp)inp.className='ans-inp correct';}
         else{wrong.push(i);if(inp)inp.className='ans-inp wrong';}  // 공란도 오답
       }
     }
@@ -820,7 +820,7 @@ function buildEditGrid(stuAnswers){
   for(let i=1;i<=maxNum;i++){
     const correct=answers[String(i)]||'';
     const val=stuAnswers[String(i)]||stuAnswers[i]||'';
-    const isCorrect=val&&correct&&val===correct;
+    const isCorrect=val&&correct&&answersEqual(val,correct);
     const item=document.createElement('div');
     item.className='ans-item';
     item.innerHTML=`<span class="ans-num">${i}번</span><input class="edit-ans-inp ${isCorrect?'correct':val?'wrong':''}" id="ed${i}" type="text" value="${val}" maxlength="6">`;
@@ -846,7 +846,7 @@ async function regrade(){
     const correct=answers[String(i)]||'';
     if(inp) inp.className='edit-ans-inp';
     if(val&&correct){
-      if(val===correct){score++;if(inp)inp.className='edit-ans-inp correct';}
+      if(answersEqual(val,correct)){score++;if(inp)inp.className='edit-ans-inp correct';}
       else{wrong.push(i);if(inp)inp.className='edit-ans-inp wrong';}
     }
   }
@@ -916,6 +916,21 @@ function resetAll(){
 
 
 <script>
+function answersEqual(val,correct){
+  var v=(val||'').trim(),cr=(correct||'').trim();
+  if(!v||!cr) return false;
+  if(v===cr) return true;
+  function toNum(s){
+    s=s.trim();
+    var m=s.match(/^(-?\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
+    if(m) return parseFloat(m[1])/parseFloat(m[2]);
+    return parseFloat(s);
+  }
+  var vn=toNum(v),cn=toNum(cr);
+  if(!isNaN(vn)&&!isNaN(cn)&&isFinite(vn)&&isFinite(cn)) return Math.abs(vn-cn)<1e-9;
+  return false;
+}
+
 (function(){
   // URL에 _v 파라미터 있으면 제거 (이미 새로 받아온 것)
   var url=new URL(location.href);
