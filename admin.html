@@ -1500,8 +1500,43 @@ async function openPlannerPreview(stuName, type, items, stuId){
       await db.ref('smPlanners/'+stuId+'/'+id+'/comment').set(val);
       toast(nm+' 코멘트 저장됨');
     };})(ta,p._pid,stuName);
+    // 날짜 변경
+    const dateRow=document.createElement('div');dateRow.style.cssText='margin-top:10px;display:flex;align-items:center;gap:8px;';
+    const dateLbl=document.createElement('span');dateLbl.style.cssText='font-size:11px;font-weight:700;color:#8a96b4;white-space:nowrap';dateLbl.textContent='날짜';
+    const dateInp=document.createElement('input');dateInp.type='date';dateInp.value=p.date||'';
+    dateInp.style.cssText='flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:12px;font-family:inherit;outline:none';
+    const dateSaveBtn=document.createElement('button');
+    dateSaveBtn.style.cssText='background:#e0f2fe;color:#0369a1;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap';
+    dateSaveBtn.textContent='날짜 변경';
+    dateSaveBtn.onclick=(function(dinp,id,nm){return async function(){
+      var nd=dinp.value;if(!nd)return;
+      await db.ref('smPlanners/'+stuId+'/'+id+'/date').set(nd);
+      toast(nm+' 날짜 변경됨 → '+nd);
+    };})(dateInp,p._pid,stuName);
+    dateRow.appendChild(dateLbl);dateRow.appendChild(dateInp);dateRow.appendChild(dateSaveBtn);
+    cbox.appendChild(dateRow);
+
+    // 유형 전환
+    const typeRow=document.createElement('div');typeRow.style.cssText='margin-top:8px;display:flex;align-items:center;gap:8px;';
+    const typeLbl=document.createElement('span');typeLbl.style.cssText='font-size:11px;font-weight:700;color:#8a96b4;white-space:nowrap';typeLbl.textContent='유형';
+    const typeBtn=document.createElement('button');
+    var isPlan=p.type!=='done';
+    typeBtn.style.cssText='flex:1;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;background:'+(isPlan?'#fef9c3':'#dcfce7')+';color:'+(isPlan?'#854d0e':'#166534');
+    typeBtn.textContent=isPlan?'📋 계획 → ✅ 완료로 변경':'✅ 완료 → 📋 계획으로 변경';
+    typeBtn.onclick=(function(id,nm,btn){return async function(){
+      var cur=(await db.ref('smPlanners/'+stuId+'/'+id+'/type').get()).val();
+      var next=cur==='done'?'plan':'done';
+      await db.ref('smPlanners/'+stuId+'/'+id+'/type').set(next);
+      btn.style.background=next==='done'?'#dcfce7':'#fef9c3';
+      btn.style.color=next==='done'?'#166534':'#854d0e';
+      btn.textContent=next==='done'?'✅ 완료 → 📋 계획으로 변경':'📋 계획 → ✅ 완료로 변경';
+      toast(nm+' 유형 변경됨 → '+(next==='done'?'완료':'계획'));
+    };})(p._pid,stuName,typeBtn);
+    typeRow.appendChild(typeLbl);typeRow.appendChild(typeBtn);
+    cbox.appendChild(typeRow);
+
     const delBtn=document.createElement('button');
-    delBtn.style.cssText='margin-top:8px;margin-right:8px;background:#fee2e2;color:#dc2626;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;float:right;font-family:inherit';
+    delBtn.style.cssText='margin-top:10px;margin-right:8px;background:#fee2e2;color:#dc2626;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;float:right;font-family:inherit';
     delBtn.textContent='삭제';
     delBtn.onclick=(function(id,wrapEl,nm){return async function(){
       if(!confirm(nm+' 플래너를 삭제할까요?')) return;
