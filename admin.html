@@ -27,7 +27,16 @@ body{font-family:'MaruBuri','Noto Sans KR',sans-serif;background:#f0f4f8;color:#
 .errmsg{color:#ef4444;font-size:13px;margin-top:10px;min-height:18px}
 #app{display:none;height:100vh;overflow:hidden}
 .layout{display:flex;height:100vh}
-.sidebar{width:220px;height:100vh;overflow-y:auto;background:#0f172a;display:flex;flex-direction:column;flex-shrink:0}
+.sidebar{width:220px;height:100vh;overflow-y:auto;background:#0f172a;display:flex;flex-direction:column;flex-shrink:0;transition:transform .25s}
+.sb-toggle{display:none;position:fixed;top:10px;left:10px;z-index:1000;background:#0f172a;color:#fff;border:none;border-radius:8px;padding:7px 11px;font-size:18px;cursor:pointer;line-height:1}
+@media(max-width:600px){
+  .sidebar{position:fixed;top:0;left:0;z-index:900;transform:translateX(-100%)}
+  .sidebar.mob-open{transform:translateX(0)}
+  .main{width:100%!important;margin-left:0!important}
+  .sb-toggle{display:block}
+  .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:850}
+  .sb-overlay.mob-open{display:block}
+}
 .sb-head{padding:16px 14px 10px;border-bottom:1px solid rgba(255,255,255,.07)}
 .sb-head h1{color:#fff;font-size:14px;font-weight:700}
 .sb-head p{color:#475569;font-size:11px;margin-top:2px}
@@ -296,7 +305,9 @@ textarea.inp{resize:vertical;min-height:68px}
   </div>
 </div>
 <div id="app">
-  <div class="layout">
+  <button class="sb-toggle" id="sbToggle" onclick="toggleSidebar()">☰</button>
+<div class="sb-overlay" id="sbOverlay" onclick="closeSidebar()"></div>
+<div class="layout">
     <aside class="sidebar">
       <div class="sb-head"><h1>📚 학생관리</h1><p id="sCnt">학생 0명</p></div>
       <div class="sb-actions"><button class="btn-add" onclick="openSM()">＋ 학생 추가</button></div>
@@ -598,6 +609,14 @@ window.addEventListener('DOMContentLoaded',()=>{
   if(sessionStorage.getItem('smAdmin')==='1')showApp();
 });
 
+function toggleSidebar(){
+  document.querySelector('.sidebar').classList.toggle('mob-open');
+  document.getElementById('sbOverlay').classList.toggle('mob-open');
+}
+function closeSidebar(){
+  document.querySelector('.sidebar').classList.remove('mob-open');
+  document.getElementById('sbOverlay').classList.remove('mob-open');
+}
 function answersEqual(val,correct){
   var v=(val||'').trim(),cr=(correct||'').trim();
   if(!v||!cr) return false;
@@ -1605,7 +1624,7 @@ function renderConsultView(){
   });
   el.innerHTML=html||'<p class="etbl">상담 요청이 없습니다</p>';
 }
-function selectStu(id){
+function selectStu(id){closeSidebar();
   uid_=id;mode='student';
   document.getElementById('empty').style.display='none';
   document.getElementById('detail').style.display='';
