@@ -61,6 +61,13 @@ body{font-family:'MaruBuri','Noto Sans KR',sans-serif;background:var(--bg);min-h
 .result-wrong{font-size:13px;color:#ef4444;margin-top:12px;line-height:1.8}
 .result-ok{font-size:13px;color:#166534;margin-top:12px}
 .result-saved{font-size:12px;color:var(--txt2);margin-top:8px;font-family:'Space Mono',monospace}
+.omok-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:12px}
+.omok-cell{border-radius:8px;padding:6px 4px;text-align:center;font-size:11px;line-height:1.4}
+.omok-cell.ok{background:#dcfce7;color:#166534}
+.omok-cell.ng{background:#fee2e2;color:#991b1b}
+.omok-num{font-weight:700;font-size:12px}
+.omok-ans{font-size:10px;margin-top:1px}
+.omok-corr{font-size:10px;color:#b91c1c;text-decoration:line-through}
 
 /* Step nav */
 .step-indicator{display:flex;align-items:center;gap:6px;margin-bottom:20px;font-family:'Space Mono',monospace;font-size:10px;color:#94a3b8}
@@ -504,7 +511,7 @@ async function hwSubmit(){
   document.getElementById('hwResultName').textContent=currentHwStuName;
   document.getElementById('hwResultScore').textContent=score;
   document.getElementById('hwResultTotal').textContent='/ '+total+' 점';
-  document.getElementById('hwResultWrong').innerHTML=wrong.length?'<div class="result-wrong">❌ 오답: '+wrong.join('번, ')+'번</div>':'<div class="result-ok">🎉 모두 정답!</div>';
+  document.getElementById('hwResultWrong').innerHTML=(wrong.length?'<div class="result-wrong">❌ 오답: '+wrong.join('번, ')+'번</div>':'<div class="result-ok">🎉 모두 정답!</div>')+buildOmokHtml(stuAnswers,answers);
   document.getElementById('hwResultSaved').textContent='✓ 결과 저장됨';
   document.getElementById('hwStep3').style.display='none';
   document.getElementById('hwStep4').style.display='';
@@ -798,11 +805,7 @@ async function submitGrade(){
   document.getElementById('resultName').textContent=currentStuName;
   document.getElementById('resultScore').textContent=score;
   document.getElementById('resultTotal').textContent='/ '+total+' 점';
-  if(wrong.length){
-    document.getElementById('resultWrong').innerHTML='<div class="result-wrong">❌ 오답: '+wrong.join('번, ')+'번</div>';
-  }else{
-    document.getElementById('resultWrong').innerHTML='<div class="result-ok">🎉 모두 정답!</div>';
-  }
+  document.getElementById('resultWrong').innerHTML=(wrong.length?'<div class="result-wrong">❌ 오답: '+wrong.join('번, ')+'번</div>':'<div class="result-ok">🎉 모두 정답!</div>')+buildOmokHtml(stuAnswers,selectedClinic.answers);
   document.getElementById('resultSaved').textContent='✓ 학생 기록에 자동 저장됨';
   if(_gradeTab!=='direct') buildEditGrid(stuAnswers);
   else document.getElementById('editGrid').innerHTML='<div style="text-align:center;padding:12px;color:#8a96b4;font-size:12px">직접 점수 입력 방식으로 채점되었습니다</div>';
@@ -867,11 +870,7 @@ async function regrade(){
   // Update display
   document.getElementById('resultScore').textContent=score;
   document.getElementById('resultTotal').textContent='/ '+total+' 점';
-  if(wrong.length){
-    document.getElementById('resultWrong').innerHTML='<div class="result-wrong">❌ 오답: '+wrong.join('번, ')+'번</div>';
-  }else{
-    document.getElementById('resultWrong').innerHTML='<div class="result-ok">🎉 모두 정답!</div>';
-  }
+  document.getElementById('resultWrong').innerHTML=(wrong.length?'<div class="result-wrong">❌ 오답: '+wrong.join('번, ')+'번</div>':'<div class="result-ok">🎉 모두 정답!</div>')+buildOmokHtml(stuAnswers,selectedClinic.answers);
   document.getElementById('resultSaved').textContent='✓ 수정 저장됨';
 }
 
@@ -916,6 +915,23 @@ function resetAll(){
 
 
 <script>
+function buildOmokHtml(stuAnswers, answers){
+  var nums=Object.keys(answers).map(Number).sort((a,b)=>a-b);
+  var cells=nums.map(function(n){
+    var correct=answers[String(n)]||'';
+    var stu=stuAnswers[String(n)]||stuAnswers[n]||'';
+    var ok=correct&&stu&&answersEqual(stu,correct);
+    var cls=ok?'ok':'ng';
+    return '<div class="omok-cell '+cls+'">'
+      +'<div class="omok-num">'+n+'번</div>'
+      +(ok
+        ?'<div class="omok-ans">✓ '+stu+'</div>'
+        :(!stu?'<div class="omok-ans">미기입</div>'
+               :'<div class="omok-corr">'+stu+'</div><div class="omok-ans">→ '+correct+'</div>'))
+      +'</div>';
+  });
+  return '<div class="omok-grid">'+cells.join('')+'</div>';
+}
 function answersEqual(val,correct){
   var v=(val||'').trim(),cr=(correct||'').trim();
   if(!v||!cr) return false;
