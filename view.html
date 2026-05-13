@@ -522,7 +522,7 @@ function renderVPlanCal(){
   var daysInMonth=new Date(_vPlanYear,_vPlanMonth+1,0).getDate();
   var daysInPrev=new Date(_vPlanYear,_vPlanMonth,0).getDate();
   var dateMap={};
-  Object.values(_vPlannerData).forEach(function(p){if(!p.date)return;if(!dateMap[p.date])dateMap[p.date]=[];dateMap[p.date].push(p);});
+  Object.entries(_vPlannerData).forEach(function([pid_,p]){if(!p.date)return;if(!dateMap[p.date])dateMap[p.date]=[];dateMap[p.date].push(Object.assign({},p,{_pid:pid_}));});
   var grid=document.getElementById('vPlanCalGrid');
   grid.innerHTML='<div class="plan-cal-dow">일</div><div class="plan-cal-dow">월</div><div class="plan-cal-dow">화</div><div class="plan-cal-dow">수</div><div class="plan-cal-dow">목</div><div class="plan-cal-dow">금</div><div class="plan-cal-dow">토</div>';
   for(var i=firstDay-1;i>=0;i--){var cell=document.createElement('div');cell.className='plan-cal-day other-month';cell.innerHTML='<span class="plan-cal-day-num">'+(daysInPrev-i)+'</span>';grid.appendChild(cell);}
@@ -557,8 +557,11 @@ function openVPlanDetail(ds,plans){
     var thumbSrc=p.imageData||p.thumbData||p.imageUrl||'';
     var imgPart='';
     if(thumbSrc){
-      var hasFull=p.thumbData?'1':'0';
       imgPart='<img class="vpdm-img" src="'+thumbSrc+'" loading="lazy">';
+    } else if(p.hasImage){
+      // 신형: smPlannerImages에서 lazy load
+      var pid_=p._pid||'';
+      imgPart='<div class="vpdm-img" style="height:100px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:13px;color:#94a3b8;cursor:pointer" onclick="vLoadImg(this,\''+pid_+'\')" data-pid="'+pid_+'">📷 탭하여 사진 보기</div>';
     }
     html+='<div class="vpdm-item"><div class="vpdm-head2">'+badge+'</div>'+imgPart+cmt+'</div>';
   });
@@ -698,6 +701,21 @@ function renderSent(){
   });
   setInterval(doCheck,30000);
 })();
+
+function vLoadImg(el,pid){
+  if(!pid||!db) return;
+  el.textContent='로딩 중...';
+  db.ref('smPlannerImages/'+pid).once('value').then(function(s){
+    var src=s.val();
+    if(src){
+      var img=document.createElement('img');
+      img.className='vpdm-img';img.src=src;img.loading='lazy';
+      el.replaceWith(img);
+    } else {
+      el.textContent='사진 없음';
+    }
+  });
+}
 </script>
 
 </body>

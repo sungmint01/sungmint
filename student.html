@@ -423,7 +423,10 @@ async function uploadPlanner() {
 
     const newRef = db.ref(`smPlanners/${stuId}`).push();
     const pid = newRef.key;
-    await newRef.set({ date, type: planType, imageData, ts: Date.now() });
+    // 메타데이터만 smPlanners에 저장 (이미지 제외 → 다운로드 절약)
+    await newRef.set({ date, type: planType, hasImage: true, ts: Date.now() });
+    // 이미지는 별도 경로에 저장 (필요할 때만 로드)
+    await db.ref(`smPlannerImages/${pid}`).set(imageData);
 
     fill.style.width = '100%';
     const label = planType === 'plan' ? '계획' : '완료';

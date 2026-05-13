@@ -617,6 +617,21 @@ function closeSidebar(){
   document.querySelector('.sidebar').classList.remove('mob-open');
   document.getElementById('sbOverlay').classList.remove('mob-open');
 }
+function loadPvImg(el, pid){
+  if(!pid) return;
+  el.textContent='로딩 중...';
+  db.ref('smPlannerImages/'+pid).get().then(function(s){
+    var src=s.val();
+    if(src){
+      var img=document.createElement('img');
+      img.className='pv-img';img.src=src;
+      img.onclick=function(){openLightbox(this.src);};
+      el.replaceWith(img);
+    } else {
+      el.textContent='사진 없음';
+    }
+  });
+}
 function answersEqual(val,correct){
   var v=(val||'').trim(),cr=(correct||'').trim();
   if(!v||!cr) return false;
@@ -644,7 +659,8 @@ function showApp(){
   document.getElementById('app').style.display='block';
   db.ref('smStudents').on('value',s=>{students=s.val()||{};renderSidebar();if(uid_&&mode==='student')renderHeader();});
   db.ref('smConsultations').on('value',s=>{consults=s.val()||{};renderSidebar();if(mode==='consult')renderConsultView()});
-  db.ref('smPlanners').on('value',s=>{planners=s.val()||{};const d=document.getElementById('rmDate');if(d&&d.value&&document.getElementById('rm').classList.contains('open'))loadRmPlanners(d.value);if(mode==='planner')renderPsTable();});
+  // smPlanners: 실시간 구독 제거 (이미지 없는 메타데이터만이라도 필요시만 로드)
+  db.ref('smPlanners').get().then(s=>{planners=s.val()||{};});
   cleanOldPlanners();
   cleanOldPdfData();
 }
@@ -680,7 +696,20 @@ async function cleanOldPlanners(){
     const deletes=[];
     Object.entries(all).forEach(function([stuId,stuPlanners]){
       Object.entries(stuPlanners).forEach(function([pid,p]){
-        if((p.ts||0)<limit) deletes.push(db.ref('smPlanners/'+stuId+'/'+pid).remove());
+        if((p.ts||0)<limit){
+          deletes.push(db.ref('smPlanners/'+stuId+'/'+pid).remove());
+          deletes.push(db.ref('smPlannerImages/'+pid).remove());
+        }
+        // 구형 imageData가 smPlanners에 있으면 smPlannerImages로 이동 후 삭제
+        else if(p.imageData){
+          (function(sId,pId,imgD){
+            db.ref('smPlannerImages/'+pId).get().then(function(s){
+              var p2=Promise.resolve();
+              if(!s.val()) p2=db.ref('smPlannerImages/'+pId).set(imgD);
+              p2.then(function(){db.ref('smPlanners/'+sId+'/'+pId+'/imageData').remove();});
+            });
+          })(stuId,pid,p.imageData);
+        }
       });
     });
     if(deletes.length>0){
@@ -1413,7 +1442,8 @@ function showPlannerStatus(){
   document.getElementById('plannerStatus').style.display='';
   renderSidebar();
   if(!_psDate) _psDate = new Date().toISOString().split('T')[0];
-  renderPsTable();
+  // 플래너 현황 열 때마다 최신 메타데이터 로드 (이미지 없음)
+  db.ref('smPlanners').get().then(s=>{planners=s.val()||{};renderPsTable();});
 }
 
 function changePsDate(dir){
@@ -1499,11 +1529,29 @@ async function openPlannerPreview(stuName, type, items, stuId){
 
   freshItems.forEach(function(p){
     const wrap=document.createElement('div');wrap.className='pp-img-wrap';
-    const imgSrc=p.imageData||p.thumbData||p.imageUrl||'';
-    if(imgSrc){
+    // 이미지: smPlannerImages에서 lazy load (구형 imageData/thumbData 하위호환)
+    const legacySrc=p.imageData||p.thumbData||p.imageUrl||'';
+    const imgWrap=document.createElement('div');
+    imgWrap.style.cssText='min-height:60px;background:#f1f5f9;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:8px';
+    if(legacySrc){
+      // 구형 데이터: 이미 imageData 있음
       const img=document.createElement('img');
-      img.className='planner-preview-img';img.src=imgSrc;
+      img.className='planner-preview-img';img.src=legacySrc;
       wrap.appendChild(img);
+    } else if(p.hasImage&&p._pid){
+      // 신형 데이터: smPlannerImages에서 로드
+      imgWrap.textContent='사진 로딩 중...';
+      wrap.appendChild(imgWrap);
+      db.ref('smPlannerImages/'+p._pid).get().then(function(s){
+        var src=s.val();
+        if(src){
+          var img=document.createElement('img');
+          img.className='planner-preview-img';img.src=src;
+          imgWrap.replaceWith(img);
+        } else {
+          imgWrap.textContent='사진 없음';
+        }
+      });
     }
     const cbox=document.createElement('div');cbox.className='pp-comment-box';
     const lbl=document.createElement('div');lbl.style.cssText='font-size:11px;font-weight:700;color:#8a96b4;margin-bottom:8px';
@@ -1625,6 +1673,8 @@ function renderConsultView(){
   el.innerHTML=html||'<p class="etbl">상담 요청이 없습니다</p>';
 }
 function selectStu(id){closeSidebar();
+  // 학생 선택 시 해당 학생 플래너 메타데이터 갱신
+  db.ref('smPlanners/'+id).get().then(s=>{planners[id]=s.val()||{};});
   uid_=id;mode='student';
   document.getElementById('empty').style.display='none';
   document.getElementById('detail').style.display='';
@@ -1864,7 +1914,7 @@ function loadRmPlanners(date) {
       : '<span class="rm-ptype rm-ptype-plan">📋 계획</span>';
     var t = new Date(p.ts||0).toLocaleTimeString('ko-KR');
     var imgSrc = p.imageData || p.thumbData || p.imageUrl || '';
-    var hasFull = !!p.thumbData && !p.imageData; // 신형식: thumbData만 있으면 원본은 smPlannerImages에
+    var hasFull = (!!p.thumbData && !p.imageData) || (!p.imageData && !p.thumbData && p.hasImage);
     var commentBody = p.comment
       ? '<div class="rm-pcomment"><div class="rm-pcomment-head">✏️ 코멘트</div>' + p.comment.split('\n').join('<br>') + '</div>'
       : '<div class="rm-pno-comment">⏳ 코멘트 없음</div>';
@@ -1999,7 +2049,7 @@ function renderPlannerView(){
             <span>📅 ${y}년 ${+m}월 ${+d}일</span>
             <span style="font-size:11px;color:#94a3b8">${new Date(p.ts||0).toLocaleString('ko-KR')}</span>
           </div>
-          <img class="pv-img" src="${p.imageData||p.imageUrl||''}" onclick="openLightbox(this.src)" loading="lazy">
+          ${(p.imageData||p.imageUrl)?`<img class="pv-img" src="${p.imageData||p.imageUrl||\'\'}" onclick="openLightbox(this.src)" loading="lazy">`:p.hasImage?`<div style="height:120px;background:#f1f5f9;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#94a3b8;cursor:pointer" onclick="loadPvImg(this,\'${p._pid||pid}\')">📷 \ud0ed\ud558\uc5ec \uc0ac\uc9c4 \ubcf4\uae30</div>`:``}
           ${p.comment?`<div class="pv-comment"><div class="pv-comment-head">✏️ 코멘트</div>${p.comment.split('\n').join('<br>')}</div>`:''}
           <div class="pv-comment-form" id="pvf_${sid}_${pid}">
             <textarea id="pvt_${sid}_${pid}" placeholder="코멘트를 입력하세요">${p.comment||''}</textarea>
