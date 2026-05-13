@@ -315,7 +315,7 @@ function showApp() {
     db.ref('od4p/' + dateStr).get().then(s => {
       const subjects = s.val() || {};
       od4pData[dateStr] = [];
-      Object.values(subjects).forEach(sub => {
+      Object.entries(subjects).forEach(([subKey, sub]) => {
         const subs = sub.submissions || {};
         const myEntry = Object.values(subs).find(e => e.name === stuData.name);
         if (myEntry) {
@@ -329,7 +329,7 @@ function showApp() {
             if (correct) score++; else wrongNums.push(i+1);
           });
           od4pData[dateStr].push({
-            subject: sub.title || '', answers: myAnswers,
+            subject: sub.title || subKey, answers: myAnswers,
             score, total, wrongNums, ts: myEntry.ts || 0
           });
         }

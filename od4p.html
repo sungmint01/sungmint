@@ -152,7 +152,10 @@ function listenQuiz(date,subKey,cb){
   ref.on("value",snap=>cb(snap.val()));
   return()=>ref.off("value");
 }
-function saveProblems(date,subKey,problems){return db.ref(`od4p/${date}/${subKey}/problems`).set(problems);}
+async function saveProblems(date,subKey,problems,title){
+  if(title) await db.ref(`od4p/${date}/${subKey}/title`).set(title);
+  return db.ref(`od4p/${date}/${subKey}/problems`).set(problems);
+}
 function saveSubmission(date,subKey,name,answers){
   const key=name.replace(/[.#$[\]\s]/g,"_")+"-"+Date.now();
   return db.ref(`od4p/${date}/${subKey}/submissions/${key}`).set({name,answers,ts:Date.now()});
@@ -521,7 +524,7 @@ function TeacherApp(){
   };
   const saveQuiz=async()=>{
     const cleaned=problems.map(p=>{const base={type:p.type,unit:p.unit.trim(),question:p.question.trim(),image:p.image||"",solutionText:p.solutionText.trim(),solutionImage:p.solutionImage||"",answer:p.answer};if(p.type==="객관식")base.options=p.options.map(o=>o.trim());return base;});
-    await saveProblems(editDate,editSub.key,cleaned);
+    await saveProblems(editDate,editSub.key,cleaned,editSub.label);
     setSaveOk(true);setTimeout(()=>setSaveOk(false),3000);
   };
 

@@ -738,7 +738,7 @@ async function cleanOldResults(){
   }catch(e){}
 }
 async function cleanOldPdfData(){
-  const limit=Date.now()-3*24*60*60*1000;
+  const limit=Date.now()-2*24*60*60*1000;
   try{
     const [clinicSnap,hwSnap2]=await Promise.all([db.ref('smClinicSets').get(),db.ref('smHwSets').get()]);
     const deletes=[];
@@ -1411,7 +1411,7 @@ function renderOd4pDates(){
       _od4pSelDate=date;_od4pSelSubj=null;
       renderOd4pDates();
       // 선택한 날짜 데이터만 로드
-      document.getElementById('od4pSubjs').innerHTML='<div class="ps-empty">로딩 중...</div>';
+      document.getElementById('od4pSubjBtns').innerHTML='<div class="ps-empty">로딩 중...</div>';
       document.getElementById('od4pRows').innerHTML='';
       db.ref('od4p/'+date).get().then(function(s){
         _od4pAllData[date]=s.val()||{};
