@@ -93,13 +93,14 @@ function compressImage(file, cb){
   reader.readAsDataURL(file);
 }
 
-function listenQs(cb){
-  const ref=db.ref("questions").orderByChild("ts").limitToLast(50);
-  ref.on("value", snap=>{
-    const val=snap.val()||{};
-    cb(Object.values(val).sort((a,b)=>b.ts-a.ts));
-  });
-  return ()=>ref.off();
+const PAGE_SIZE=6;
+async function fetchPage(endTs=null){
+  let ref=db.ref("questions").orderByChild("ts").limitToLast(PAGE_SIZE);
+  if(endTs!==null) ref=db.ref("questions").orderByChild("ts").endBefore(endTs).limitToLast(PAGE_SIZE);
+  const snap=await ref.get();
+  const val=snap.val()||{};
+  const items=Object.entries(val).map(([id,q])=>({...q,id})).sort((a,b)=>b.ts-a.ts);
+  return items;
 }
 async function pushQ(q){
   const photo=q.photo||"";
@@ -256,15 +257,40 @@ function App(){
   const [replyComment,setReplyComment]=useState("");
   const [filter,setFilter]=useState("all");
   const [subjectFilter,setSubjectFilter]=useState("전체");
+  const [cursorStack,setCursorStack]=useState([]); // 이전 페이지로 돌아가기 위한 커서 스택
+  const [hasMore,setHasMore]=useState(false);
+
+  const loadPage=async(stack)=>{
+    setLoading(true);
+    const endTs=stack.length>0?stack[stack.length-1]:null;
+    const items=await fetchPage(endTs);
+    setQuestions(items);
+    setHasMore(items.length>=PAGE_SIZE);
+    setLoading(false);
+  };
 
   useEffect(()=>{
-    const unsub=listenQs(qs=>{setQuestions(qs);setLoading(false);});
+    loadPage([]);
     db.ref('settings/emailAlert').on('value', snap=>{
       const val = snap.val();
       if(val !== null){ setEmailAlert(val); emailAlertRef.current = val; }
     });
-    return unsub;
   },[]);
+
+  const goNextPage=()=>{
+    if(!questions.length) return;
+    const oldest=questions[questions.length-1].ts;
+    const newStack=[...cursorStack,oldest];
+    setCursorStack(newStack);
+    loadPage(newStack);
+  };
+  const goPrevPage=()=>{
+    if(!cursorStack.length) return;
+    const newStack=cursorStack.slice(0,-1);
+    setCursorStack(newStack);
+    loadPage(newStack);
+  };
+  const refreshPage=()=>loadPage(cursorStack);
 
   const onFile=e=>{
     const f=e.target.files[0];
@@ -305,12 +331,14 @@ function App(){
     if(!videoUrl.trim()&&!replyComment.trim()) return;
     await updateQ(qId,{answered:true,videoUrl:videoUrl.trim(),comment:replyComment.trim()});
     setReplyTarget(null);setVideoUrl("");setReplyComment("");
+    refreshPage();
   };
 
   const onDelete=async(qId)=>{
     if(!window.confirm("삭제할까요?")) return;
     await deleteQ(qId);
     if(replyTarget===qId) setReplyTarget(null);
+    refreshPage();
   };
 
   const filtered=questions.filter(q=>filter==="all"?true:filter==="pending"?!q.answered:q.answered);
@@ -482,6 +510,24 @@ function App(){
             }
           </>
         )}
+        {/* 페이지네이션 */}
+        <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:10,padding:"16px 0 24px"}}>
+          <button onClick={goPrevPage} disabled={!cursorStack.length||loading}
+            style={{padding:"8px 18px",borderRadius:8,border:"none",background:cursorStack.length?"#e0f2fe":"#f1f5f9",color:cursorStack.length?"#0369a1":"#94a3b8",fontWeight:700,fontSize:13,cursor:cursorStack.length?"pointer":"default",fontFamily:"inherit"}}>
+            ← 최신
+          </button>
+          <span style={{fontSize:12,color:"#94a3b8"}}>
+            {cursorStack.length+1}페이지
+          </span>
+          <button onClick={goNextPage} disabled={!hasMore||loading}
+            style={{padding:"8px 18px",borderRadius:8,border:"none",background:hasMore?"#e0f2fe":"#f1f5f9",color:hasMore?"#0369a1":"#94a3b8",fontWeight:700,fontSize:13,cursor:hasMore?"pointer":"default",fontFamily:"inherit"}}>
+            이전 →
+          </button>
+          <button onClick={refreshPage} disabled={loading}
+            style={{padding:"8px 14px",borderRadius:8,border:"none",background:"#f1f5f9",color:"#64748b",fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>
+            🔄
+          </button>
+        </div>
       </div>
     </div>
   );
