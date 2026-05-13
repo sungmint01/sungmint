@@ -95,15 +95,19 @@ function compressImage(file, cb){
 }
 
 const PAGE_SIZE=6;
-async function fetchPage(startAfterTs=null){
-  // 오름차순 (오래된 것 = 1번)
+async function fetchPage(startBeforeTs=null){
   const snap=await db.ref("questions").get();
   const val=snap.val()||{};
-  const all=Object.entries(val).map(([id,q])=>({...q,id})).sort((a,b)=>a.ts-b.ts);
-  if(startAfterTs===null) return all.slice(0,PAGE_SIZE);
-  const idx=all.findIndex(q=>q.ts>startAfterTs);
-  if(idx===-1) return [];
-  return all.slice(idx,idx+PAGE_SIZE);
+  // 오름차순으로 번호 부여 (오래된 것=1번)
+  const allAsc=Object.entries(val).map(([id,q])=>({...q,id})).sort((a,b)=>a.ts-b.ts);
+  const total=allAsc.length;
+  allAsc.forEach((q,i)=>{ q._num=i+1; });
+  // 표시는 내림차순 (최신이 위)
+  const allDesc=[...allAsc].reverse();
+  if(startBeforeTs===null) return {items:allDesc.slice(0,PAGE_SIZE),total};
+  const idx=allDesc.findIndex(q=>q.ts<startBeforeTs);
+  if(idx===-1) return {items:[],total};
+  return {items:allDesc.slice(idx,idx+PAGE_SIZE),total};
 }
 async function pushQ(q){
   const photo=q.photo||"";
@@ -267,12 +271,14 @@ function App(){
   const [cursorStack,setCursorStack]=useState([]); // 이전 페이지로 돌아가기 위한 커서 스택
   const [hasMore,setHasMore]=useState(false);
 
+  const [totalQ,setTotalQ]=useState(0);
   const loadPage=async(stack)=>{
     setLoading(true);
     try{
       const endTs=stack.length>0?stack[stack.length-1]:null;
-      const items=await fetchPage(endTs);
+      const {items,total}=await fetchPage(endTs);
       setQuestions(items);
+      setTotalQ(total);
       setHasMore(items.length>=PAGE_SIZE);
     }catch(e){
       console.error('qna loadPage error:',e);
@@ -292,8 +298,9 @@ function App(){
 
   const goNextPage=()=>{
     if(!questions.length||!hasMore) return;
-    const newest=questions[questions.length-1].ts;
-    const newStack=[...cursorStack,newest];
+    // 현재 페이지 마지막(가장 오래된) ts 저장 → 그 이전 항목들 로드
+    const oldest=questions[questions.length-1].ts;
+    const newStack=[...cursorStack,oldest];
     setCursorStack(newStack);
     loadPage(newStack);
   };
@@ -457,7 +464,7 @@ function App(){
               ? <div style={{textAlign:"center",padding:"40px 0",color:"#94a3b8",fontSize:13}}>불러오는 중...</div>
               : questions.filter(q=>q.answered&&(subjectFilter==="전체"||q.subject===subjectFilter)).length===0
                 ? <div style={{textAlign:"center",padding:"40px 0",color:"#94a3b8",fontSize:13}}>해설된 질문이 없어요</div>
-                : questions.filter(q=>q.answered&&(subjectFilter==="전체"||q.subject===subjectFilter)).map((q,i)=><QCard key={q.id} q={q} num={cursorStack.length*PAGE_SIZE+(i+1)} isTeacher={false}/>)
+                : questions.filter(q=>q.answered&&(subjectFilter==="전체"||q.subject===subjectFilter)).map((q,i)=><QCard key={q.id} q={q} num={q._num||0} isTeacher={false}/>)
             }
           </>
         )}
@@ -513,7 +520,7 @@ function App(){
               : filtered.length===0
                 ? <div style={{textAlign:"center",padding:"60px 0",color:"#94a3b8",fontSize:13}}>질문이 없어요</div>
                 : filtered.map((q,i)=>(
-                    <QCard key={q.id} q={q} num={cursorStack.length*PAGE_SIZE+(i+1)} isTeacher={true}
+                    <QCard key={q.id} q={q} num={q._num||0} isTeacher={true}
                       replyTarget={replyTarget} setReplyTarget={setReplyTarget}
                       videoUrl={videoUrl} setVideoUrl={setVideoUrl}
                       replyComment={replyComment} setReplyComment={setReplyComment}
@@ -527,14 +534,14 @@ function App(){
         <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:10,padding:"16px 0 24px"}}>
           <button onClick={goPrevPage} disabled={!cursorStack.length||loading}
             style={{padding:"8px 18px",borderRadius:8,border:"none",background:cursorStack.length?"#e0f2fe":"#f1f5f9",color:cursorStack.length?"#0369a1":"#94a3b8",fontWeight:700,fontSize:13,cursor:cursorStack.length?"pointer":"default",fontFamily:"inherit"}}>
-            ← 이전
+            ← 최신
           </button>
           <span style={{fontSize:12,color:"#94a3b8"}}>
             {cursorStack.length+1}페이지
           </span>
           <button onClick={goNextPage} disabled={!hasMore||loading}
             style={{padding:"8px 18px",borderRadius:8,border:"none",background:hasMore?"#e0f2fe":"#f1f5f9",color:hasMore?"#0369a1":"#94a3b8",fontWeight:700,fontSize:13,cursor:hasMore?"pointer":"default",fontFamily:"inherit"}}>
-            다음 →
+            이전 →
           </button>
           <button onClick={refreshPage} disabled={loading}
             style={{padding:"8px 14px",borderRadius:8,border:"none",background:"#f1f5f9",color:"#64748b",fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>
