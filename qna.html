@@ -567,17 +567,19 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     }catch(e){return null;}
   }
 
+  var _smvRef=null;
   function doCheck(){
     var db=getDB();
     if(!db) return;
-    db.ref('smAppVersion').once('value',function(s){
+    if(_smvRef) return;
+    _smvRef=db.ref('smAppVersion');
+    _smvRef.on('value',function(s){
       var sv=String(s.val()||'');
       if(!sv) return;
       var lv=sessionStorage.getItem('smv')||'';
       if(!lv){sessionStorage.setItem('smv',sv);return;}
       if(sv===lv) return;
       sessionStorage.setItem('smv',sv);
-      // fetch로 새 HTML 직접 받아서 document.write로 교체 → CDN 캐시 완전 우회
       var freshUrl=location.pathname+'?_v='+sv;
       fetch(freshUrl,{cache:'no-store',credentials:'same-origin'})
         .then(function(r){return r.text();})
@@ -598,7 +600,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   document.addEventListener('visibilitychange',function(){
     if(document.visibilityState==='visible') doCheck();
   });
-  setInterval(doCheck,30000);
 })();
 </script>
 
