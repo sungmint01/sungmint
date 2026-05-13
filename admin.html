@@ -706,7 +706,10 @@ async function cleanOldPlanners(){
             db.ref('smPlannerImages/'+pId).get().then(function(s){
               var p2=Promise.resolve();
               if(!s.val()) p2=db.ref('smPlannerImages/'+pId).set(imgD);
-              p2.then(function(){db.ref('smPlanners/'+sId+'/'+pId+'/imageData').remove();});
+              p2.then(function(){
+              db.ref('smPlanners/'+sId+'/'+pId+'/imageData').remove();
+              db.ref('smPlanners/'+sId+'/'+pId+'/hasImage').set(true);
+            });
             });
           })(stuId,pid,p.imageData);
         }
@@ -1538,8 +1541,8 @@ async function openPlannerPreview(stuName, type, items, stuId){
       const img=document.createElement('img');
       img.className='planner-preview-img';img.src=legacySrc;
       wrap.appendChild(img);
-    } else if(p.hasImage&&p._pid){
-      // 신형 데이터: smPlannerImages에서 로드
+    } else if(p._pid){
+      // 신형/마이그레이션 데이터: smPlannerImages에서 로드
       imgWrap.textContent='사진 로딩 중...';
       wrap.appendChild(imgWrap);
       db.ref('smPlannerImages/'+p._pid).get().then(function(s){
@@ -1549,7 +1552,7 @@ async function openPlannerPreview(stuName, type, items, stuId){
           img.className='planner-preview-img';img.src=src;
           imgWrap.replaceWith(img);
         } else {
-          imgWrap.textContent='사진 없음';
+          imgWrap.style.display='none';
         }
       });
     }
@@ -1914,7 +1917,7 @@ function loadRmPlanners(date) {
       : '<span class="rm-ptype rm-ptype-plan">📋 계획</span>';
     var t = new Date(p.ts||0).toLocaleTimeString('ko-KR');
     var imgSrc = p.imageData || p.thumbData || p.imageUrl || '';
-    var hasFull = (!!p.thumbData && !p.imageData) || (!p.imageData && !p.thumbData && p.hasImage);
+    var hasFull = !p.imageData && !p.thumbData && !p.imageUrl && !!pid;
     var commentBody = p.comment
       ? '<div class="rm-pcomment"><div class="rm-pcomment-head">✏️ 코멘트</div>' + p.comment.split('\n').join('<br>') + '</div>'
       : '<div class="rm-pno-comment">⏳ 코멘트 없음</div>';
@@ -2049,7 +2052,7 @@ function renderPlannerView(){
             <span>📅 ${y}년 ${+m}월 ${+d}일</span>
             <span style="font-size:11px;color:#94a3b8">${new Date(p.ts||0).toLocaleString('ko-KR')}</span>
           </div>
-          ${(p.imageData||p.imageUrl)?`<img class="pv-img" src="${p.imageData||p.imageUrl||''}" onclick="openLightbox(this.src)" loading="lazy">`:p.hasImage?`<div style="height:120px;background:#f1f5f9;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#94a3b8;cursor:pointer" onclick="loadPvImg(this,'${p._pid||pid}')">📷 탭하여 사진 보기</div>`:``}
+          ${(p.imageData||p.imageUrl)?`<img class="pv-img" src="${p.imageData||p.imageUrl||''}" onclick="openLightbox(this.src)" loading="lazy">`:p._pid?`<div style="height:120px;background:#f1f5f9;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#94a3b8;cursor:pointer" onclick="loadPvImg(this,'${p._pid||pid}')">📷 탭하여 사진 보기</div>`:``}
           ${p.comment?`<div class="pv-comment"><div class="pv-comment-head">✏️ 코멘트</div>${p.comment.split('\n').join('<br>')}</div>`:''}
           <div class="pv-comment-form" id="pvf_${sid}_${pid}">
             <textarea id="pvt_${sid}_${pid}" placeholder="코멘트를 입력하세요">${p.comment||''}</textarea>
