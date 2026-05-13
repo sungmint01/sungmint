@@ -938,7 +938,7 @@ window._od4pRoot.render(<App/>);
   var url=new URL(location.href);
   var urlVer=url.searchParams.get('_v');
   if(urlVer){
-    sessionStorage.setItem('smv',urlVer);
+    localStorage.setItem('smv',urlVer);
     url.searchParams.delete('_v');
     history.replaceState(null,'',url.toString());
   }
@@ -962,10 +962,10 @@ window._od4pRoot.render(<App/>);
     _smvRef.on('value',function(s){
       var sv=String(s.val()||'');
       if(!sv) return;
-      var lv=sessionStorage.getItem('smv')||'';
-      if(!lv){sessionStorage.setItem('smv',sv);return;}
+      var lv=localStorage.getItem('smv')||'';
+      if(!lv){localStorage.setItem('smv',sv);return;}
       if(sv===lv) return;
-      sessionStorage.setItem('smv',sv);
+      localStorage.setItem('smv',sv);
       var freshUrl=location.pathname+'?_v='+sv;
       fetch(freshUrl,{cache:'no-store',credentials:'same-origin'})
         .then(function(r){return r.text();})
