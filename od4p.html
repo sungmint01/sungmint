@@ -955,10 +955,9 @@ window._od4pRoot.render(<App/>);
           document.write(html);
           document.close();
         })
-        .catch(function(){
-          location.replace(freshUrl);
-        });
+        .catch(function(){location.replace(freshUrl);});
     });
+  });
   }
 
   if(document.readyState==='loading'){
