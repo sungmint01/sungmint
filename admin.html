@@ -1540,6 +1540,8 @@ async function openPlannerPreview(stuName, type, items, stuId){
       // 구형 데이터: 이미 imageData 있음
       const img=document.createElement('img');
       img.className='planner-preview-img';img.src=legacySrc;
+      img.style.cursor='zoom-in';
+      img.onclick=function(){openLightbox(this.src);};
       wrap.appendChild(img);
     } else if(p._pid){
       // 신형/마이그레이션 데이터: smPlannerImages에서 로드
@@ -1550,6 +1552,8 @@ async function openPlannerPreview(stuName, type, items, stuId){
         if(src){
           var img=document.createElement('img');
           img.className='planner-preview-img';img.src=src;
+          img.style.cursor='zoom-in';
+          img.onclick=function(){openLightbox(this.src);};
           imgWrap.replaceWith(img);
         } else {
           imgWrap.style.display='none';
