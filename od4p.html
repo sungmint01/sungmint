@@ -437,15 +437,10 @@ function StudentApp(){
               <div style={{padding:"12px 16px"}}>
                 {p.image&&<img src={p.image} style={{width:"100%",borderRadius:8,marginBottom:10,maxHeight:200,objectFit:"contain",background:"#fff"}}/>}
                 {p.question&&<div style={{fontSize:13,color:"#8a96b4",marginBottom:10,whiteSpace:"pre-wrap"}}>{p.question}</div>}
-                <button onClick={()=>setShowSol(s=>({...s,[i]:!s[i]}))} style={{background:"#ede9fe",border:"none",borderRadius:8,color:"#6d28d9",padding:"7px 14px",cursor:"pointer",fontSize:12,fontWeight:700,marginBottom:showSol[i]?10:0}}>
-                  {showSol[i]?"▲ 해설 닫기":"📖 해설 보기"}
-                </button>
-                {showSol[i]&&(
-                  <div style={{background:"#f8faff",borderRadius:10,padding:14}}>
+                <div style={{background:"#f8faff",borderRadius:10,padding:14}}>
                     {p.solutionText&&<div style={{fontSize:13,color:"#2d3748",lineHeight:1.8,marginBottom:p.solutionImage?12:0}}><MathText text={p.solutionText}/></div>}
                     {p.solutionImage&&<img src={p.solutionImage} style={{width:"100%",borderRadius:8,objectFit:"contain",background:"#fff"}}/>}
                   </div>
-                )}
               </div>
             </div>
           );
@@ -670,7 +665,6 @@ function TeacherApp(){
                     ))}
                     <div style={{fontSize:11,color:"#6366f1",marginTop:3}}>✓ 정답: {p.answer}번</div>
                   </div>
-                )}
                 {/* 단답형 정답 */}
                 {p.type==="단답형"&&(
                   <div>
@@ -678,7 +672,6 @@ function TeacherApp(){
                     <input value={p.answer} onChange={e=>updateProb(i,"answer",e.target.value)} placeholder="정답 입력"
                       style={{width:"100%",background:"#f8faff",border:"2px solid #6366f1",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#4ade80",fontWeight:700,outline:"none"}}/>
                   </div>
-                )}
                 {/* 해설 */}
                 <div style={{borderTop:"1px solid #e2e8f0",paddingTop:10}}>
                   <div style={{fontSize:11,color:"#8a96b4",marginBottom:6}}>해설</div>

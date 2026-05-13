@@ -967,10 +967,13 @@ function answersEqual(val,correct){
     }catch(e){return null;}
   }
 
+  var _smvRef=null;
   function doCheck(){
     var db=getDB();
     if(!db) return;
-    db.ref('smAppVersion').once('value',function(s){
+    if(_smvRef) return; // 이미 구독 중
+    _smvRef=db.ref('smAppVersion');
+    _smvRef.on('value',function(s){
       var sv=String(s.val()||'');
       if(!sv) return;
       var lv=sessionStorage.getItem('smv')||'';
@@ -998,7 +1001,6 @@ function answersEqual(val,correct){
   document.addEventListener('visibilitychange',function(){
     if(document.visibilityState==='visible') doCheck();
   });
-  setInterval(doCheck,30000);
 })();
 </script>
 
