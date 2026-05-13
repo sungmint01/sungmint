@@ -499,10 +499,10 @@ function renderPlanCal() {
   var daysInMonth = new Date(_planCalYear, _planCalMonth + 1, 0).getDate();
   var daysInPrev = new Date(_planCalYear, _planCalMonth, 0).getDate();
   var dateMap = {};
-  Object.values(plannerData).forEach(function(p) {
+  Object.entries(plannerData).forEach(function([pid_,p]) {
     if (!p.date) return;
     if (!dateMap[p.date]) dateMap[p.date] = [];
-    dateMap[p.date].push(p);
+    dateMap[p.date].push(Object.assign({},p,{_pid:pid_}));
   });
   var grid = document.getElementById('planCalGrid');
   grid.innerHTML = '<div class="plan-cal-dow">일</div><div class="plan-cal-dow">월</div><div class="plan-cal-dow">화</div><div class="plan-cal-dow">수</div><div class="plan-cal-dow">목</div><div class="plan-cal-dow">금</div><div class="plan-cal-dow">토</div>';
@@ -600,13 +600,28 @@ function openPlanDetail(ds, plans) {
     html += '<div class="pdm-item">';
     html += '<div class="pdm-item-head">' + badge + '</div>';
     const thumbSrc = p.thumbData || p.imageData || p.imageUrl || '';
-      if(thumbSrc){
-        // 썸네일로 즉시 표시, 클릭 시 원본 로드
-        html += '<img class="pdm-img" src="' + thumbSrc + '" loading="lazy">';
-      }
+    const pid_ = p._pid || '';
+    if(thumbSrc){
+      html += '<img class="pdm-img" src="' + thumbSrc + '" loading="lazy">';
+    } else if(pid_){
+      html += '<div class="pdm-img" id="pdmimg_' + pid_ + '" style="height:120px;background:#f1f5f9;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#94a3b8">로딩 중...</div>';
+    }
     html += commentHtml + '</div>';
   });
   document.getElementById('pdmBody').innerHTML = html || '<div class="pdm-empty">기록이 없습니다</div>';
+  // 신형 이미지 async 로드 (캐시 우선)
+  plans.forEach(function(p){
+    var pid_=p._pid||'';
+    if(!pid_||p.thumbData||p.imageData||p.imageUrl) return;
+    var el=document.getElementById('pdmimg_'+pid_);
+    if(!el) return;
+    loadPlannerImg(pid_).then(function(src){
+      if(!src){el.style.display='none';return;}
+      var img=document.createElement('img');
+      img.className='pdm-img';img.src=src;img.loading='lazy';
+      el.replaceWith(img);
+    });
+  });
   document.getElementById('planDetailOv').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -628,6 +643,50 @@ function closeLightbox() {
 // today() defined above
 
 // Auto-login if session exists
+const PIC={
+  _db:null,
+  async db(){
+    if(this._db) return this._db;
+    return new Promise(res=>{
+      const r=indexedDB.open('smtPlanner',1);
+      r.onupgradeneeded=e=>e.target.result.createObjectStore('imgs',{keyPath:'pid'});
+      r.onsuccess=e=>{this._db=e.target.result;res(this._db);};
+      r.onerror=()=>res(null);
+    });
+  },
+  async get(pid){
+    try{
+      const db=await this.db();if(!db)return null;
+      return new Promise(res=>{
+        const r=db.transaction('imgs').objectStore('imgs').get(pid);
+        r.onsuccess=()=>{const v=r.result;res(v&&(Date.now()-v.ts)<60*86400000?v.src:null);};
+        r.onerror=()=>res(null);
+      });
+    }catch{return null;}
+  },
+  async set(pid,src){
+    try{
+      const db=await this.db();if(!db)return;
+      db.transaction('imgs','readwrite').objectStore('imgs').put({pid,src,ts:Date.now()});
+    }catch{}
+  },
+  async del(pid){
+    try{
+      const db=await this.db();if(!db)return;
+      db.transaction('imgs','readwrite').objectStore('imgs').delete(pid);
+    }catch{}
+  }
+};
+async function loadPlannerImg(pid){
+  if(!pid)return null;
+  const cached=await PIC.get(pid);
+  if(cached)return cached;
+  const snap=await db.ref('smPlannerImages/'+pid).get();
+  const src=snap.val();
+  if(src)PIC.set(pid,src);
+  return src;
+}
+
 window.addEventListener('DOMContentLoaded', async () => {
   const sid = sessionStorage.getItem('stuId');
   const hash = sessionStorage.getItem('stuHash');

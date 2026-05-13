@@ -617,11 +617,54 @@ function closeSidebar(){
   document.querySelector('.sidebar').classList.remove('mob-open');
   document.getElementById('sbOverlay').classList.remove('mob-open');
 }
+const PIC={
+  _db:null,
+  async db(){
+    if(this._db) return this._db;
+    return new Promise(res=>{
+      const r=indexedDB.open('smtPlanner',1);
+      r.onupgradeneeded=e=>e.target.result.createObjectStore('imgs',{keyPath:'pid'});
+      r.onsuccess=e=>{this._db=e.target.result;res(this._db);};
+      r.onerror=()=>res(null);
+    });
+  },
+  async get(pid){
+    try{
+      const db=await this.db();if(!db)return null;
+      return new Promise(res=>{
+        const r=db.transaction('imgs').objectStore('imgs').get(pid);
+        r.onsuccess=()=>{const v=r.result;res(v&&(Date.now()-v.ts)<60*86400000?v.src:null);};
+        r.onerror=()=>res(null);
+      });
+    }catch{return null;}
+  },
+  async set(pid,src){
+    try{
+      const db=await this.db();if(!db)return;
+      db.transaction('imgs','readwrite').objectStore('imgs').put({pid,src,ts:Date.now()});
+    }catch{}
+  },
+  async del(pid){
+    try{
+      const db=await this.db();if(!db)return;
+      db.transaction('imgs','readwrite').objectStore('imgs').delete(pid);
+    }catch{}
+  }
+};
+async function loadPlannerImg(pid){
+  if(!pid)return null;
+  const cached=await PIC.get(pid);
+  if(cached)return cached;
+  const snap=await db.ref('smPlannerImages/'+pid).get();
+  const src=snap.val();
+  if(src)PIC.set(pid,src);
+  return src;
+}
+
 function loadPvImg(el, pid){
   if(!pid) return;
   el.textContent='로딩 중...';
-  db.ref('smPlannerImages/'+pid).get().then(function(s){
-    var src=s.val();
+  loadPlannerImg(pid).then(function(src){
     if(src){
       var img=document.createElement('img');
       img.className='pv-img';img.src=src;
@@ -1547,8 +1590,7 @@ async function openPlannerPreview(stuName, type, items, stuId){
       // 신형/마이그레이션 데이터: smPlannerImages에서 로드
       imgWrap.textContent='사진 로딩 중...';
       wrap.appendChild(imgWrap);
-      db.ref('smPlannerImages/'+p._pid).get().then(function(s){
-        var src=s.val();
+      loadPlannerImg(p._pid).then(function(src){
         if(src){
           var img=document.createElement('img');
           img.className='planner-preview-img';img.src=src;
@@ -1616,6 +1658,7 @@ async function openPlannerPreview(stuName, type, items, stuId){
       if(!confirm(nm+' 플래너를 삭제할까요?')) return;
       await db.ref('smPlanners/'+stuId+'/'+id).remove();
       await db.ref('smPlannerImages/'+id).remove();
+      PIC.del(id);
       wrapEl.remove();
       toast(nm+' 플래너 삭제됨');
     };})(p._pid,wrap,stuName);
@@ -2094,9 +2137,8 @@ function rmImgClick(el){
   if(el.dataset.fullSrc){openLightbox(el.dataset.fullSrc);return;}
   var pid=el.dataset.pid;
   el.style.opacity='0.6';
-  db.ref('smPlannerImages/'+pid).once('value').then(function(snap){
+  loadPlannerImg(pid).then(function(src){
     el.style.opacity='1';
-    var src=snap.val();
     if(src){el.dataset.fullSrc=src;openLightbox(src);}
     else{openLightbox(el.src);}
   });

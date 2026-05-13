@@ -558,14 +558,27 @@ function openVPlanDetail(ds,plans){
     var imgPart='';
     if(thumbSrc){
       imgPart='<img class="vpdm-img" src="'+thumbSrc+'" loading="lazy">';
-    } else if(p.hasImage){
-      // 신형: smPlannerImages에서 lazy load
+    } else if(p._pid){
+      // 신형/마이그레이션: IndexedDB 캐시 → smPlannerImages
       var pid_=p._pid||'';
-      imgPart='<div class="vpdm-img" style="height:100px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:13px;color:#94a3b8;cursor:pointer" onclick="vLoadImg(this,\''+pid_+'\')" data-pid="'+pid_+'">📷 탭하여 사진 보기</div>';
+      imgPart='<div class="vpdm-img" id="vpdmimg_'+pid_+'" style="height:100px;background:#f1f5f9;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#94a3b8">로딩 중...</div>';
     }
     html+='<div class="vpdm-item"><div class="vpdm-head2">'+badge+'</div>'+imgPart+cmt+'</div>';
   });
   document.getElementById('vpdmBody').innerHTML=html||'<p style="text-align:center;color:#94a3b8;padding:20px">없음</p>';
+  // 신형 이미지 async 로드 (IndexedDB 캐시 우선)
+  plans.forEach(function(p){
+    var pid_=p._pid||'';
+    if(!pid_||p.thumbData||p.imageData||p.imageUrl) return;
+    var el=document.getElementById('vpdmimg_'+pid_);
+    if(!el) return;
+    loadPlannerImg(pid_).then(function(src){
+      if(!src){el.style.display='none';return;}
+      var img=document.createElement('img');
+      img.className='vpdm-img';img.src=src;img.loading='lazy';
+      el.replaceWith(img);
+    });
+  });
   document.getElementById('vPlanDetailOv').classList.add('open');
   document.body.style.overflow='hidden';
 }
@@ -705,8 +718,7 @@ function renderSent(){
 function vLoadImg(el,pid){
   if(!pid||!db) return;
   el.textContent='로딩 중...';
-  db.ref('smPlannerImages/'+pid).once('value').then(function(s){
-    var src=s.val();
+  loadPlannerImg(pid).then(function(src){
     if(src){
       var img=document.createElement('img');
       img.className='vpdm-img';img.src=src;img.loading='lazy';
