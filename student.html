@@ -310,42 +310,50 @@ function showApp() {
   db.ref(`smPlanners/${stuId}`).on('value', s => {
     renderPlanners(s.val() || {});
   });
-  // Load od4p submissions for this student
-  db.ref('od4p').on('value', s => {
-    const allOd4p = s.val() || {};
-    od4pData = {};
-    Object.entries(allOd4p).forEach(([date, subjects]) => {
+  // Load od4p - 오늘 날짜만 로드 (전체 트리 다운로드 방지)
+  function loadOd4pForDate(dateStr) {
+    db.ref('od4p/' + dateStr).get().then(s => {
+      const subjects = s.val() || {};
+      od4pData[dateStr] = [];
       Object.values(subjects).forEach(sub => {
         const subs = sub.submissions || {};
         const myEntry = Object.values(subs).find(e => e.name === stuData.name);
         if (myEntry) {
-          if (!od4pData[date]) od4pData[date] = [];
-          // 채점: 정답과 비교
           var problems = sub.problems || {};
           var probArr = Object.values(problems);
           var myAnswers = myEntry.answers || {};
-          var score = 0;
-          var total = probArr.length;
-          var wrongNums = [];
+          var score = 0, total = probArr.length, wrongNums = [];
           probArr.forEach(function(p, i) {
             var ua = String(myAnswers[i] || '').trim();
             var correct = p.type === '객관식' ? ua === String(p.answer) : ua.replace(/\s/g,'') === String(p.answer).replace(/\s/g,'');
-            if (correct) score++;
-            else wrongNums.push(i+1);
+            if (correct) score++; else wrongNums.push(i+1);
           });
-          od4pData[date].push({
-            subject: sub.title || '',
-            answers: myAnswers,
-            score: score,
-            total: total,
-            wrongNums: wrongNums,
-            ts: myEntry.ts || 0
+          od4pData[dateStr].push({
+            subject: sub.title || '', answers: myAnswers,
+            score, total, wrongNums, ts: myEntry.ts || 0
           });
         }
       });
+      if (_planCalYear) renderPlanCal();
     });
-    if (_planCalYear) renderPlanCal();
-  });
+  }
+  // 오늘 + 달력에 보이는 최근 30일 로드
+  const _todayStr = today();
+  const _d = new Date();
+  for (let i = 0; i < 30; i++) {
+    const dd = new Date(_d);
+    dd.setDate(_d.getDate() - i);
+    const ds = dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0');
+    // 제출 기록이 있는 날짜만 로드 (submissions 존재 여부 먼저 체크)
+    db.ref('od4p/' + ds).get().then(s => {
+      if (!s.exists()) return;
+      const subjects = s.val() || {};
+      const hasMyEntry = Object.values(subjects).some(sub =>
+        Object.values(sub.submissions || {}).some(e => e.name === stuData.name)
+      );
+      if (hasMyEntry) loadOd4pForDate(ds);
+    });
+  }
 }
 
 // ── Homework ──
@@ -753,7 +761,6 @@ window.addEventListener('DOMContentLoaded', async () => {
         })
         .catch(function(){location.replace(freshUrl);});
     });
-  });
   }
 
   if(document.readyState==='loading'){

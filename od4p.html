@@ -164,8 +164,14 @@ async function fetchAllData(){
   return snap.val()||{};
 }
 async function listenAllDates(cb){
-  db.ref("od4p").on("value",snap=>cb(snap.val()||{}));
-  return()=>db.ref("od4p").off();
+  // 전체 트리 대신 날짜 선택 시에만 로드 (초기엔 빈 객체)
+  cb({});
+  return()=>{};
+}
+async function loadDateData(date,allData,setAllData){
+  const snap=await db.ref("od4p/"+date).get();
+  const val=snap.val()||{};
+  setAllData(prev=>({...prev,[date]:val}));
 }
 
 // ── 학생 앱 ──────────────────────────────────────────
@@ -477,9 +483,15 @@ function TeacherApp(){
 
   useEffect(()=>{
     if(!authed)return;
-    const unsub=listenAllDates(data=>{setAllData(data);setDataLoaded(true);});
-    return unsub;
+    // 전체 로드 제거 - 날짜 선택시만 로드
+    setDataLoaded(true);
   },[authed]);
+
+  // editDate 변경 시 해당 날짜 데이터 로드
+  useEffect(()=>{
+    if(!authed||!editDate)return;
+    loadDateData(editDate,allData,setAllData);
+  },[authed,editDate]);
 
   const updateProb=(i,f,v)=>setProblems(ps=>ps.map((p,pi)=>pi===i?{...p,[f]:v}:p));
   const updateOpt=(i,oi,v)=>setProblems(ps=>ps.map((p,pi)=>pi===i?{...p,options:p.options.map((o,j)=>j===oi?v:o)}:p));

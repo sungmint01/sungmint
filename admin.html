@@ -712,8 +712,31 @@ function showApp(){
   db.ref('smPlanners').get().then(s=>{planners=s.val()||{};});
   cleanOldPlanners();
   cleanOldPdfData();
+  cleanOldResults();
 }
 
+
+async function cleanOldResults(){
+  const limit=Date.now()-2*24*60*60*1000;
+  try{
+    const [hwR,clR]=await Promise.all([
+      db.ref('smHwResults').get(),
+      db.ref('smClinicResults').get()
+    ]);
+    const del=[];
+    Object.entries(hwR.val()||{}).forEach(function([setId,results]){
+      Object.entries(results||{}).forEach(function([stuId,r]){
+        if((r.gradedAt||0)<limit) del.push(db.ref('smHwResults/'+setId+'/'+stuId).remove());
+      });
+    });
+    Object.entries(clR.val()||{}).forEach(function([setId,results]){
+      Object.entries(results||{}).forEach(function([stuId,r]){
+        if((r.gradedAt||0)<limit) del.push(db.ref('smClinicResults/'+setId+'/'+stuId).remove());
+      });
+    });
+    if(del.length) await Promise.all(del);
+  }catch(e){}
+}
 async function cleanOldPdfData(){
   const limit=Date.now()-3*24*60*60*1000;
   try{
@@ -1362,27 +1385,39 @@ function showOd4pStatus(){
   ['empty','detail','consultView','plannerStatus','clinicMgr'].forEach(function(id){document.getElementById(id).style.display='none';});
   document.getElementById('od4pStatus').style.display='';
   renderSidebar();
-  db.ref('od4p').once('value',function(s){
-    _od4pAllData=s.val()||{};
-    renderOd4pDates();
-  });
-  db.ref('od4p').on('value',function(s){
-    _od4pAllData=s.val()||{};
-    if(_od4pSelDate&&_od4pSelSubj) renderOd4pRows();
-  });
+  // 전체 트리 로드 제거 - 날짜 목록은 클라이언트에서 직접 생성
+  renderOd4pDates();
 }
 
 function renderOd4pDates(){
-  var dates=Object.keys(_od4pAllData).sort(function(a,b){return b.localeCompare(a);}).slice(0,14);
+  // 최근 14일 날짜 목록 클라이언트에서 생성 (Firebase 조회 불필요)
+  var dates=[];
+  var now=new Date();
+  for(var i=0;i<14;i++){
+    var d=new Date(now);
+    d.setDate(now.getDate()-i);
+    var ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    dates.push(ds);
+  }
   var el=document.getElementById('od4pDates');
   el.innerHTML='';
-  if(!dates.length){el.innerHTML='<div class="ps-empty">데이터가 없습니다</div>';return;}
   dates.forEach(function(d){
     var btn=document.createElement('button');
     btn.className='od4p-date-btn'+(d===_od4pSelDate?' on':'');
     var parts=d.split('-');
-    btn.textContent=d===new Date().toISOString().split('T')[0]?'오늘':(+parts[1])+'월'+(+parts[2])+'일';
-    btn.onclick=(function(date){return function(){_od4pSelDate=date;_od4pSelSubj=null;renderOd4pDates();renderOd4pSubjs();};})(d);
+    var todayStr=new Date().toISOString().split('T')[0];
+    btn.textContent=d===todayStr?'오늘':(+parts[1])+'월'+(+parts[2])+'일';
+    btn.onclick=(function(date){return function(){
+      _od4pSelDate=date;_od4pSelSubj=null;
+      renderOd4pDates();
+      // 선택한 날짜 데이터만 로드
+      document.getElementById('od4pSubjs').innerHTML='<div class="ps-empty">로딩 중...</div>';
+      document.getElementById('od4pRows').innerHTML='';
+      db.ref('od4p/'+date).get().then(function(s){
+        _od4pAllData[date]=s.val()||{};
+        renderOd4pSubjs();
+      });
+    };})(d);
     el.appendChild(btn);
   });
   if(_od4pSelDate) renderOd4pSubjs();

@@ -95,12 +95,14 @@ function compressImage(file, cb){
 
 const PAGE_SIZE=6;
 async function fetchPage(endTs=null){
-  let ref=db.ref("questions").orderByChild("ts").limitToLast(PAGE_SIZE);
-  if(endTs!==null) ref=db.ref("questions").orderByChild("ts").endBefore(endTs).limitToLast(PAGE_SIZE);
-  const snap=await ref.get();
+  // orderByChild 인덱스 불필요: 전체 로드 후 클라이언트 정렬+슬라이싱
+  const snap=await db.ref("questions").get();
   const val=snap.val()||{};
-  const items=Object.entries(val).map(([id,q])=>({...q,id})).sort((a,b)=>b.ts-a.ts);
-  return items;
+  const all=Object.entries(val).map(([id,q])=>({...q,id})).sort((a,b)=>b.ts-a.ts);
+  if(endTs===null) return all.slice(0,PAGE_SIZE);
+  const idx=all.findIndex(q=>q.ts<endTs);
+  if(idx===-1) return [];
+  return all.slice(idx,idx+PAGE_SIZE);
 }
 async function pushQ(q){
   const photo=q.photo||"";
@@ -262,11 +264,17 @@ function App(){
 
   const loadPage=async(stack)=>{
     setLoading(true);
-    const endTs=stack.length>0?stack[stack.length-1]:null;
-    const items=await fetchPage(endTs);
-    setQuestions(items);
-    setHasMore(items.length>=PAGE_SIZE);
-    setLoading(false);
+    try{
+      const endTs=stack.length>0?stack[stack.length-1]:null;
+      const items=await fetchPage(endTs);
+      setQuestions(items);
+      setHasMore(items.length>=PAGE_SIZE);
+    }catch(e){
+      console.error('qna loadPage error:',e);
+      setQuestions([]);
+    }finally{
+      setLoading(false);
+    }
   };
 
   useEffect(()=>{
