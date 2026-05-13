@@ -1378,6 +1378,7 @@ async function deleteClinic(cid){
 // ════ END CLINIC ════
 
 var _od4pAllData={}, _od4pSelDate=null, _od4pSelSubj=null, _od4pFocused=null;
+var OD4P_SUBJ_LABELS={'gongmath1':'공통수학1','gongmath2':'공통수학2','daesoo1':'대수(수1)','mij1':'미적분1(수2)'};
 
 function showOd4pStatus(){
   document.getElementById('hwMgr').style.display='none';
@@ -1431,7 +1432,7 @@ function renderOd4pSubjs(){
   subjs.forEach(function([key,sub]){
     var btn=document.createElement('button');
     btn.className='od4p-subj-btn'+(_od4pSelSubj===key?' on':'');
-    btn.textContent=sub.title||key;
+    btn.textContent=sub.title||(OD4P_SUBJ_LABELS[key]||key);
     btn.onclick=(function(k){return function(){_od4pSelSubj=k;renderOd4pSubjs();renderOd4pRows();};})(key);
     el.appendChild(btn);
   });

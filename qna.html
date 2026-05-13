@@ -33,6 +33,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script>emailjs.init("9834V_7luPj7hfNIz");</script>
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -572,10 +573,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   function getDB(){
     try{
       if(typeof firebase==='undefined') return null;
-      if(firebase.apps&&firebase.apps.length>0) return firebase.database();
       if(typeof SM_CONFIG==='undefined'||!SM_CONFIG.apiKey||SM_CONFIG.apiKey.includes('여기에')) return null;
-      firebase.initializeApp(SM_CONFIG);
-      return firebase.database();
+      // sungmint named app으로 메인 DB 접근 (qna는 별도 프로젝트 사용)
+      var smApp=firebase.apps.find(function(a){return a.name==='sungmint';});
+      if(!smApp) smApp=firebase.initializeApp(SM_CONFIG,'sungmint');
+      return smApp.database();
     }catch(e){return null;}
   }
 

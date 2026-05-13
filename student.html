@@ -329,7 +329,7 @@ function showApp() {
             if (correct) score++; else wrongNums.push(i+1);
           });
           od4pData[dateStr].push({
-            subject: sub.title || subKey, answers: myAnswers,
+            subject: sub.title || ({'gongmath1':'공통수학1','gongmath2':'공통수학2','daesoo1':'대수(수1)','mij1':'미적분1(수2)'})[subKey] || subKey, answers: myAnswers,
             score, total, wrongNums, ts: myEntry.ts || 0
           });
         }

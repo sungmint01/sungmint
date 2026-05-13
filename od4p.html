@@ -166,15 +166,25 @@ async function fetchAllData(){
   const snap=await db.ref("od4p").once("value");
   return snap.val()||{};
 }
-async function listenAllDates(cb){
-  // 전체 트리 대신 날짜 선택 시에만 로드 (초기엔 빈 객체)
-  cb({});
+function listenAllDates(cb){
+  // 최근 14일 날짜만 로드 (전체 트리 제거)
+  const dates=[];
+  const now=new Date();
+  for(let i=0;i<14;i++){
+    const d=new Date(now);d.setDate(now.getDate()-i);
+    dates.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));
+  }
+  let merged={};
+  let loaded=0;
+  dates.forEach(date=>{
+    db.ref("od4p/"+date).get().then(s=>{
+      if(s.val()) merged[date]=s.val();
+      loaded++;
+      if(loaded===dates.length) cb(Object.keys(merged).length?merged:{});
+    }).catch(()=>{loaded++;if(loaded===dates.length)cb(merged);});
+  });
+  if(!dates.length) cb({});
   return()=>{};
-}
-async function loadDateData(date,allData,setAllData){
-  const snap=await db.ref("od4p/"+date).get();
-  const val=snap.val()||{};
-  setAllData(prev=>({...prev,[date]:val}));
 }
 
 // ── 학생 앱 ──────────────────────────────────────────
@@ -486,15 +496,9 @@ function TeacherApp(){
 
   useEffect(()=>{
     if(!authed)return;
-    // 전체 로드 제거 - 날짜 선택시만 로드
-    setDataLoaded(true);
+    const unsub=listenAllDates(data=>{setAllData(data);setDataLoaded(true);});
+    return unsub;
   },[authed]);
-
-  // editDate 변경 시 해당 날짜 데이터 로드
-  useEffect(()=>{
-    if(!authed||!editDate)return;
-    loadDateData(editDate,allData,setAllData);
-  },[authed,editDate]);
 
   const updateProb=(i,f,v)=>setProblems(ps=>ps.map((p,pi)=>pi===i?{...p,[f]:v}:p));
   const updateOpt=(i,oi,v)=>setProblems(ps=>ps.map((p,pi)=>pi===i?{...p,options:p.options.map((o,j)=>j===oi?v:o)}:p));
