@@ -275,6 +275,61 @@ footer{text-align:center;padding:24px 0 12px;color:#cbd5e1;font-size:12px}
   </div>
 </div>
 <script>
+const PIC={
+  _db:null,
+  async db(){
+    if(this._db) return this._db;
+    return new Promise(res=>{
+      const r=indexedDB.open('smtPlanner',1);
+      r.onupgradeneeded=e=>e.target.result.createObjectStore('imgs',{keyPath:'pid'});
+      r.onsuccess=e=>{this._db=e.target.result;res(this._db);};
+      r.onerror=()=>res(null);
+    });
+  },
+  async get(pid){
+    try{
+      const db=await this.db();if(!db)return null;
+      return new Promise(res=>{
+        const r=db.transaction('imgs').objectStore('imgs').get(pid);
+        r.onsuccess=()=>{const v=r.result;res(v&&(Date.now()-v.ts)<60*86400000?v.src:null);};
+        r.onerror=()=>res(null);
+      });
+    }catch{return null;}
+  },
+  async set(pid,src){
+    try{
+      const db=await this.db();if(!db)return;
+      db.transaction('imgs','readwrite').objectStore('imgs').put({pid,src,ts:Date.now()});
+    }catch{}
+  },
+  async del(pid){
+    try{
+      const db=await this.db();if(!db)return;
+      db.transaction('imgs','readwrite').objectStore('imgs').delete(pid);
+    }catch{}
+  }
+};
+async function loadPlannerImg(pid){
+  if(!pid)return null;
+  const cached=await PIC.get(pid);
+  if(cached)return cached;
+  const snap=await db.ref('smPlannerImages/'+pid).get();
+  const src=snap.val();
+  if(src)PIC.set(pid,src);
+  return src;
+}
+
+
+async function loadPlannerImg(pid){
+  if(!pid)return null;
+  const cached=await PIC.get(pid);
+  if(cached)return cached;
+  const snap=await db.ref('smPlannerImages/'+pid).get();
+  const src=snap.val();
+  if(src)PIC.set(pid,src);
+  return src;
+}
+
 let db,sid_=null,recData={},sent=[],consultData={},calYear,calMonth,openDetailDate=null;
 function today(){
   const d=new Date();
@@ -704,7 +759,6 @@ function renderSent(){
         })
         .catch(function(){location.replace(freshUrl);});
     });
-  });
   }
 
   if(document.readyState==='loading'){
