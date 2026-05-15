@@ -516,24 +516,24 @@ function renderPlannerComments() {
 
   var items = [];
   Object.entries(plannerData).forEach(function([pid, p]) {
-    if (!p.comment) return;
     if (p.date === yestStr && p.type === 'done') {
-      items.push({type:'done', date:yestStr, label:'어제 ✅ 완료 플래너', comment:p.comment});
+      items.push({type:'done', label:'어제 ✅ 완료 플래너', comment:p.comment||''});
     }
     if (p.date === todayStr && p.type === 'plan') {
-      items.push({type:'plan', date:todayStr, label:'오늘 📋 계획 플래너', comment:p.comment});
+      items.push({type:'plan', label:'오늘 📋 계획 플래너', comment:p.comment||''});
     }
   });
 
   var card = document.getElementById('plannerCommentCard');
   var content = document.getElementById('plannerCommentContent');
   if (!items.length) { card.style.display = 'none'; return; }
+  card.style.display = '';
 
   card.style.display = '';
   content.innerHTML = items.map(function(item) {
     return '<div class="pc-comment-item ' + item.type + '">'
       + '<div class="pc-comment-type">' + item.label + '</div>'
-      + '<div class="pc-comment-text">' + item.comment.split('\n').join('<br>') + '</div>'
+      + '<div class="pc-comment-text">' + (item.comment ? item.comment.split('\n').join('<br>') : '<span style="color:#94a3b8;font-style:italic">⏳ 코멘트 대기 중</span>') + '</div>'
       + '</div>';
   }).join('');
 }
