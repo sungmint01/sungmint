@@ -2115,50 +2115,6 @@ async function saveReply(sid,cid){
   await db.ref(`smConsultations/${sid}/${cid}`).update({reply,replyAt:Date.now(),isRead:true});
   toast('답변이 저장되었습니다');
 }
-function showPlannerView(){
-  mode='planner';uid_=null;
-  document.getElementById('empty').style.display='none';
-  document.getElementById('detail').style.display='none';
-  document.getElementById('consultView').style.display='none';
-  // plannerView removed - now integrated into calendar modal
-  renderPlannerView();renderSidebar();
-}
-
-function renderPlannerView(){
-  const el=document.getElementById('pvContent');
-  const arr=Object.entries(students).sort(([,a],[,b])=>(a.name||'').localeCompare(b.name||'','ko'));
-  let html='';
-  arr.forEach(([sid,stu])=>{
-    const sp=planners[sid]||{};
-    const pa=Object.entries(sp).sort(([,a],[,b])=>(b.ts||0)-(a.ts||0));
-    if(!pa.length)return;
-    html+=`<div class="pv-card">
-      <div class="pv-stu-head">${stu.name||'?'}<span style="font-size:11px;color:#94a3b8;font-weight:400">${stu.grade||''} · ${pa.length}개</span></div>
-      ${pa.map(([pid,p])=>{
-        const[y,m,d]=(p.date||'').split('-');
-        return`<div class="pv-item">
-          <div class="pv-date">
-            <span>📅 ${y}년 ${+m}월 ${+d}일</span>
-            <span style="font-size:11px;color:#94a3b8">${new Date(p.ts||0).toLocaleString('ko-KR')}</span>
-          </div>
-          ${(p.imageData||p.imageUrl)?`<img class="pv-img" src="${p.imageData||p.imageUrl||''}" onclick="openLightbox(this.src)" loading="lazy">`:p._pid?`<div style="height:120px;background:#f1f5f9;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#94a3b8;cursor:pointer" onclick="loadPvImg(this,'${p._pid||pid}')">📷 탭하여 사진 보기</div>`:``}
-          ${p.comment?`<div class="pv-comment"><div class="pv-comment-head">✏️ 코멘트</div>${p.comment.split('\n').join('<br>')}</div>`:''}
-          <div class="pv-comment-form" id="pvf_${sid}_${pid}">
-            <textarea id="pvt_${sid}_${pid}" placeholder="코멘트를 입력하세요">${p.comment||''}</textarea>
-            <div class="pv-form-row">
-              <button class="btn-pv-save" onclick="savePlannerComment('${sid}','${pid}')">저장</button>
-              <button class="btn-pv-cancel" onclick="togglePvForm('${sid}','${pid}')">취소</button>
-            </div>
-          </div>
-          <div style="margin-top:4px">
-            <button class="lnk le" onclick="togglePvForm('${sid}','${pid}')">${p.comment?'코멘트 수정':'코멘트 달기'}</button>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>`;
-  });
-  el.innerHTML=html||'<p class="etbl">제출된 플래너가 없습니다</p>';
-}
 
 function togglePvForm(sid,pid){
   const f=document.getElementById(`pvf_${sid}_${pid}`);
