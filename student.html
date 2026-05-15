@@ -135,6 +135,13 @@ body{font-family:'MaruBuri','Noto Sans KR',sans-serif;background:#f8faff;color:#
 .pdm-item-head{padding:8px 12px;display:flex;align-items:center;justify-content:space-between;background:#f1f5f9}
 .pdm-img{width:100%;max-height:260px;object-fit:cover;cursor:pointer}
 .pdm-comment{padding:10px 12px;font-size:13px;color:#166534;background:#f0fdf4;line-height:1.6;white-space:pre-wrap}
+.planner-comment-card{background:#e4e8f4;border-radius:20px;padding:20px;margin-bottom:16px;box-shadow:5px 5px 14px rgba(145,165,210,.5),-4px -4px 12px rgba(255,255,255,.85)}
+.pc-comment-label{font-family:'Space Mono',monospace;font-size:9px;color:#94a3b8;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.pc-comment-item{background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:8px;border-left:4px solid #86efac}
+.pc-comment-item.plan{border-left-color:#93c5fd}
+.pc-comment-type{font-size:10px;font-weight:700;color:#5a6e96;margin-bottom:4px}
+.pc-comment-text{font-size:13px;color:#166534;line-height:1.6;white-space:pre-wrap}
+.pc-comment-empty{font-size:12px;color:#94a3b8;font-style:italic;padding:4px 0}
 .pdm-comment-head{font-size:10px;font-weight:700;color:#15803d;margin-bottom:3px}
 .pdm-no-comment{padding:8px 12px;font-size:12px;color:#94a3b8;font-style:italic}
 .pdm-empty{text-align:center;padding:28px;color:#94a3b8;font-size:13px}
@@ -186,6 +193,12 @@ body{font-family:'MaruBuri','Noto Sans KR',sans-serif;background:#f8faff;color:#
     <div class="hw-label">This Week's Homework</div>
     <div class="hw-title">이번 주 숙제</div>
     <div id="hwContent"><div class="hw-empty">등록된 숙제가 없습니다</div></div>
+  </div>
+
+  <!-- 플래너 코멘트 -->
+  <div class="planner-comment-card" id="plannerCommentCard" style="display:none">
+    <div class="pc-comment-label">선생님 코멘트</div>
+    <div id="plannerCommentContent"></div>
   </div>
 
   <!-- Planner upload -->
@@ -492,6 +505,37 @@ function renderPlanners(data) {
     _planCalMonth = now.getMonth();
   }
   renderPlanCal();
+  renderPlannerComments();
+}
+
+function renderPlannerComments() {
+  var todayStr = today();
+  // 어제 날짜
+  var yd = new Date(); yd.setDate(yd.getDate() - 1);
+  var yestStr = yd.getFullYear()+'-'+String(yd.getMonth()+1).padStart(2,'0')+'-'+String(yd.getDate()).padStart(2,'0');
+
+  var items = [];
+  Object.entries(plannerData).forEach(function([pid, p]) {
+    if (!p.comment) return;
+    if (p.date === yestStr && p.type === 'done') {
+      items.push({type:'done', date:yestStr, label:'어제 ✅ 완료 플래너', comment:p.comment});
+    }
+    if (p.date === todayStr && p.type === 'plan') {
+      items.push({type:'plan', date:todayStr, label:'오늘 📋 계획 플래너', comment:p.comment});
+    }
+  });
+
+  var card = document.getElementById('plannerCommentCard');
+  var content = document.getElementById('plannerCommentContent');
+  if (!items.length) { card.style.display = 'none'; return; }
+
+  card.style.display = '';
+  content.innerHTML = items.map(function(item) {
+    return '<div class="pc-comment-item ' + item.type + '">'
+      + '<div class="pc-comment-type">' + item.label + '</div>'
+      + '<div class="pc-comment-text">' + item.comment.split('\n').join('<br>') + '</div>'
+      + '</div>';
+  }).join('');
 }
 function changePlanMonth(dir) {
   _planCalMonth += dir;
