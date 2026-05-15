@@ -526,8 +526,11 @@ function renderPlannerComments() {
 
   var card = document.getElementById('plannerCommentCard');
   var content = document.getElementById('plannerCommentContent');
-  if (!items.length) { card.style.display = 'none'; return; }
   card.style.display = '';
+  if (!items.length) {
+    content.innerHTML = '<div class="pc-comment-empty">오늘/어제 제출된 플래너가 없습니다</div>';
+    return;
+  }
 
   card.style.display = '';
   content.innerHTML = items.map(function(item) {
