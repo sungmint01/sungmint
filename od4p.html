@@ -10,8 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Gothic+A1:wght@300;400;700;900&family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'MaruBuri, Noto Sans KR',sans-serif;background:#f8faff;color:#1a202c;min-height:100vh}
-    input,textarea,button,select{font-family:'MaruBuri','Noto Sans KR',sans-serif}
+    body{font-family:'MaruBuri','Noto Sans KR',sans-serif;background:#f8faff;color:#1a202c;min-height:100vh}
+    input,textarea,button,select{font-family:'MaruBuri','MaruBuri','Noto Sans KR',sans-serif}
     ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#f0f4f8}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
   
   .back-home{
@@ -20,7 +20,7 @@
     border:1px solid #e9d5ff;border-radius:10px;
     color:#7c3aed;padding:7px 14px;cursor:pointer;
     font-size:12px;font-weight:700;text-decoration:none;
-    font-family:'MaruBuri','Noto Sans KR',sans-serif;
+    font-family:'MaruBuri','MaruBuri','Noto Sans KR',sans-serif;
   }
   .back-home:hover{background:#f5f3ff}
 </style>
@@ -47,17 +47,17 @@
 <div id="loginPage" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#e4e8f4;background-image:radial-gradient(circle at 20% 20%,rgba(55,100,191,.12) 0%,transparent 50%),radial-gradient(circle at 80% 80%,rgba(90,138,224,.1) 0%,transparent 50%)">
   <div style="background:#e4e8f4;border-radius:24px;padding:44px 36px 36px;width:320px;box-shadow:8px 8px 20px rgba(145,165,210,.6),-6px -6px 16px rgba(255,255,255,.9);text-align:center">
     <div style="width:58px;height:58px;background:linear-gradient(135deg,#5a8ae0,#3764bf);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 18px;box-shadow:3px 3px 10px rgba(55,100,191,.4),-2px -2px 6px rgba(255,255,255,.6)">📚</div>
-    <div style="font-family:'Nanum Myeongjo',serif;font-size:24px;font-weight:800;color:#1a2840;margin-bottom:4px">오늘의 문제</div>
-    <div style="font-family:'Space Mono',monospace;font-size:10px;color:#8a96b4;letter-spacing:2px;margin-bottom:26px;text-transform:uppercase">OD4P</div>
+    <div style="font-family:'MaruBuri','MaruBuri','Noto Sans KR',sans-serif;font-size:24px;font-weight:800;color:#1a2840;margin-bottom:4px">오늘의 문제</div>
+    <div style="font-family:'MaruBuri','MaruBuri','Noto Sans KR',sans-serif;font-size:10px;color:#8a96b4;letter-spacing:2px;margin-bottom:26px;text-transform:uppercase">OD4P</div>
     <input id="od4pPwInput" type="password" placeholder="비밀번호 입력"
-      style="width:100%;border:none;border-radius:12px;padding:12px 14px;font-size:15px;font-family:'MaruBuri','Noto Sans KR',sans-serif;outline:none;background:#e4e8f4;letter-spacing:4px;margin-bottom:12px;box-shadow:inset 3px 3px 7px rgba(145,165,210,.55),inset -3px -3px 7px rgba(255,255,255,.85);color:#1a2840;text-align:center"
+      style="width:100%;border:none;border-radius:12px;padding:12px 14px;font-size:15px;font-family:'MaruBuri','MaruBuri','Noto Sans KR',sans-serif;outline:none;background:#e4e8f4;letter-spacing:4px;margin-bottom:12px;box-shadow:inset 3px 3px 7px rgba(145,165,210,.55),inset -3px -3px 7px rgba(255,255,255,.85);color:#1a2840;text-align:center"
       onkeydown="if(event.key==='Enter')od4pLogin()">
     <button onclick="od4pLogin()"
-      style="width:100%;background:linear-gradient(135deg,#5a8ae0,#3764bf);color:#fff;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:'MaruBuri','Noto Sans KR',sans-serif;box-shadow:3px 3px 10px rgba(55,100,191,.35)">
+      style="width:100%;background:linear-gradient(135deg,#5a8ae0,#3764bf);color:#fff;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:'MaruBuri','MaruBuri','Noto Sans KR',sans-serif;box-shadow:3px 3px 10px rgba(55,100,191,.35)">
       확인 →
     </button>
-    <div id="od4pErr" style="color:#ef4444;font-size:12px;margin-top:8px;min-height:16px;font-family:'Space Mono',monospace"></div>
-    <a href="./main.html" style="display:block;margin-top:16px;font-size:11px;color:#8a96b4;text-decoration:none;font-family:'Space Mono',monospace;letter-spacing:1px">← 홈으로</a>
+    <div id="od4pErr" style="color:#ef4444;font-size:12px;margin-top:8px;min-height:16px;font-family:'MaruBuri','MaruBuri','Noto Sans KR',sans-serif"></div>
+    <a href="./main.html" style="display:block;margin-top:16px;font-size:11px;color:#8a96b4;text-decoration:none;font-family:'MaruBuri','MaruBuri','Noto Sans KR',sans-serif;letter-spacing:1px">← 홈으로</a>
   </div>
 </div>
 <div id="root" style="display:none"></div>
@@ -288,7 +288,7 @@ function StudentApp(){
   if(isClosed)return(
     <div style={{maxWidth:400,margin:"0 auto",padding:"80px 20px",textAlign:"center"}}>
       <div style={{fontSize:52,marginBottom:16}}>🌙</div>
-      <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:24,color:"#1a2840",marginBottom:10}}>지금은 쉬는 시간</div>
+      <div style={{fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif",fontSize:24,color:"#1a2840",marginBottom:10}}>지금은 쉬는 시간</div>
       <div style={{color:"#8a96b4",fontSize:14,lineHeight:1.8}}>오전 6시부터 문제를 풀 수 있어요<br/>조금만 기다려줘요 😴</div>
     </div>
   );
@@ -297,7 +297,7 @@ function StudentApp(){
   if(step==="subject")return(
     <div style={{maxWidth:440,margin:"0 auto",padding:"50px 20px",textAlign:"center"}}>
       <div style={{marginBottom:6,fontSize:13,color:"#718096"}}>{availDate?formatDate(availDate):"─"}</div>
-      <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:38,marginBottom:4,background:"linear-gradient(135deg,#5a8ae0,#3764bf)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>OD4P</div>
+      <div style={{fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif",fontSize:38,marginBottom:4,background:"linear-gradient(135deg,#5a8ae0,#3764bf)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>OD4P</div>
       <div style={{fontSize:12,color:"#718096",marginBottom:36,letterSpacing:1}}>OneDay 4 Problem</div>
       <div style={{fontSize:14,color:"#718096",marginBottom:18}}>풀 과목을 선택하세요</div>
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
@@ -306,7 +306,7 @@ function StudentApp(){
             onMouseEnter={e=>{e.currentTarget.style.borderColor="#6366f1";e.currentTarget.style.background="#f5f3ff";}}
             onMouseLeave={e=>{e.currentTarget.style.borderColor="#e2e8f0";e.currentTarget.style.background="#ffffff";}}>
             <div>
-              <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:18,color:"#1a2840",textAlign:"left"}}>{sub.label}</div>
+              <div style={{fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif",fontSize:18,color:"#1a2840",textAlign:"left"}}>{sub.label}</div>
               <div style={{fontSize:12,color:"#8a96b4",marginTop:2,textAlign:"left"}}>오늘의 문제 4개</div>
             </div>
             <div style={{fontSize:22}}>→</div>
@@ -346,30 +346,30 @@ function StudentApp(){
     const noQuiz=!quiz?.problems;
     return(
       <div style={{maxWidth:420,margin:"0 auto",padding:"40px 20px",textAlign:"center"}}>
-        <button onClick={()=>setStep("subject")} style={{background:"none",border:"none",color:"#8a96b4",cursor:"pointer",fontSize:13,marginBottom:20,fontFamily:"'Space Mono',monospace"}}>← 과목 선택으로</button>
+        <button onClick={()=>setStep("subject")} style={{background:"none",border:"none",color:"#8a96b4",cursor:"pointer",fontSize:13,marginBottom:20,fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif"}}>← 과목 선택으로</button>
         <div style={{display:"inline-block",background:"linear-gradient(135deg,#5a8ae0,#3764bf)",borderRadius:10,padding:"4px 14px",fontSize:12,fontWeight:700,color:"#fff",marginBottom:12}}>{selSubject?.label}</div>
-        <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:28,fontWeight:800,color:"#1a2840",marginBottom:4}}>오늘의 문제</div>
-        <div style={{fontFamily:"'Space Mono',monospace",fontSize:12,color:"#8a96b4",marginBottom:24}}>{formatDate(availDate)}</div>
+        <div style={{fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif",fontSize:28,fontWeight:800,color:"#1a2840",marginBottom:4}}>오늘의 문제</div>
+        <div style={{fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif",fontSize:12,color:"#8a96b4",marginBottom:24}}>{formatDate(availDate)}</div>
         {noQuiz?(
           <div style={{background:"#e4e8f4",borderRadius:20,boxShadow:"6px 6px 14px rgba(145,165,210,.6),-4px -4px 10px rgba(255,255,255,.85)",padding:40}}>
             <div style={{fontSize:48,marginBottom:14}}>🎉</div>
-            <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:22,fontWeight:800,color:"#1a2840",marginBottom:8}}>오늘은 쉬는 날!!</div>
+            <div style={{fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif",fontSize:22,fontWeight:800,color:"#1a2840",marginBottom:8}}>오늘은 쉬는 날!!</div>
             <div style={{color:"#8a96b4",fontSize:13}}>내일 또 열심히 해봐요 😊</div>
           </div>
         ):(
           <div style={{background:"#e4e8f4",borderRadius:20,boxShadow:"6px 6px 14px rgba(145,165,210,.6),-4px -4px 10px rgba(255,255,255,.85)",padding:28}}>
-            <div style={{fontSize:13,color:"#5a6e96",marginBottom:20,fontFamily:"'MaruBuri','Noto Sans KR',sans-serif"}}>학생 비밀번호를 입력하고 시작해요</div>
+            <div style={{fontSize:13,color:"#5a6e96",marginBottom:20,fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif"}}>학생 비밀번호를 입력하고 시작해요</div>
             <input value={authPw} onChange={e=>setAuthPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doAuth()} placeholder="비밀번호"
               type="password"
               style={{width:"100%",background:"#e4e8f4",border:"none",borderRadius:12,padding:"13px 16px",fontSize:16,color:"#1a2840",outline:"none",textAlign:"center",marginBottom:8,boxShadow:"inset 3px 3px 7px rgba(145,165,210,.55),inset -3px -3px 7px rgba(255,255,255,.85)",letterSpacing:4}}/>
-            {authErr&&<div style={{color:"#ef4444",fontSize:12,marginBottom:10,fontFamily:"'Space Mono',monospace"}}>{authErr}</div>}
+            {authErr&&<div style={{color:"#ef4444",fontSize:12,marginBottom:10,fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif"}}>{authErr}</div>}
             <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:20,flexWrap:"wrap"}}>
               {Object.values(quiz.problems).map((p,i)=>(
                 <div key={i} style={{background:"#d2dcf0",borderRadius:8,padding:"5px 11px",fontSize:11,color:"#3764bf"}}>{i+1}번 {p.type==="객관식"?"🔵":"✏️"}</div>
               ))}
             </div>
             <button onClick={doAuth} disabled={!authPw.trim()||authLoading}
-              style={{width:"100%",background:authPw.trim()?"linear-gradient(135deg,#5a8ae0,#3764bf)":"#b8c4d8",border:"none",borderRadius:12,color:"#fff",padding:"15px 0",fontSize:16,fontWeight:700,cursor:authPw.trim()?"pointer":"not-allowed",fontFamily:"'Gothic A1',sans-serif",boxShadow:authPw.trim()?"3px 3px 10px rgba(55,100,191,.35)":"none"}}>
+              style={{width:"100%",background:authPw.trim()?"linear-gradient(135deg,#5a8ae0,#3764bf)":"#b8c4d8",border:"none",borderRadius:12,color:"#fff",padding:"15px 0",fontSize:16,fontWeight:700,cursor:authPw.trim()?"pointer":"not-allowed",fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif",boxShadow:authPw.trim()?"3px 3px 10px rgba(55,100,191,.35)":"none"}}>
               {authLoading?"확인 중...":"시작하기 →"}
             </button>
           </div>
@@ -387,7 +387,7 @@ function StudentApp(){
           <div>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <span style={{background:"linear-gradient(135deg,#5a8ae0,#3764bf)",borderRadius:6,padding:"2px 10px",fontSize:11,fontWeight:700,color:"#fff"}}>{selSubject?.label}</span>
-              <span style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:18,color:"#1a2840"}}>{formatDate(availDate)}</span>
+              <span style={{fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif",fontSize:18,color:"#1a2840"}}>{formatDate(availDate)}</span>
             </div>
             <div style={{fontSize:12,color:"#8a96b4",marginTop:2}}>{name}</div>
           </div>
@@ -396,7 +396,7 @@ function StudentApp(){
         {probs.map((p,i)=>(
           <div key={i} style={{background:"#ffffff",borderRadius:16,border:"1px solid #e2e8f0",marginBottom:14,overflow:"hidden"}}>
             <div style={{padding:"11px 16px",borderBottom:"1px solid #e9e4ff",display:"flex",alignItems:"center",gap:8}}>
-              <div style={{width:30,height:30,borderRadius:9,background:answers[i]!==undefined&&answers[i]!==""?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#ede9fe",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Nanum Myeongjo',serif",fontSize:14,color:answers[i]!==undefined&&answers[i]!==""?"#fff":"#7c3aed",flexShrink:0}}>{i+1}</div>
+              <div style={{width:30,height:30,borderRadius:9,background:answers[i]!==undefined&&answers[i]!==""?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#ede9fe",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif",fontSize:14,color:answers[i]!==undefined&&answers[i]!==""?"#fff":"#7c3aed",flexShrink:0}}>{i+1}</div>
               <span style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:5,background:p.type==="객관식"?"#ede9fe":"#f0fff4",color:p.type==="객관식"?"#6d28d9":"#16a34a"}}>{p.type}</span>
               {p.unit&&<span style={{fontSize:11,color:"#8a96b4",marginLeft:2}}>📌 {p.unit}</span>}
             </div>
@@ -423,7 +423,7 @@ function StudentApp(){
             </div>
           </div>
         ))}
-        <button onClick={submit} style={{width:"100%",background:"linear-gradient(135deg,#5a8ae0,#3764bf)",border:"none",borderRadius:14,color:"#fff",padding:"15px 0",fontSize:17,fontWeight:900,cursor:"pointer",fontFamily:"'Nanum Myeongjo',serif",marginTop:4}}>✅ 제출하기</button>
+        <button onClick={submit} style={{width:"100%",background:"linear-gradient(135deg,#5a8ae0,#3764bf)",border:"none",borderRadius:14,color:"#fff",padding:"15px 0",fontSize:17,fontWeight:900,cursor:"pointer",fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif",marginTop:4}}>✅ 제출하기</button>
       </div>
     );
   }
@@ -436,7 +436,7 @@ function StudentApp(){
       <div style={{maxWidth:600,margin:"0 auto",padding:"24px 16px"}}>
         <div style={{background:"#ffffff",borderRadius:20,border:"1px solid #e2e8f0",padding:26,textAlign:"center",marginBottom:18}}>
           <div style={{fontSize:48,marginBottom:8}}>{emoji}</div>
-          <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:28,color:"#1a2840",marginBottom:4}}>{result.score}/{result.total} 맞았어요!</div>
+          <div style={{fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif",fontSize:28,color:"#1a2840",marginBottom:4}}>{result.score}/{result.total} 맞았어요!</div>
           {result.isReview&&<div style={{display:"inline-block",background:"#ebf4ff",border:"1px solid #3b82f6",borderRadius:8,padding:"3px 12px",fontSize:11,color:"#60a5fa",marginBottom:8}}>📋 이미 제출한 기록이에요</div>}
           <div style={{fontSize:13,color:"#8a96b4",marginBottom:18}}>{name} · {selSubject?.label} · {formatDate(availDate)}</div>
           <div style={{height:8,background:"#e2e8f0",borderRadius:4,overflow:"hidden",marginBottom:4}}>
@@ -591,19 +591,19 @@ function TeacherApp(){
   if(!authed)return(
     <div style={{maxWidth:340,margin:"80px auto",padding:"0 20px",textAlign:"center"}}>
       <div style={{fontSize:36,marginBottom:12}}>🔐</div>
-      <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:22,color:"#1a2840",marginBottom:6}}>선생님 전용</div>
+      <div style={{fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif",fontSize:22,color:"#1a2840",marginBottom:6}}>선생님 전용</div>
       <div style={{fontSize:13,color:"#8a96b4",marginBottom:24}}>비밀번호를 입력해 주세요</div>
       <input type="password" value={pw} onChange={e=>{setPw(e.target.value);setPwErr(false);}} onKeyDown={e=>e.key==="Enter"&&login()} placeholder="비밀번호"
         style={{width:"100%",background:"#ffffff",border:"2px solid "+(pwErr?"#ef4444":"#334155"),borderRadius:10,padding:"12px 16px",fontSize:16,color:"#1a2840",outline:"none",textAlign:"center",marginBottom:8}}/>
       {pwErr&&<div style={{color:"#ef4444",fontSize:12,marginBottom:8}}>비밀번호가 틀렸어요</div>}
-      <button onClick={login} style={{width:"100%",background:"linear-gradient(135deg,#5a8ae0,#3764bf)",border:"none",borderRadius:10,color:"#fff",padding:"13px 0",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"'Nanum Myeongjo',serif",marginTop:4}}>입장하기</button>
+      <button onClick={login} style={{width:"100%",background:"linear-gradient(135deg,#5a8ae0,#3764bf)",border:"none",borderRadius:10,color:"#fff",padding:"13px 0",fontSize:15,fontWeight:900,cursor:"pointer",fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif",marginTop:4}}>입장하기</button>
     </div>
   );
 
   return(
     <div style={{maxWidth:800,margin:"0 auto",padding:"20px 16px"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:20,flexWrap:"wrap"}}>
-        <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:18,color:"#1a2840"}}>문제 관리</div>
+        <div style={{fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif",fontSize:18,color:"#1a2840"}}>문제 관리</div>
         <div style={{display:"flex",gap:6,marginLeft:"auto",flexWrap:"wrap"}}>
           {[["upload","📝 출제"],["results","📊 현황"],["students","👥 학생 분석"]].map(([t,l])=>(
             <button key={t} onClick={()=>setTab(t)} style={{padding:"7px 14px",borderRadius:8,border:"none",cursor:"pointer",background:tab===t?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#f3f0ff",color:tab===t?"#fff":"#7c3aed",fontWeight:700,fontSize:12}}>{l}</button>
@@ -633,7 +633,7 @@ function TeacherApp(){
           {problems.map((p,i)=>(
             <div key={i} style={{background:"#ffffff",borderRadius:14,border:"1px solid #e2e8f0",marginBottom:14,overflow:"hidden"}}>
               <div style={{padding:"11px 16px",borderBottom:"1px solid #e9e4ff",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                <div style={{width:28,height:28,borderRadius:8,background:"linear-gradient(135deg,#5a8ae0,#3764bf)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Nanum Myeongjo',serif",fontSize:13,color:"#fff"}}>{i+1}</div>
+                <div style={{width:28,height:28,borderRadius:8,background:"linear-gradient(135deg,#5a8ae0,#3764bf)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif",fontSize:13,color:"#fff"}}>{i+1}</div>
                 <span style={{fontWeight:700,color:"#1a2840",fontSize:13}}>문제 {i+1}</span>
                 <div style={{display:"flex",gap:5,marginLeft:"auto"}}>
                   {["객관식","단답형"].map(t=>(
@@ -713,7 +713,7 @@ function TeacherApp(){
           {saveOk?(
             <div style={{background:"#f0fff4",border:"2px solid #059669",borderRadius:12,padding:14,textAlign:"center",color:"#4ade80",fontWeight:700}}>✅ {formatDate(editDate)} · {editSub.label} 저장 완료!</div>
           ):(
-            <button onClick={saveQuiz} style={{width:"100%",background:"linear-gradient(135deg,#5a8ae0,#3764bf)",border:"none",borderRadius:14,color:"#fff",padding:"15px 0",fontSize:16,fontWeight:900,cursor:"pointer",fontFamily:"'Nanum Myeongjo',serif"}}>💾 저장하기</button>
+            <button onClick={saveQuiz} style={{width:"100%",background:"linear-gradient(135deg,#5a8ae0,#3764bf)",border:"none",borderRadius:14,color:"#fff",padding:"15px 0",fontSize:16,fontWeight:900,cursor:"pointer",fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif"}}>💾 저장하기</button>
           )}
           {/* 날짜 이동 */}
           <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",padding:"14px 16px",marginTop:12}}>
@@ -789,7 +789,7 @@ function TeacherApp(){
                         </div>
                       ))}
                     </div>
-                    <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:18,color:score===curProbs.length?"#fbbf24":score>=curProbs.length/2?"#4ade80":"#f87171",minWidth:40,textAlign:"right"}}>{score}/{curProbs.length}</div>
+                    <div style={{fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif",fontSize:18,color:score===curProbs.length?"#fbbf24":score>=curProbs.length/2?"#4ade80":"#f87171",minWidth:40,textAlign:"right"}}>{score}/{curProbs.length}</div>
                     <button onClick={()=>{const subId=Object.keys(curData.submissions)[si];setConfirmDel({type:"one",date:selDate,subKey:selSub.key,subId,name:sub.name});}} style={{background:"#fff5f5",border:"1px solid #7f1d1d",borderRadius:7,color:"#f87171",padding:"5px 9px",cursor:"pointer",fontSize:11}}>삭제</button>
                   </div>
                 );
@@ -820,7 +820,7 @@ function TeacherApp(){
                       <div style={{fontSize:11,color:"#8a96b4"}}>총 {st.total}문제 · {st.correct}개 정답</div>
                     </div>
                     <div style={{textAlign:"right"}}>
-                      <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:24,color:pct>=80?"#4ade80":pct>=60?"#fbbf24":"#f87171"}}>{pct}%</div>
+                      <div style={{fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif",fontSize:24,color:pct>=80?"#4ade80":pct>=60?"#fbbf24":"#f87171"}}>{pct}%</div>
                       <div style={{fontSize:10,color:"#8a96b4"}}>전체 정답률</div>
                     </div>
                   </div>
@@ -877,7 +877,7 @@ function TeacherApp(){
         <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999,padding:20}}>
           <div style={{background:"#ffffff",borderRadius:16,border:"2px solid #7f1d1d",padding:28,maxWidth:340,width:"100%",textAlign:"center"}}>
             <div style={{fontSize:32,marginBottom:12}}>🗑️</div>
-            <div style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:18,color:"#1a2840",marginBottom:8}}>
+            <div style={{fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif",fontSize:18,color:"#1a2840",marginBottom:8}}>
               {confirmDel.type==="one"?`${confirmDel.name}의 기록을 삭제할까요?`:"이 날 전체 기록을 삭제할까요?"}
             </div>
             <div style={{fontSize:13,color:"#8a96b4",marginBottom:24}}>삭제 후 복구가 불가능해요</div>
@@ -903,10 +903,10 @@ function App(){
     <div style={{minHeight:"100vh",background:"#f8faff"}}>
       <header style={{background:"#ffffff",borderBottom:"1px solid #e2e8f0",padding:"0 20px",display:"flex",alignItems:"center",justifyContent:"space-between",height:54,position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 16px rgba(0,0,0,0.4)"}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontFamily:"'Nanum Myeongjo',serif",fontSize:15,background:"linear-gradient(135deg,#5a8ae0,#3764bf)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>OD4P</span>
+          <span style={{fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif",fontSize:15,background:"linear-gradient(135deg,#5a8ae0,#3764bf)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>OD4P</span>
           <span style={{fontSize:10,color:"#718096",letterSpacing:0.5}}>OneDay 4 Problem</span>
           {mode==="student"&&window._od4pStudentName&&window._od4pStudentName!=="__teacher__"&&(
-            <span style={{marginLeft:8,background:"#d2dcf0",borderRadius:99,padding:"3px 12px",fontSize:11,fontWeight:700,color:"#3764bf",fontFamily:"'Gothic A1',sans-serif"}}>
+            <span style={{marginLeft:8,background:"#d2dcf0",borderRadius:99,padding:"3px 12px",fontSize:11,fontWeight:700,color:"#3764bf",fontFamily:"'MaruBuri','MaruBuri','Noto Sans KR',sans-serif"}}>
               ✏️ {window._od4pStudentName}
             </span>
           )}
