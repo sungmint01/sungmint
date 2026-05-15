@@ -333,7 +333,7 @@ textarea.inp{resize:vertical;min-height:68px}
       <div class="sb-section">학생</div>
       <div id="sList"></div>
       <div class="sb-foot" style="display:flex;flex-direction:column;gap:6px"><button class="btn-sv" style="font-size:11px;padding:7px;background:#7c3aed;box-shadow:none" onclick="mergeSessionsByDate()" title="같은 날짜 중복 세션 병합">🔗 세션 병합</button>
-<button class="btn-sv" style="font-size:11px;padding:7px;background:#f59e0b;box-shadow:none" onclick="cleanWrongPrevHw()" title="잘못 입력된 지난숙제 일괄 초기화">🧹 지난숙제 정리</button><button class="btn-sv" style="font-size:11px;padding:7px" onclick="bumpVersion()" title="전체 페이지 자동 새로고침 트리거">🔄 업데이트 배포</button><button class="btn-out" onclick="logout()">로그아웃</button><button class="btn-out" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);margin-top:6px" onclick="notifyDeploy()" title="GitHub Pages 배포 완료 후 누르세요">📡 배포 완료</button></div>
+<button class="btn-sv" style="font-size:11px;padding:7px;background:#f59e0b;box-shadow:none" onclick="cleanWrongPrevHw()" title="잘못 입력된 지난숙제 일괄 초기화">🧹 지난숙제 정리</button><button class="btn-out" onclick="logout()">로그아웃</button><button class="btn-out" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);margin-top:6px" onclick="notifyDeploy()" title="GitHub Pages 배포 완료 후 누르세요">📡 배포 완료</button></div>
     </aside>
     <div class="main">
       <div class="empty" id="empty" style="height:100%">
@@ -2376,11 +2376,6 @@ async function cleanWrongPrevHw(){
   toast('완료: '+checked+'개 확인, '+fixed+'개 정리됨');
 }
 
-async function bumpVersion(){
-  const ver = Date.now().toString();
-  await db.ref('smAppVersion').set(ver);
-  toast('✅ 배포 완료 — 학생/학부모 페이지가 3초 내 자동 새로고침됩니다');
-}
 function today(){
   const d=new Date();
   // 새벽 3시 이전이면 전날로 처리
