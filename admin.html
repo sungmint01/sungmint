@@ -611,15 +611,9 @@ window.addEventListener('DOMContentLoaded',()=>{
 
 async function notifyDeploy(){
   if(!confirm('GitHub Pages에 파일을 모두 올린 후 누르세요.\n\n누르면 모든 학생/학부모/조교 화면이 자동으로 새 버전으로 바뀝니다.')) return;
-  await db.ref('smAppVersion').set('v1778814951');
-  toast('✅ 배포 완료 — 모든 화면이 곧 새 버전으로 전환됩니다');
-}
-
-// 앱 시작 시 smAppVersion이 없으면 현재 BUILD_VER로 초기화
-function initAppVersion(){
-  db.ref('smAppVersion').once('value',function(s){
-    if(!s.val()) db.ref('smAppVersion').set('v1778814951');
-  });
+  const v='v'+Date.now();
+  await db.ref('smAppVersion').set(v);
+  toast('✅ 배포 완료 알림 전송');
 }
 function toggleSidebar(){
   document.querySelector('.sidebar').classList.toggle('mob-open');
@@ -719,7 +713,6 @@ function showApp(){
   cleanOldPlanners();
   cleanOldPdfData();
   cleanOldResults();
-  initAppVersion();
 }
 
 

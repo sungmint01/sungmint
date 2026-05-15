@@ -737,20 +737,20 @@ function renderSent(){
   }
 
   var _smvRef=null;
-  var BUILD_VER='v1778814951';
   function doCheck(){
     var db=getDB();
     if(!db) return;
     if(_smvRef) return;
+    var urlVer=new URL(location.href).searchParams.get('_v');
+    if(urlVer) localStorage.setItem('smv',urlVer);
     _smvRef=db.ref('smAppVersion');
     _smvRef.on('value',function(s){
       var sv=String(s.val()||'');
       if(!sv) return;
-      if(sv===BUILD_VER) return;
-      // location.replace 사용 - 깔끔한 페이지 이동 (document.write 제거)
-      var freshUrl=location.pathname+'?_v='+sv;
+      var lv=localStorage.getItem('smv')||'';
+      if(lv===sv) return;
       if(location.search.indexOf('_v='+sv)!==-1) return;
-      location.replace(freshUrl);
+      location.replace(location.pathname+'?_v='+sv);
     });
   }
 
