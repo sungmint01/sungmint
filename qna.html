@@ -599,16 +599,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       var sv=String(s.val()||'');
       if(!sv) return;
       if(sv===BUILD_VER) return;
+      // location.replace 사용 - 깔끔한 페이지 이동 (document.write 제거)
       var freshUrl=location.pathname+'?_v='+sv;
       if(location.search.indexOf('_v='+sv)!==-1) return;
-      fetch(freshUrl,{cache:'no-store',credentials:'same-origin'})
-        .then(function(r){return r.text();})
-        .then(function(html){
-          document.open('text/html','replace');
-          document.write(html);
-          document.close();
-        })
-        .catch(function(){location.replace(freshUrl);});
+      location.replace(freshUrl);
     });
   }
 
