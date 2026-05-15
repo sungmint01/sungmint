@@ -783,6 +783,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 
   var _smvRef=null;
+  var BUILD_VER='v1778814951';
   function doCheck(){
     var db=getDB();
     if(!db) return;
@@ -791,11 +792,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     _smvRef.on('value',function(s){
       var sv=String(s.val()||'');
       if(!sv) return;
-      var lv=localStorage.getItem('smv')||'';
-      if(!lv){localStorage.setItem('smv',sv);return;}
-      if(sv===lv) return;
-      localStorage.setItem('smv',sv);
+      if(sv===BUILD_VER) return;
       var freshUrl=location.pathname+'?_v='+sv;
+      if(location.search.indexOf('_v='+sv)!==-1) return;
       fetch(freshUrl,{cache:'no-store',credentials:'same-origin'})
         .then(function(r){return r.text();})
         .then(function(html){

@@ -333,7 +333,7 @@ textarea.inp{resize:vertical;min-height:68px}
       <div class="sb-section">학생</div>
       <div id="sList"></div>
       <div class="sb-foot" style="display:flex;flex-direction:column;gap:6px"><button class="btn-sv" style="font-size:11px;padding:7px;background:#7c3aed;box-shadow:none" onclick="mergeSessionsByDate()" title="같은 날짜 중복 세션 병합">🔗 세션 병합</button>
-<button class="btn-sv" style="font-size:11px;padding:7px;background:#f59e0b;box-shadow:none" onclick="cleanWrongPrevHw()" title="잘못 입력된 지난숙제 일괄 초기화">🧹 지난숙제 정리</button><button class="btn-sv" style="font-size:11px;padding:7px" onclick="bumpVersion()" title="전체 페이지 자동 새로고침 트리거">🔄 업데이트 배포</button><button class="btn-out" onclick="logout()">로그아웃</button><button class="btn-out" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);margin-top:6px" onclick="notifyDeploy()" title="배포 후 모든 화면 자동 새로고침">📡 배포 알림</button></div>
+<button class="btn-sv" style="font-size:11px;padding:7px;background:#f59e0b;box-shadow:none" onclick="cleanWrongPrevHw()" title="잘못 입력된 지난숙제 일괄 초기화">🧹 지난숙제 정리</button><button class="btn-sv" style="font-size:11px;padding:7px" onclick="bumpVersion()" title="전체 페이지 자동 새로고침 트리거">🔄 업데이트 배포</button><button class="btn-out" onclick="logout()">로그아웃</button><button class="btn-out" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);margin-top:6px" onclick="notifyDeploy()" title="GitHub Pages 배포 완료 후 누르세요">📡 배포 완료</button></div>
     </aside>
     <div class="main">
       <div class="empty" id="empty" style="height:100%">
@@ -610,10 +610,10 @@ window.addEventListener('DOMContentLoaded',()=>{
 });
 
 async function notifyDeploy(){
-  if(!confirm('배포 알림을 보내면 학생/학부모/조교 화면이 자동으로 새로고침됩니다.')) return;
-  const v=Date.now().toString();
+  if(!confirm('GitHub Pages에 파일을 모두 올린 후 누르세요.\n\n누르면 모든 학생/학부모/조교 화면이 자동으로 새 버전으로 바뀝니다.')) return;
+  const v='v'+Date.now().toString();
   await db.ref('smAppVersion').set(v);
-  toast('배포 알림 전송됨 — 모든 화면이 곧 새로고침됩니다');
+  toast('✅ 배포 완료 알림 전송 — 모든 화면이 새 버전으로 전환됩니다');
 }
 function toggleSidebar(){
   document.querySelector('.sidebar').classList.toggle('mob-open');
