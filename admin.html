@@ -612,7 +612,18 @@ window.addEventListener('DOMContentLoaded',()=>{
 async function notifyDeploy(){
   if(!confirm('GitHub Pages에 파일을 모두 올린 후 누르세요.\n\n누르면 모든 학생/학부모/조교 화면이 자동으로 새 버전으로 바뀝니다.')) return;
   const v='v'+Date.now();
-  await db.ref('smAppVersion').set(v);
+  // 메인 DB + qna DB 동시에 버전 업데이트
+  const QNA_DB_URL='https://qna-sungmint-default-rtdb.firebaseio.com';
+  try{
+    var qnaApp=firebase.apps.find(function(a){return a.name==='qna-notify';});
+    if(!qnaApp) qnaApp=firebase.initializeApp({databaseURL:QNA_DB_URL},'qna-notify');
+    await Promise.all([
+      db.ref('smAppVersion').set(v),
+      qnaApp.database().ref('smAppVersion').set(v)
+    ]);
+  }catch(e){
+    await db.ref('smAppVersion').set(v);
+  }
   toast('✅ 배포 완료 알림 전송');
 }
 
@@ -639,6 +650,7 @@ function openDateMover(){
     const from=document.getElementById('dmFrom').value;
     const cls=document.getElementById('dmCls').value;
     if(!from){document.getElementById('dmInfo').textContent='';return;}
+    // 메모리에 있는 것만 우선 표시 (정확한 수는 실행 시 Firebase 조회)
     let cnt=0;
     Object.entries(students).forEach(function([sid,s]){
       if(cls && (s.cls||'미지정')!==cls) return;
@@ -646,7 +658,7 @@ function openDateMover(){
       if(Object.values(sess).some(r=>r.date===from)) cnt++;
     });
     const clsLabel=cls||'전체';
-    document.getElementById('dmInfo').textContent=cnt?`[${clsLabel}] ${from} 세션: ${cnt}명 영향`:'해당 조건의 세션 없음';
+    document.getElementById('dmInfo').textContent=cnt?`[${clsLabel}] ${from} 세션: 최소 ${cnt}명 (실제는 더 많을 수 있음)`:'이동하기 클릭 시 전체 확인';
   }
   document.getElementById('dmFrom').oninput=updateInfo;
   document.getElementById('dmCls').onchange=updateInfo;
@@ -661,15 +673,18 @@ async function runDateMover(){
   const to=document.getElementById('dmTo').value;
   if(!from||!to){toast('날짜를 모두 입력하세요');return;}
   if(from===to){toast('기존 날짜와 새 날짜가 같습니다');return;}
-  const selCls2=document.getElementById('dmCls').value;
-  const clsMsg=selCls2?`[${selCls2}] `:'전체 ';
+  const selCls=document.getElementById('dmCls').value;
+  const clsMsg=selCls?`[${selCls}] `:'전체 ';
   if(!confirm(`${clsMsg}${from}의 세션을 ${to}로 이동할까요?`)) return;
+  document.getElementById('dmInfo').textContent='Firebase 조회 중...';
+  // 메모리 캐시 말고 Firebase에서 직접 전체 조회
+  const snap=await db.ref('smSessions').get();
+  const allSessions=snap.val()||{};
   const updates={};
   let cnt=0;
-  const selCls=document.getElementById('dmCls').value;
   Object.entries(students).forEach(function([sid,s]){
     if(selCls && (s.cls||'미지정')!==selCls) return;
-    const sess=sessions[sid]||{};
+    const sess=allSessions[sid]||{};
     Object.entries(sess).forEach(function([rid,r]){
       if(r.date===from){
         updates[`smSessions/${sid}/${rid}/date`]=to;
@@ -677,7 +692,7 @@ async function runDateMover(){
       }
     });
   });
-  if(!cnt){toast('해당 날짜의 세션이 없습니다');return;}
+  if(!cnt){toast('해당 날짜의 세션이 없습니다');document.getElementById('dmInfo').textContent='해당 조건의 세션 없음';return;}
   await db.ref().update(updates);
   toast(`✅ ${cnt}개 세션을 ${to}로 이동했습니다`);
   closeDateMover();
