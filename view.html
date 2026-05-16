@@ -419,9 +419,10 @@ function loadStudentData(stuId, stu){
 }
 function showErr(title,msg){document.getElementById('load').innerHTML=`<div class="err"><div class="ei">😔</div><h2>${title}</h2><p>${msg}</p></div>`;}
 
-function starsHtml(n,absent){
+function starsHtml(n,absent,late){
   if(absent) return`<span style="color:#ef4444;font-weight:700;font-size:13px">✕</span>`;
   if(n==null||n<0) return'';
+  if(late) return`<span style="font-size:12px;background:#ffedd5;border-radius:4px;padding:1px 4px;color:#ea580c;font-weight:700">⏰</span>`+(n>0?`<span class="s${n}">${'★'.repeat(n)}</span>`:'');
   if(n===0) return`<span style="color:#ef4444;font-weight:700;font-size:11px">✕</span>`;
   return`<span class="s${n}">${'★'.repeat(n)}</span>`;
 }
@@ -504,10 +505,10 @@ function renderCal(){
     if(dow===6)cell.classList.add('sat');
     if(rec){
       const ev=rec.eval!=null&&rec.eval>=0?rec.eval:null;
-      const bg=rec.absent?'#fee2e2':ev===5?'#fefce8':ev===4?'#f0fdf4':ev===3?'#eff8ff':ev===2?'#fff7ed':ev===1||ev===0?'#fff5f5':'#fafbfc';
+      const bg=rec.absent?'#fee2e2':rec.late?'#ffedd5':ev===5?'#fefce8':ev===4?'#f0fdf4':ev===3?'#eff8ff':ev===2?'#fff7ed':ev===1||ev===0?'#fff5f5':'#fafbfc';
       cell.style.background=bg;
       const pp=rec.prog||'';
-      cell.innerHTML=`<span class="cal-day-num">${d}</span><div class="cal-cell-body"><div class="cal-stars">${starsHtml(ev,rec.absent)}</div>${pp&&!rec.absent?`<div class="cal-prog">${pp}</div>`:''}</div>`;
+      cell.innerHTML=`<span class="cal-day-num">${d}</span><div class="cal-cell-body"><div class="cal-stars">${starsHtml(ev,rec.absent,rec.late)}</div>${pp&&!rec.absent?`<div class="cal-prog">${pp}</div>`:''}</div>`;
       cell.addEventListener('click',(function(d){return function(){const r=Object.values(recData).find(function(x){return x.date===d;});if(r)showDetail(d,r);};})(ds));
     }else{
       cell.innerHTML=`<span class="cal-day-num">${d}</span>`;
