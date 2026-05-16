@@ -622,22 +622,34 @@ function openDateMover(){
   document.getElementById('dmFrom').value=td;
   document.getElementById('dmTo').value=td;
   document.getElementById('dmInfo').textContent='';
+  // 반 목록 동적 생성
+  const clsSel=document.getElementById('dmCls');
+  const clsSet=new Set();
+  Object.values(students).forEach(s=>clsSet.add(s.cls||'미지정'));
+  clsSel.innerHTML='<option value="">전체 학생</option>';
+  Array.from(clsSet).sort().forEach(cls=>{
+    const opt=document.createElement('option');
+    opt.value=cls; opt.textContent=cls;
+    clsSel.appendChild(opt);
+  });
   const m=document.getElementById('dateMoverModal');
   m.style.display='flex';
-  // 날짜 변경 시 영향 학생 수 미리 표시
-  ['dmFrom','dmTo'].forEach(id=>{
-    document.getElementById(id).oninput=function(){
-      const from=document.getElementById('dmFrom').value;
-      if(!from) return;
-      let cnt=0;
-      Object.values(students).forEach(function(stu){
-        const sid=Object.keys(students).find(k=>students[k]===stu);
-        const sess=sessions[sid]||{};
-        if(Object.values(sess).some(r=>r.date===from)) cnt++;
-      });
-      document.getElementById('dmInfo').textContent=cnt?`${from} 날짜 세션: ${cnt}명 영향`:'해당 날짜 세션 없음';
-    };
-  });
+  // 날짜/반 변경 시 영향 학생 수 미리 표시
+  function updateInfo(){
+    const from=document.getElementById('dmFrom').value;
+    const cls=document.getElementById('dmCls').value;
+    if(!from){document.getElementById('dmInfo').textContent='';return;}
+    let cnt=0;
+    Object.entries(students).forEach(function([sid,s]){
+      if(cls && (s.cls||'미지정')!==cls) return;
+      const sess=sessions[sid]||{};
+      if(Object.values(sess).some(r=>r.date===from)) cnt++;
+    });
+    const clsLabel=cls||'전체';
+    document.getElementById('dmInfo').textContent=cnt?`[${clsLabel}] ${from} 세션: ${cnt}명 영향`:'해당 조건의 세션 없음';
+  }
+  document.getElementById('dmFrom').oninput=updateInfo;
+  document.getElementById('dmCls').onchange=updateInfo;
 }
 
 function closeDateMover(){
@@ -649,10 +661,14 @@ async function runDateMover(){
   const to=document.getElementById('dmTo').value;
   if(!from||!to){toast('날짜를 모두 입력하세요');return;}
   if(from===to){toast('기존 날짜와 새 날짜가 같습니다');return;}
-  if(!confirm(`${from}의 모든 세션을 ${to}로 이동할까요?`)) return;
+  const selCls2=document.getElementById('dmCls').value;
+  const clsMsg=selCls2?`[${selCls2}] `:'전체 ';
+  if(!confirm(`${clsMsg}${from}의 세션을 ${to}로 이동할까요?`)) return;
   const updates={};
   let cnt=0;
-  Object.entries(students).forEach(function([sid]){
+  const selCls=document.getElementById('dmCls').value;
+  Object.entries(students).forEach(function([sid,s]){
+    if(selCls && (s.cls||'미지정')!==selCls) return;
     const sess=sessions[sid]||{};
     Object.entries(sess).forEach(function([rid,r]){
       if(r.date===from){
@@ -2402,7 +2418,12 @@ document.getElementById('rm').addEventListener('click',e=>{if(e.target.id==='rm'
   <div id="dateMoverModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;display:none;align-items:center;justify-content:center">
     <div style="background:#fff;border-radius:20px;padding:28px;width:320px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,.18)">
       <div style="font-size:16px;font-weight:700;color:#1a2840;margin-bottom:20px">📅 날짜 일괄 이동</div>
-      <div style="font-size:13px;color:#64748b;margin-bottom:16px">선택한 날짜의 <b>전체 학생</b> 세션을 새 날짜로 이동합니다</div>
+      <div style="margin-bottom:14px">
+        <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px">대상 반</label>
+        <select id="dmCls" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:inherit;background:#fff">
+          <option value="">전체 학생</option>
+        </select>
+      </div>
       <div style="margin-bottom:12px">
         <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px">기존 날짜 (잘못 입력된 날짜)</label>
         <input type="date" id="dmFrom" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:inherit">
