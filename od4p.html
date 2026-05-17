@@ -485,8 +485,8 @@ function TeacherApp(){
   const[problems,setProblems]=useState([emptyProb(),emptyProb(),emptyProb(),emptyProb()]);
   const[saveOk,setSaveOk]=useState(false);
   const[confirmDel,setConfirmDel]=useState(null); // {type:'one'|'all', date, subKey, subId, name}
-  const fr=[useRef(),useRef(),useRef(),useRef()];
-  const frs=[useRef(),useRef(),useRef(),useRef()]; // solution image refs
+  const fr=[useRef(),useRef(),useRef(),useRef(),useRef(),useRef(),useRef(),useRef()];
+  const frs=[useRef(),useRef(),useRef(),useRef(),useRef(),useRef(),useRef(),useRef()]; // solution image refs
 
   // 현황 탭 상태
   const[selDate,setSelDate]=useState(todayKey());
