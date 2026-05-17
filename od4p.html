@@ -167,23 +167,8 @@ async function fetchAllData(){
   return snap.val()||{};
 }
 function listenAllDates(cb){
-  // 최근 14일 날짜만 로드 (전체 트리 제거)
-  const dates=[];
-  const now=new Date();
-  for(let i=0;i<14;i++){
-    const d=new Date(now);d.setDate(now.getDate()-i);
-    dates.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));
-  }
-  let merged={};
-  let loaded=0;
-  dates.forEach(date=>{
-    db.ref("od4p/"+date).get().then(s=>{
-      if(s.val()) merged[date]=s.val();
-      loaded++;
-      if(loaded===dates.length) cb(Object.keys(merged).length?merged:{});
-    }).catch(()=>{loaded++;if(loaded===dates.length)cb(merged);});
-  });
-  if(!dates.length) cb({});
+  // 초기 로드 없음 - 날짜 선택 시 즉시 조회 방식으로 대체
+  cb({});
   return()=>{};
 }
 
@@ -520,6 +505,15 @@ function TeacherApp(){
       setProblems([emptyProb(),emptyProb(),emptyProb(),emptyProb()]);
     }
   },[editDate,editSub,allData]);
+
+  // editDate 변경 시 allData에 없으면 Firebase 직접 조회
+  useEffect(()=>{
+    if(!authed||!editDate) return;
+    if(allData[editDate]!==undefined) return; // 이미 있음
+    db.ref("od4p/"+editDate).get().then(s=>{
+      if(s.val()) setAllData(prev=>({...prev,[editDate]:s.val()}));
+    });
+  },[authed,editDate]);
   const handleSolImg=(i,e)=>{
     const file=e.target.files[0];if(!file)return;
     const reader=new FileReader();
