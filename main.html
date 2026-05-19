@@ -132,7 +132,7 @@
   function doCheck(){
     var db=getDB();
     if(!db) return;
-    if(_smvRef) return; // 이미 구독 중
+    if(_smvRef) return;
     var urlVer=new URL(location.href).searchParams.get('_v');
     if(urlVer) localStorage.setItem('smv',urlVer);
     _smvRef=db.ref('smAppVersion');
@@ -152,7 +152,6 @@
   document.addEventListener('visibilitychange',function(){
     if(document.visibilityState==='visible') doCheck();
   });
-  setInterval(doCheck,30000);
 })();
 </script>
 
