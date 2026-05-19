@@ -8,10 +8,7 @@
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>sungmint</title>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  <script src="config.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Gothic+A1:wght@300;400;700;900&family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Gothic+A1:wght@300;400;700;900&family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>:root{
   --p1:#9D91EE;--p2:#BCB4F8;--p3:#D4CFF8;
   --warm:#E8795A;--cool:#56A08A;
@@ -107,53 +104,7 @@
 
 
 
-<script>
-(function(){
-  // URL에 _v 파라미터 있으면 제거 (이미 새로 받아온 것)
-  var url=new URL(location.href);
-  var urlVer=url.searchParams.get('_v');
-  if(urlVer){
-    sessionStorage.setItem('smv',urlVer);
-    url.searchParams.delete('_v');
-    history.replaceState(null,'',url.toString());
-  }
 
-  function getDB(){
-    try{
-      if(typeof firebase==='undefined') return null;
-      if(firebase.apps&&firebase.apps.length>0) return firebase.database();
-      if(typeof SM_CONFIG==='undefined'||!SM_CONFIG.apiKey||SM_CONFIG.apiKey.includes('여기에')) return null;
-      firebase.initializeApp(SM_CONFIG);
-      return firebase.database();
-    }catch(e){return null;}
-  }
-
-  var _smvRef=null;
-  function doCheck(){
-    var db=getDB();
-    if(!db) return;
-    if(_smvRef) return;
-    var urlVer=new URL(location.href).searchParams.get('_v');
-    if(urlVer) localStorage.setItem('smv',urlVer);
-    _smvRef=db.ref('smAppVersion');
-    _smvRef.on('value',function(s){
-      var sv=String(s.val()||'');
-      if(!sv) return;
-      var lv=localStorage.getItem('smv')||'';
-      if(lv===sv) return;
-      if(location.search.indexOf('_v='+sv)!==-1) return;
-      location.replace(location.pathname+'?_v='+sv);
-    });
-  }
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',function(){doCheck();});
-  }else{doCheck();}
-  document.addEventListener('visibilitychange',function(){
-    if(document.visibilityState==='visible') doCheck();
-  });
-})();
-</script>
 
 </body>
 </html>
