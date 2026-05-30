@@ -24,7 +24,7 @@
     .logo-text-em{color:#9D91EE;font-style:italic}
     .logo-divider{width:36px;height:2px;background:linear-gradient(90deg,#9D91EE,transparent);margin:12px auto}
     .logo-sub{font-family:'Noto Sans KR','MaruBuri',sans-serif;font-size:13px;font-weight:300;color:#7A78A8}
-    .cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%}
+    .cards{display:flex;flex-wrap:wrap;gap:12px;width:100%;justify-content:center}.cards .card{width:calc(50% - 6px)}
     .card{display:block;text-decoration:none;background:#F0EEFF;border-radius:20px;padding:22px 18px 42px;position:relative;overflow:hidden;box-shadow:5px 5px 14px rgba(150,140,240,.35),-4px -4px 12px rgba(255,255,255,.9);transition:box-shadow .2s,transform .2s}
     .card:hover{transform:translateY(-3px);box-shadow:8px 8px 20px rgba(150,140,240,.40),-5px -5px 14px rgba(255,255,255,.9)}
     .card-icon{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:21px;margin-bottom:14px;box-shadow:3px 3px 8px rgba(150,140,240,.30),-2px -2px 6px rgba(255,255,255,.85)}
@@ -65,20 +65,6 @@
       <div class="logo-divider"></div>
       <div class="logo-sub">학습 현황을 언제 어디서나 확인하세요</div>
     </div>
-    <div class="cards">
-      <a class="card" href="./qna.html">
-        <div class="card-icon">💬</div>
-        <div class="card-title">익명 질문함</div>
-        <div class="card-desc">모르는 문제를<br>익명으로 질문해요</div>
-        <div class="card-arrow">›</div>
-      </a>
-      <a class="card" href="./od4p.html">
-        <div class="card-icon">📚</div>
-        <div class="card-title">OD4P_하루4문제</div>
-        <div class="card-desc">매일 4문제 풀고<br>즉시 채점 확인</div>
-        <div class="card-arrow">›</div>
-      </a>
-    </div>
     <div class="wide-wrap">
       <a class="card-wide" href="./student.html">
         <div class="wide-icon">✏️</div>
@@ -88,6 +74,11 @@
       <a class="card-wide" href="./view.html">
         <div class="wide-icon">📋</div>
         <div><div class="wide-title">학부모 페이지</div><div class="wide-desc">수업 현황 · 숙제 · 플래너 확인</div></div>
+        <div class="wide-pill">›</div>
+      </a>
+      <a class="card-wide" href="./qna.html">
+        <div class="wide-icon">💬</div>
+        <div><div class="wide-title">익명 질문함</div><div class="wide-desc">모르는 문제를 익명으로 질문해요</div></div>
         <div class="wide-pill">›</div>
       </a>
     </div>
