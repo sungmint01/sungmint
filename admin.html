@@ -678,23 +678,37 @@ async function runDateMover(){
   if(!confirm(`${clsMsg}${from}의 세션을 ${to}로 이동할까요?`)) return;
   document.getElementById('dmInfo').textContent='Firebase 조회 중...';
   // 메모리 캐시 말고 Firebase에서 직접 전체 조회
-  const snap=await db.ref('smSessions').get();
-  const allSessions=snap.val()||{};
+  // smSessions + smPlanners 동시 조회
+  const [sessSnap, planSnap] = await Promise.all([
+    db.ref('smSessions').get(),
+    db.ref('smPlanners').get()
+  ]);
+  const allSessions=sessSnap.val()||{};
+  const allPlanners=planSnap.val()||{};
   const updates={};
-  let cnt=0;
+  let sessCnt=0, planCnt=0;
   Object.entries(students).forEach(function([sid,s]){
     if(selCls && (s.cls||'미지정')!==selCls) return;
+    // 세션 이동
     const sess=allSessions[sid]||{};
     Object.entries(sess).forEach(function([rid,r]){
       if(r.date===from){
         updates[`smSessions/${sid}/${rid}/date`]=to;
-        cnt++;
+        sessCnt++;
+      }
+    });
+    // 플래너 이동
+    const plans=allPlanners[sid]||{};
+    Object.entries(plans).forEach(function([pid,p]){
+      if(p.date===from){
+        updates[`smPlanners/${sid}/${pid}/date`]=to;
+        planCnt++;
       }
     });
   });
-  if(!cnt){toast('해당 날짜의 세션이 없습니다');document.getElementById('dmInfo').textContent='해당 조건의 세션 없음';return;}
+  if(!sessCnt&&!planCnt){toast('해당 날짜의 데이터가 없습니다');document.getElementById('dmInfo').textContent='해당 조건의 데이터 없음';return;}
   await db.ref().update(updates);
-  toast(`✅ ${cnt}개 세션을 ${to}로 이동했습니다`);
+  toast(`✅ 세션 ${sessCnt}개 · 플래너 ${planCnt}개를 ${to}로 이동했습니다`);
   closeDateMover();
 }
 function toggleSidebar(){
