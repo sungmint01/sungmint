@@ -233,6 +233,7 @@ body{font-family:'Noto Sans KR','MaruBuri',sans-serif;background:var(--bg);min-h
       <div class="grade-toggle">
         <button class="grade-tab on" id="tabAns" onclick="switchGradeTab('ans')">📝 답 입력</button>
         <button class="grade-tab" id="tabDirect" onclick="switchGradeTab('direct')">🔢 점수 직접 입력</button>
+        <button class="grade-tab" id="tabText" onclick="switchGradeTab('text')">✍️ 직접 내용 작성</button>
       </div>
       <div id="ansMode">
         <div style="background:#eff4ff;border-left:3px solid #3764bf;border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#1a2840;line-height:1.8">
@@ -260,6 +261,10 @@ body{font-family:'Noto Sans KR','MaruBuri',sans-serif;background:var(--bg);min-h
           </div>
           <div class="score-hint">맞은 개수 / 푼 개수</div>
         </div>
+      </div>
+      <div id="textMode" style="display:none">
+        <div style="margin:8px 0 6px;font-size:12px;color:#6A6688">클리닉 내용을 자유롭게 작성하세요 (학생 기록에 저장됩니다)</div>
+        <textarea id="textContent" rows="4" placeholder="예: 수학1 클리닉A, 극한 파트 집중 풀이" style="width:100%;padding:10px 12px;border:1.5px solid rgba(120,100,200,.2);border-radius:12px;font-size:13px;font-family:'Noto Sans KR',sans-serif;resize:vertical;outline:none;color:#1E1B3A;background:#fff;box-sizing:border-box"></textarea>
       </div>
     </div>
     <div id="pdfDownloadWrap" style="display:none"></div>
@@ -750,8 +755,10 @@ function switchGradeTab(tab){
   _gradeTab=tab;
   document.getElementById('tabAns').className='grade-tab'+(tab==='ans'?' on':'');
   document.getElementById('tabDirect').className='grade-tab'+(tab==='direct'?' on':'');
+  document.getElementById('tabText').className='grade-tab'+(tab==='text'?' on':'');
   document.getElementById('ansMode').style.display=tab==='ans'?'':'none';
   document.getElementById('directMode').style.display=tab==='direct'?'':'none';
+  document.getElementById('textMode').style.display=tab==='text'?'':'none';
 }
 
 function buildAnsGrid(){
@@ -800,6 +807,35 @@ function buildAnsGrid(){
 
 async function submitGrade(){
   let score, total, wrong=[], stuAnswers={};
+  if(_gradeTab==='text'){
+    // 직접 내용 작성
+    const txt=document.getElementById('textContent').value.trim();
+    if(!txt){document.getElementById('err3').textContent='내용을 입력하세요';return;}
+    document.getElementById('err3').textContent='';
+    score=null; total=null;
+    stuAnswers={};
+    lastResult={stuAnswers,score,total,wrong:[],isDirect:false,isText:true,textContent:txt};
+    const result={name:currentStuName,textContent:txt,isText:true,gradedAt:Date.now()};
+    await db.ref('smClinicResults/'+selectedClinicId+'/'+currentStuId).set(result);
+    const isAbsent=document.getElementById('chkAbsent').checked;
+    const isLate=document.getElementById('chkLate').checked;
+    const todayStr=today();
+    const cliText=selectedClinic.title+', '+txt;
+    const existingSes=await findOrCreateSession(currentStuId,todayStr);
+    if(existingSes){
+      await db.ref('smSessions/'+currentStuId+'/'+existingSes[0]).update({cli:cliText,absent:isAbsent,late:isLate,upd:Date.now()});
+    }else{
+      await db.ref('smSessions/'+currentStuId).push({date:todayStr,cli:cliText,absent:isAbsent,late:isLate,eval:null,at:Date.now(),upd:Date.now()});
+    }
+    document.getElementById('resultName').textContent=currentStuName;
+    document.getElementById('resultScore').textContent=txt;
+    document.getElementById('resultTotal').textContent='';
+    document.getElementById('resultWrong').innerHTML='<div class="result-ok">✅ 내용 저장 완료</div>';
+    document.getElementById('resultSaved').textContent='✓ 학생 기록에 자동 저장됨';
+    document.getElementById('editGrid').innerHTML='';
+    setStep(4);
+    return;
+  }
   if(_gradeTab==='direct'){
     // 직접 점수 입력
     score=parseInt(document.getElementById('directScore').value)||0;
