@@ -820,7 +820,7 @@ async function submitGrade(){
     const isAbsent=document.getElementById('chkAbsent').checked;
     const isLate=document.getElementById('chkLate').checked;
     const todayStr=today();
-    const cliText=selectedClinic.title+', '+txt;
+    const cliText=txt;  // 직접 작성 내용만 저장 (클리닉 제목 미포함)
     const existingSes=await findOrCreateSession(currentStuId,todayStr);
     if(existingSes){
       await db.ref('smSessions/'+currentStuId+'/'+existingSes[0]).update({cli:cliText,absent:isAbsent,late:isLate,upd:Date.now()});
@@ -832,7 +832,7 @@ async function submitGrade(){
     document.getElementById('resultTotal').textContent='';
     document.getElementById('resultWrong').innerHTML='<div class="result-ok">✅ 내용 저장 완료</div>';
     document.getElementById('resultSaved').textContent='✓ 학생 기록에 자동 저장됨';
-    document.getElementById('editGrid').innerHTML='';
+    document.getElementById('editGrid').innerHTML='<button onclick="backToTextEdit()" style="width:100%;padding:11px;background:#F0EEFF;border:none;border-radius:12px;color:#6B5DC8;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:4px">✏️ 내용 수정하기</button>';
     setStep(4);
     return;
   }
@@ -984,6 +984,16 @@ function resetAll(){
   selectedClinicId=null; selectedClinic=null; currentStuId=null; currentStuName='';
   renderClinicList();
   setStep(1);
+}
+
+function backToTextEdit(){
+  // 텍스트탭 활성화하고 Step 3으로
+  switchGradeTab('text');
+  // 저장된 내용 복원
+  if(lastResult && lastResult.isText && lastResult.textContent){
+    document.getElementById('textContent').value=lastResult.textContent;
+  }
+  setStep(3);
 }
 
 async function loadDirectRecord(stuId){
