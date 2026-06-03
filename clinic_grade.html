@@ -797,9 +797,9 @@ async function submitGrade(){
       await db.ref('smSessions/'+currentStuId).push({date:todayStr,cli:cliText,absent:isAbsent,late:isLate,eval:null,at:Date.now(),upd:Date.now()});
     }
     document.getElementById('resultName').textContent=currentStuName;
-    document.getElementById('resultScore').textContent=txt;
-    document.getElementById('resultTotal').textContent='';
-    document.getElementById('resultWrong').innerHTML='<div class="result-ok">✅ 내용 저장 완료</div>';
+    document.getElementById('resultScore').textContent='✅';
+    document.getElementById('resultTotal').textContent='내용 저장 완료';
+    document.getElementById('resultWrong').innerHTML='<div style="background:#f0eeff;border-radius:12px;padding:12px 14px;font-size:13px;color:#1E1B3A;line-height:1.7;margin-top:8px;text-align:left">'+txt+'</div>';
     document.getElementById('resultSaved').textContent='✓ 학생 기록에 자동 저장됨';
     document.getElementById('editGrid').innerHTML='<button onclick="backToTextEdit()" style="width:100%;padding:11px;background:#F0EEFF;border:none;border-radius:12px;color:#6B5DC8;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:4px">✏️ 내용 수정하기</button>';
     setStep(4);
