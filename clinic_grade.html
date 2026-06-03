@@ -173,6 +173,36 @@ body{font-family:'Noto Sans KR','MaruBuri',sans-serif;background:var(--bg);min-h
       <div class="card-title">📖 숙제 채점 선택</div>
       <div id="hwClinicItems"><div class="ps-empty">해당 숙제가 없습니다</div></div>
     </div>
+    <div class="card" style="margin-top:12px" id="directInputCard">
+      <div class="card-title">✏️ 직접 점수 입력</div>
+      <div id="directInputForm">
+        <div style="margin-bottom:10px">
+          <label style="font-size:12px;color:#6A6688;display:block;margin-bottom:4px">제목 (예: 수학1 클리닉, 모의고사 등)</label>
+          <input class="inp" type="text" id="directTitle" placeholder="채점 제목 입력" style="width:100%">
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
+          <div style="flex:1">
+            <label style="font-size:12px;color:#6A6688;display:block;margin-bottom:4px">맞은 개수</label>
+            <input class="inp" type="number" id="dScore" min="0" placeholder="0" style="width:100%">
+          </div>
+          <div style="padding-top:18px;color:#A8A4C0;font-size:18px">/</div>
+          <div style="flex:1">
+            <label style="font-size:12px;color:#6A6688;display:block;margin-bottom:4px">전체 개수</label>
+            <input class="inp" type="number" id="dTotal" min="0" placeholder="0" style="width:100%">
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-bottom:12px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+            <input type="checkbox" id="dAbsent" style="width:17px;height:17px;accent-color:#ef4444"> 🚫 결석
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+            <input type="checkbox" id="dLate" style="width:17px;height:17px;accent-color:#f97316"> ⏰ 지각
+          </label>
+        </div>
+        <div class="err" id="errDirect"></div>
+        <button class="btn-pri" onclick="submitDirect()">💾 저장하기</button>
+      </div>
+    </div>
     <div class="err" id="err2"></div>
     <a href="#" onclick="backToStep1()" class="back-link">← 이름 다시 입력</a>
   </div>
@@ -603,6 +633,8 @@ function goStep2(){
   // Filter clinics/hw for this student
   renderFilteredClinicList(entry[0],entry[1]);
   renderFilteredHwList(entry[0],entry[1]);
+  // 오늘 직접입력 기록이 있으면 폼에 로드
+  loadDirectRecord(entry[0]);
   setStep(2);
 }
 
