@@ -949,6 +949,59 @@ function resetAll(){
   renderClinicList();
   setStep(1);
 }
+
+async function loadDirectRecord(stuId){
+  const todayStr=today();
+  document.getElementById('errDirect').style.color='';
+  document.getElementById('errDirect').textContent='';
+  try{
+    const snap=await db.ref('smClinicResults/direct_'+todayStr+'/'+stuId).get();
+    const data=snap.val();
+    if(data){
+      document.getElementById('directTitle').value=data.title||'';
+      document.getElementById('dScore').value=data.score||'';
+      document.getElementById('dTotal').value=data.total||'';
+      document.getElementById('errDirect').style.color='#8B7DD8';
+      document.getElementById('errDirect').textContent='기존 기록 불러옴 — 수정 후 저장하세요';
+    }else{
+      document.getElementById('directTitle').value='';
+      document.getElementById('dScore').value='';
+      document.getElementById('dTotal').value='';
+    }
+  }catch(e){}
+}
+
+async function submitDirect(){
+  const title=document.getElementById('directTitle').value.trim()||'직접입력';
+  const score=parseInt(document.getElementById('dScore').value)||0;
+  const total=parseInt(document.getElementById('dTotal').value)||0;
+  const isAbsent=document.getElementById('dAbsent').checked;
+  const isLate=document.getElementById('dLate').checked;
+  const errEl=document.getElementById('errDirect');
+  if(!total){errEl.style.color='#ef4444';errEl.textContent='전체 개수를 입력하세요';return;}
+  if(score>total){errEl.style.color='#ef4444';errEl.textContent='맞은 개수가 전체보다 클 수 없습니다';return;}
+  errEl.textContent='';
+  const todayStr=today();
+  const cliText=title+', '+score+'/'+total+'점';
+  const existingSes=await findOrCreateSession(currentStuId,todayStr);
+  if(existingSes){
+    await db.ref('smSessions/'+currentStuId+'/'+existingSes[0]).update({
+      cli:cliText,absent:isAbsent,late:isLate,upd:Date.now()
+    });
+  }else{
+    await db.ref('smSessions/'+currentStuId).push({
+      date:todayStr,cli:cliText,absent:isAbsent,late:isLate,
+      eval:null,at:Date.now(),upd:Date.now()
+    });
+  }
+  await db.ref('smClinicResults/direct_'+todayStr+'/'+currentStuId).set({
+    name:currentStuName,score,total,title,isDirect:true,gradedAt:Date.now()
+  });
+  errEl.style.color='#56A08A';
+  errEl.textContent='✓ '+currentStuName+' 학생 기록 저장됨 ('+cliText+')';
+  document.getElementById('dAbsent').checked=false;
+  document.getElementById('dLate').checked=false;
+}
 </script>
 
 
