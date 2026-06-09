@@ -330,6 +330,10 @@ textarea.inp{resize:vertical;min-height:68px}
         <span class="rdot" id="totalUnread" style="display:none"></span>
       </div>
       <div class="sb-div"></div>
+      <div class="sb-sec-label">교재</div>
+      <div class="sb-lnk" onclick="showTextbookMgr()">
+        <span class="sb-lnk-ico">📖</span><span class="sb-lnk-label">교재 관리</span>
+      </div>
       <div class="sb-section">학생</div>
       <div id="sList"></div>
       <div class="sb-foot" style="display:flex;flex-direction:column;gap:6px"><button class="btn-sv" style="font-size:11px;padding:7px;background:#7c3aed;box-shadow:none" onclick="mergeSessionsByDate()" title="같은 날짜 중복 세션 병합">🔗 세션 병합</button><button class="btn-sv" style="font-size:11px;padding:7px;background:#8b5cf6;box-shadow:none" onclick="openDateMover()" title="날짜 일괄 이동">📅 날짜 이동</button>
@@ -420,6 +424,64 @@ textarea.inp{resize:vertical;min-height:68px}
           <div style="font-size:16px;font-weight:700">📋 클리닉 관리</div>
           <button class="btn-sv" onclick="openClinicForm()">+ 클리닉 추가</button>
         </div>
+        <!-- ── TEXTBOOK MGR ── -->
+        <div id="textbookMgr" style="display:none;padding:22px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div style="font-size:16px;font-weight:700;color:#1E1B3A">📖 교재 관리</div>
+            <button class="btn-sv" onclick="openTbCreate()" style="font-size:12px;padding:7px 12px">+ 교재 등록</button>
+          </div>
+
+          <!-- 교재 목록 -->
+          <div id="tbList" style="margin-bottom:20px"></div>
+
+          <!-- 학생 교재 배정 -->
+          <div style="font-size:14px;font-weight:600;color:#1E1B3A;margin-bottom:10px">학생 교재 배정</div>
+          <div id="tbAssignList"></div>
+        </div>
+
+        <!-- 교재 등록/수정 모달 -->
+        <div id="tbModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;display:none;align-items:center;justify-content:center">
+          <div style="background:#fff;border-radius:20px;padding:26px;width:340px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,.18);max-height:90vh;overflow-y:auto">
+            <div style="font-size:15px;font-weight:700;margin-bottom:16px" id="tbModalTitle">교재 등록</div>
+            <input type="hidden" id="tbEditId">
+            <div style="margin-bottom:10px">
+              <label style="font-size:12px;color:#6A6688;display:block;margin-bottom:4px">교재 제목</label>
+              <input class="inp" id="tbTitleInp" placeholder="예: 공통수학1 올림포스" style="width:100%">
+            </div>
+            <div style="margin-bottom:14px">
+              <label style="font-size:12px;color:#6A6688;display:block;margin-bottom:4px">문제 번호 목록</label>
+              <div style="font-size:11px;color:#A8A4C0;margin-bottom:4px">쉼표로 구분 또는 범위 (예: 1-50 또는 1,2,3,4a,4b)</div>
+              <textarea class="inp" id="tbProblemsInp" rows="3" placeholder="1-50 또는 1,2,3,4a,4b,5" style="width:100%;resize:vertical"></textarea>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button onclick="closeTbModal()" style="flex:1;padding:10px;border:none;border-radius:10px;background:#f1f5f9;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">취소</button>
+              <button onclick="saveTb()" style="flex:2;padding:10px;border:none;border-radius:10px;background:linear-gradient(135deg,#9D91EE,#BCB4F8);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">저장</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 유튜브 링크 모달 -->
+        <div id="ytModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;align-items:center;justify-content:center">
+          <div style="background:#fff;border-radius:20px;padding:26px;width:340px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+            <div style="font-size:15px;font-weight:700;margin-bottom:4px">▶ 유튜브 링크 등록</div>
+            <div id="ytModalProbLabel" style="font-size:12px;color:#6A6688;margin-bottom:14px"></div>
+            <input type="hidden" id="ytTbId">
+            <input type="hidden" id="ytProbNum">
+            <div style="margin-bottom:10px">
+              <label style="font-size:12px;color:#6A6688;display:block;margin-bottom:4px">영상 제목 (선택)</label>
+              <input class="inp" id="ytTitleInp" placeholder="예: 극한 파트 풀이" style="width:100%">
+            </div>
+            <div style="margin-bottom:14px">
+              <label style="font-size:12px;color:#6A6688;display:block;margin-bottom:4px">유튜브 URL</label>
+              <input class="inp" id="ytUrlInp" placeholder="https://youtu.be/..." style="width:100%">
+            </div>
+            <div style="display:flex;gap:8px">
+              <button onclick="closeYtModal()" style="flex:1;padding:10px;border:none;border-radius:10px;background:#f1f5f9;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">취소</button>
+              <button onclick="saveYtLink()" style="flex:2;padding:10px;border:none;border-radius:10px;background:linear-gradient(135deg,#E8795A,#F5A882);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">저장</button>
+            </div>
+          </div>
+        </div>
+
         <div id="clinicList"><p class="etbl">등록된 클리닉이 없습니다</p></div>
       </div>
       <!-- Clinic Form Modal -->
@@ -627,6 +689,175 @@ async function notifyDeploy(){
   toast('✅ 배포 완료 알림 전송');
 }
 
+
+// ════ TEXTBOOK ════
+var tbSets={};
+
+function showTextbookMgr(){
+  ['hwMgr','clinicMgr','empty','detail','consultView','plannerStatus','od4pStatus'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display='none';
+  });
+  mode='textbook';uid_=null;
+  document.getElementById('textbookMgr').style.display='';
+  renderSidebar();
+  loadTextbookData();
+}
+
+function loadTextbookData(){
+  db.ref('smTextbooks').once('value',s=>{
+    tbSets=s.val()||{};
+    renderTbList();
+  });
+  renderTbAssignList();
+}
+
+function renderTbList(){
+  var el=document.getElementById('tbList');
+  var arr=Object.entries(tbSets).sort(([,a],[,b])=>(b.createdAt||0)-(a.createdAt||0));
+  if(!arr.length){el.innerHTML='<div style="color:#A8A4C0;font-size:13px;padding:8px">등록된 교재가 없습니다</div>';return;}
+  el.innerHTML=arr.map(([tid,tb])=>{
+    var pcnt=Object.keys(tb.problems||{}).length;
+    var ytcnt=Object.values(tb.problems||{}).filter(p=>p&&p.youtubeUrl).length;
+    return `<div style="background:#F0EEFF;border-radius:14px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div>
+          <div style="font-size:14px;font-weight:600">${tb.title}</div>
+          <div style="font-size:11px;color:#A8A4C0;font-family:'Plus Jakarta Sans',sans-serif">${pcnt}문제 · 영상 ${ytcnt}개</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button onclick="openTbEdit('${tid}')" style="padding:5px 10px;border:none;border-radius:8px;background:#fff;color:#6A6688;font-size:11px;cursor:pointer;font-family:inherit">수정</button>
+          <button onclick="deleteTb('${tid}')" style="padding:5px 10px;border:none;border-radius:8px;background:#fff;color:#ef4444;font-size:11px;cursor:pointer;font-family:inherit">삭제</button>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#6A6688;margin-bottom:8px">문제 클릭 → 유튜브 링크 등록</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">
+        ${Object.keys(tb.problems||{}).sort((a,b)=>{var na=parseFloat(a),nb=parseFloat(b);return(!isNaN(na)&&!isNaN(nb))?na-nb:a.localeCompare(b,'ko')}).map(num=>{
+          var p=(tb.problems||{})[num]||{};
+          var hasYt=!!(p.youtubeUrl);
+          return `<button onclick="openYtModal('${tid}','${num}')" style="padding:4px 8px;border:1.5px solid ${hasYt?'#E8795A':'rgba(120,100,200,.2)'};border-radius:8px;background:${hasYt?'rgba(232,121,90,.1)':'#fff'};color:${hasYt?'#E8795A':'#6A6688'};font-size:11px;cursor:pointer;font-family:inherit;font-weight:600">${num}${hasYt?'▶':''}</button>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTbAssignList(){
+  db.ref('smStudents').once('value',s=>{
+    var stuList=Object.entries(s.val()||{}).sort(([,a],[,b])=>(a.name||'').localeCompare(b.name||'','ko'));
+    db.ref('smTbAssign').once('value',as=>{
+      var assigns=as.val()||{};
+      var tbOpts='<option value="">없음</option>'+Object.entries(tbSets).map(([tid,tb])=>`<option value="${tid}">${tb.title}</option>`).join('');
+      document.getElementById('tbAssignList').innerHTML=
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+        stuList.map(([sid,s])=>`
+          <div style="background:#F0EEFF;border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:13px;font-weight:500">${s.name}</div>
+            <select onchange="assignTb('${sid}',this.value)" style="font-size:11px;border:1.5px solid rgba(120,100,200,.2);border-radius:8px;padding:4px 6px;font-family:inherit;background:#fff;color:#1E1B3A">
+              ${tbOpts.replace(`value="${assigns[sid]||''}"`,`value="${assigns[sid]||''}" selected`)}
+            </select>
+          </div>`).join('')+
+        '</div>';
+    });
+  });
+}
+
+function assignTb(stuId,tbId){
+  if(tbId) db.ref('smTbAssign/'+stuId).set(tbId);
+  else db.ref('smTbAssign/'+stuId).remove();
+}
+
+function openTbCreate(){
+  document.getElementById('tbEditId').value='';
+  document.getElementById('tbTitleInp').value='';
+  document.getElementById('tbProblemsInp').value='';
+  document.getElementById('tbModalTitle').textContent='교재 등록';
+  document.getElementById('tbModal').style.display='flex';
+}
+
+function openTbEdit(tid){
+  var tb=tbSets[tid]||{};
+  document.getElementById('tbEditId').value=tid;
+  document.getElementById('tbTitleInp').value=tb.title||'';
+  var nums=Object.keys(tb.problems||{}).sort((a,b)=>{var na=parseFloat(a),nb=parseFloat(b);return(!isNaN(na)&&!isNaN(nb))?na-nb:a.localeCompare(b,'ko')});
+  document.getElementById('tbProblemsInp').value=nums.join(',');
+  document.getElementById('tbModalTitle').textContent='교재 수정';
+  document.getElementById('tbModal').style.display='flex';
+}
+
+function closeTbModal(){document.getElementById('tbModal').style.display='none';}
+
+async function saveTb(){
+  var title=document.getElementById('tbTitleInp').value.trim();
+  var probsRaw=document.getElementById('tbProblemsInp').value.trim();
+  if(!title||!probsRaw){toast('제목과 문제 번호를 입력하세요');return;}
+
+  // 문제 번호 파싱 (범위 또는 쉼표)
+  var nums=[];
+  probsRaw.split(',').forEach(seg=>{
+    seg=seg.trim();
+    var m=seg.match(/^(\d+)-(\d+)$/);
+    if(m){
+      var s=parseInt(m[1]),e=parseInt(m[2]);
+      for(var i=s;i<=e;i++) nums.push(String(i));
+    }else if(seg) nums.push(seg);
+  });
+
+  var editId=document.getElementById('tbEditId').value;
+  var tid=editId||db.ref('smTextbooks').push().key;
+
+  // 기존 문제의 유튜브 링크 보존
+  var existProbs=(tbSets[tid]||{}).problems||{};
+  var problems={};
+  nums.forEach(num=>{ problems[num]=existProbs[num]||{}; });
+
+  await db.ref('smTextbooks/'+tid).set({title,problems,createdAt:Date.now()});
+  tbSets[tid]={title,problems,createdAt:Date.now()};
+  toast('✅ 교재 저장됨');
+  closeTbModal();
+  renderTbList();
+}
+
+async function deleteTb(tid){
+  if(!confirm('교재를 삭제할까요? 학생 체크 기록도 모두 삭제됩니다.')) return;
+  await Promise.all([
+    db.ref('smTextbooks/'+tid).remove(),
+    db.ref('smTbQuestions/'+tid).remove()
+  ]);
+  delete tbSets[tid];
+  renderTbList();
+  toast('삭제됨');
+}
+
+function openYtModal(tbId,probNum){
+  var tb=tbSets[tbId]||{};
+  var p=(tb.problems||{})[probNum]||{};
+  document.getElementById('ytTbId').value=tbId;
+  document.getElementById('ytProbNum').value=probNum;
+  document.getElementById('ytModalProbLabel').textContent=`교재: ${tb.title} · ${probNum}번 문제`;
+  document.getElementById('ytTitleInp').value=p.title||'';
+  document.getElementById('ytUrlInp').value=p.youtubeUrl||'';
+  document.getElementById('ytModal').style.display='flex';
+}
+
+function closeYtModal(){document.getElementById('ytModal').style.display='none';}
+
+async function saveYtLink(){
+  var tbId=document.getElementById('ytTbId').value;
+  var probNum=document.getElementById('ytProbNum').value;
+  var title=document.getElementById('ytTitleInp').value.trim();
+  var url=document.getElementById('ytUrlInp').value.trim();
+  await db.ref('smTextbooks/'+tbId+'/problems/'+probNum).update({
+    title:title||'', youtubeUrl:url
+  });
+  if(tbSets[tbId]&&tbSets[tbId].problems&&tbSets[tbId].problems[probNum]){
+    tbSets[tbId].problems[probNum].title=title;
+    tbSets[tbId].problems[probNum].youtubeUrl=url;
+  }
+  closeYtModal();
+  renderTbList();
+  toast(url?'▶ 영상 링크 저장됨':'링크 삭제됨');
+}
+// ════ END TEXTBOOK ════
 function openDateMover(){
   const today=new Date();
   const td=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');

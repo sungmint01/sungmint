@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>교재 질문 — 성민T</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="config.js"></script>
+<style>
+:root{
+  --bg:#F0EEFF;--surface:#fff;--fg:#1E1B3A;--fg2:#6A6688;--fg3:#A8A4C0;
+  --p1:#9D91EE;--p2:#BCB4F8;--p3:#D4CFF8;
+  --warm:#E8795A;--cool:#56A08A;
+  --shadow:rgba(120,100,200,.10);
+  --border:rgba(120,100,200,.12);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;
+  background-image:radial-gradient(ellipse 60% 40% at 10% 0%,rgba(155,143,224,.12) 0%,transparent 60%),
+  radial-gradient(ellipse 50% 40% at 90% 100%,rgba(86,160,138,.08) 0%,transparent 60%)}
+
+/* LOGIN */
+#loginPage{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.lbox{background:var(--surface);border-radius:24px;padding:36px 28px;width:100%;max-width:360px;
+  box-shadow:0 8px 32px var(--shadow)}
+.lbox-badge{display:inline-block;font-family:'Plus Jakarta Sans',sans-serif;font-size:10px;font-weight:600;
+  letter-spacing:2.5px;text-transform:uppercase;color:var(--p1);background:rgba(157,145,238,.1);
+  padding:4px 12px;border-radius:20px;margin-bottom:18px}
+.lbox h1{font-size:26px;font-weight:700;letter-spacing:-.5px;margin-bottom:4px}
+.lbox .sub{font-size:13px;color:var(--fg2);margin-bottom:24px;font-weight:300}
+.inp{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;
+  font-size:14px;font-family:inherit;color:var(--fg);background:#fff;outline:none;transition:.15s}
+.inp:focus{border-color:var(--p1);box-shadow:0 0 0 3px rgba(157,145,238,.15)}
+.btn-pri{width:100%;padding:13px;background:linear-gradient(135deg,#9D91EE,#BCB4F8);border:none;
+  border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;
+  margin-top:12px;letter-spacing:-.2px;transition:.15s}
+.btn-pri:hover{opacity:.92}
+.errmsg{font-size:12px;color:var(--warm);margin-top:8px;min-height:18px}
+.back-link{display:block;text-align:center;font-size:13px;color:var(--fg3);margin-top:16px;
+  text-decoration:none}
+.back-link:hover{color:var(--fg2)}
+
+/* APP */
+#app{display:none;max-width:480px;margin:0 auto;padding:0 0 40px}
+
+/* HEADER */
+.hdr{background:linear-gradient(145deg,#6A5CC8 0%,#8878E0 50%,#AAA0F0 100%);
+  padding:44px 22px 52px;position:relative;overflow:hidden;border-radius:0 0 32px 32px}
+.hdr::before{content:'';position:absolute;width:200px;height:200px;
+  background:rgba(255,255,255,.07);border-radius:50%;right:-40px;top:-60px}
+.hdr::after{content:'';position:absolute;left:20px;bottom:-50px;width:130px;height:130px;
+  background:rgba(232,121,90,.15);border-radius:50%;filter:blur(24px)}
+.hdr-inner{position:relative;z-index:2}
+.hdr-label{font-family:'Plus Jakarta Sans',sans-serif;font-size:10px;letter-spacing:2.5px;
+  color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:6px}
+.hdr-name{font-size:26px;font-weight:700;color:#fff;letter-spacing:-.5px;margin-bottom:2px}
+.hdr-sub{font-size:12px;color:rgba(255,255,255,.5)}
+.logout-btn{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);
+  border:none;padding:6px 12px;border-radius:20px;color:#fff;font-size:12px;cursor:pointer;
+  font-family:inherit;font-weight:500;z-index:10}
+
+/* BODY */
+.body{padding:16px 16px 0}
+
+.card{background:var(--surface);border-radius:18px;padding:18px;
+  box-shadow:0 4px 24px var(--shadow);margin-bottom:14px}
+.card-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:1.5px;color:var(--fg3);text-transform:uppercase;margin-bottom:12px}
+
+/* TB SELECTOR */
+.tb-item{padding:12px 14px;border-radius:12px;background:var(--bg);cursor:pointer;
+  margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;
+  border:1.5px solid transparent;transition:.15s}
+.tb-item:hover{border-color:var(--p2)}
+.tb-item.selected{border-color:var(--p1);background:rgba(157,145,238,.08)}
+.tb-name{font-size:14px;font-weight:600;color:var(--fg)}
+.tb-cnt{font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;color:var(--fg3)}
+
+/* PROBLEM GRID */
+.prob-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:4px}
+.prob-cell{position:relative;aspect-ratio:1;border-radius:12px;
+  background:var(--bg);border:1.5px solid transparent;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;transition:.15s;gap:2px}
+.prob-cell:hover{border-color:var(--p2);background:rgba(157,145,238,.05)}
+.prob-cell.checked{background:linear-gradient(135deg,rgba(157,145,238,.2),rgba(188,180,248,.2));
+  border-color:var(--p1)}
+.prob-cell.has-yt{border-color:var(--warm);background:rgba(232,121,90,.06)}
+.prob-cell.checked.has-yt{background:linear-gradient(135deg,rgba(232,121,90,.15),rgba(232,121,90,.08));
+  border-color:var(--warm)}
+.prob-num{font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;color:var(--fg)}
+.prob-cell.checked .prob-num{color:var(--p1)}
+.prob-cell.has-yt .prob-num{color:var(--warm)}
+.prob-yt{font-size:10px;color:var(--warm);line-height:1}
+.prob-check{position:absolute;top:4px;right:4px;width:12px;height:12px;
+  background:var(--p1);border-radius:50%;display:none}
+.prob-cell.checked .prob-check{display:block}
+.prob-cell.has-yt.checked .prob-check{background:var(--warm)}
+
+/* YOUTUBE PANEL */
+.yt-panel{background:var(--surface);border-radius:18px;padding:16px;
+  box-shadow:0 4px 24px var(--shadow);margin-bottom:14px}
+.yt-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:1.5px;color:var(--fg3);text-transform:uppercase;margin-bottom:10px}
+.yt-item{display:flex;align-items:center;gap:10px;padding:10px 12px;
+  background:rgba(232,121,90,.06);border:1.5px solid rgba(232,121,90,.2);
+  border-radius:12px;margin-bottom:8px;text-decoration:none}
+.yt-item:hover{background:rgba(232,121,90,.12)}
+.yt-play{width:32px;height:32px;background:var(--warm);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.yt-play::after{content:'▶';color:#fff;font-size:10px;margin-left:2px}
+.yt-info{flex:1}
+.yt-prob{font-family:'Plus Jakarta Sans',sans-serif;font-size:10px;color:var(--warm);
+  font-weight:600;letter-spacing:.5px;margin-bottom:1px}
+.yt-empty{font-size:13px;color:var(--fg3);font-style:italic;padding:8px 0;font-weight:300}
+
+/* LEGEND */
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--fg2)}
+.legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+
+/* EMPTY */
+.empty-msg{text-align:center;padding:32px;color:var(--fg3);font-size:13px;font-weight:300}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginPage">
+  <div class="lbox">
+    <div class="lbox-badge">📖 Textbook Q</div>
+    <h1>교재 질문</h1>
+    <div class="sub">이름을 입력하고 교재 문제를 확인하세요</div>
+    <input class="inp" type="text" id="nameInp" placeholder="이름 입력" autocomplete="off"
+      onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn-pri" onclick="doLogin()">확인 →</button>
+    <div class="errmsg" id="errLogin"></div>
+    <a href="./main.html" class="back-link">← 홈으로</a>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="hdr">
+    <button class="logout-btn" onclick="doLogout()">로그아웃</button>
+    <div class="hdr-inner">
+      <div class="hdr-label">Textbook Questions</div>
+      <div class="hdr-name" id="hdrName">-</div>
+      <div class="hdr-sub" id="hdrSub">교재 질문 체크</div>
+    </div>
+  </div>
+
+  <div class="body">
+    <!-- 교재 없을 때 -->
+    <div id="noTbMsg" style="display:none">
+      <div class="card">
+        <div class="empty-msg">📚 배정된 교재가 없습니다<br><br>선생님께 교재 배정을 요청하세요</div>
+      </div>
+    </div>
+
+    <!-- 교재 선택 (여러 권 배정된 경우) -->
+    <div id="tbSelectWrap" style="display:none">
+      <div class="card">
+        <div class="card-title">📚 교재 선택</div>
+        <div id="tbSelectList"></div>
+      </div>
+    </div>
+
+    <!-- 문제 목록 -->
+    <div id="probSection" style="display:none">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div>
+            <div class="card-title" style="margin-bottom:2px">문제 목록</div>
+            <div id="tbNameDisplay" style="font-size:14px;font-weight:600;color:var(--fg)"></div>
+          </div>
+          <div id="qCntBadge" style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;
+            font-weight:700;color:var(--p1);background:rgba(157,145,238,.12);padding:4px 10px;
+            border-radius:20px">0개 질문</div>
+        </div>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:linear-gradient(135deg,rgba(157,145,238,.4),rgba(188,180,248,.3));border:1.5px solid var(--p1)"></div>
+            질문 체크
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:rgba(232,121,90,.15);border:1.5px solid var(--warm)"></div>
+            영상 있음
+          </div>
+        </div>
+        <div class="prob-grid" id="probGrid"></div>
+      </div>
+
+      <!-- 유튜브 영상 -->
+      <div class="yt-panel" id="ytPanel" style="display:none">
+        <div class="yt-title">▶ 풀이 영상</div>
+        <div id="ytList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var db=null;
+var currentStuId=null;
+var currentStuName=null;
+var assignedTbIds=[];
+var activeTbId=null;
+var tbData={};
+var myQuestions={};
+
+function getDB(){
+  try{
+    if(typeof firebase==='undefined') return null;
+    if(firebase.apps&&firebase.apps.length>0) return firebase.database();
+    if(typeof SM_CONFIG==='undefined'||!SM_CONFIG.apiKey||SM_CONFIG.apiKey.includes('여기에')) return null;
+    firebase.initializeApp(SM_CONFIG);
+    return firebase.database();
+  }catch(e){return null;}
+}
+
+function doLogin(){
+  const name=document.getElementById('nameInp').value.trim();
+  if(!name){document.getElementById('errLogin').textContent='이름을 입력하세요';return;}
+  db=getDB();
+  if(!db){document.getElementById('errLogin').textContent='서버 연결 실패';return;}
+  db.ref('smStudents').once('value',function(s){
+    const all=s.val()||{};
+    const entry=Object.entries(all).find(([,v])=>v.name===name);
+    if(!entry){
+      document.getElementById('errLogin').textContent='등록된 학생이 아닙니다';
+      return;
+    }
+    currentStuId=entry[0];
+    currentStuName=entry[1].name;
+    loadApp();
+  });
+}
+
+function doLogout(){
+  currentStuId=null; currentStuName=null; activeTbId=null;
+  assignedTbIds=[]; tbData={}; myQuestions={};
+  document.getElementById('app').style.display='none';
+  document.getElementById('loginPage').style.display='flex';
+  document.getElementById('nameInp').value='';
+  document.getElementById('errLogin').textContent='';
+}
+
+function loadApp(){
+  document.getElementById('loginPage').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('hdrName').textContent=currentStuName;
+
+  // 배정 교재 로드
+  db.ref('smTbAssign/'+currentStuId).once('value',function(s){
+    const val=s.val();
+    if(!val){showNoTb();return;}
+    // 단일 or 배열
+    assignedTbIds=Array.isArray(val)?val:(typeof val==='object'?Object.values(val):[val]);
+    assignedTbIds=assignedTbIds.filter(Boolean);
+    if(!assignedTbIds.length){showNoTb();return;}
+    loadTextbooks();
+  });
+}
+
+function showNoTb(){
+  document.getElementById('noTbMsg').style.display='block';
+  document.getElementById('tbSelectWrap').style.display='none';
+  document.getElementById('probSection').style.display='none';
+}
+
+function loadTextbooks(){
+  var loaded=0;
+  tbData={};
+  assignedTbIds.forEach(function(tbId){
+    db.ref('smTextbooks/'+tbId).once('value',function(s){
+      if(s.val()) tbData[tbId]=s.val();
+      loaded++;
+      if(loaded===assignedTbIds.length) onTbLoaded();
+    });
+  });
+}
+
+function onTbLoaded(){
+  var ids=Object.keys(tbData);
+  if(!ids.length){showNoTb();return;}
+  if(ids.length===1){
+    // 교재 1개 - 바로 표시
+    selectTb(ids[0]);
+  }else{
+    // 여러 교재 - 선택 화면
+    document.getElementById('tbSelectWrap').style.display='block';
+    var html='';
+    ids.forEach(function(tbId){
+      var tb=tbData[tbId];
+      var cnt=Object.keys(tb.problems||{}).length;
+      html+='<div class="tb-item" onclick="selectTb(\''+tbId+'\')">'+
+        '<div><div class="tb-name">'+tb.title+'</div></div>'+
+        '<div class="tb-cnt">'+cnt+'문제</div></div>';
+    });
+    document.getElementById('tbSelectList').innerHTML=html;
+  }
+}
+
+function selectTb(tbId){
+  activeTbId=tbId;
+  document.getElementById('tbSelectWrap').style.display='none';
+  document.getElementById('noTbMsg').style.display='none';
+  document.getElementById('probSection').style.display='block';
+
+  var tb=tbData[tbId];
+  document.getElementById('tbNameDisplay').textContent=tb.title;
+
+  // 내 질문 로드
+  db.ref('smTbQuestions/'+tbId+'/').once('value',function(s){
+    var all=s.val()||{};
+    myQuestions={};
+    Object.entries(all).forEach(function([probNum,stuMap]){
+      if(stuMap&&stuMap[currentStuId]) myQuestions[probNum]=true;
+    });
+    renderGrid(tb);
+  });
+}
+
+function renderGrid(tb){
+  var problems=tb.problems||{};
+  var nums=Object.keys(problems).sort(function(a,b){
+    var na=parseFloat(a), nb=parseFloat(b);
+    if(!isNaN(na)&&!isNaN(nb)) return na-nb;
+    return a.localeCompare(b,'ko');
+  });
+
+  var html='';
+  nums.forEach(function(num){
+    var p=problems[num]||{};
+    var hasYt=!!(p.youtubeUrl);
+    var isChecked=!!myQuestions[num];
+    var cls='prob-cell'+(isChecked?' checked':'')+(hasYt?' has-yt':'');
+    html+='<div class="'+cls+'" onclick="toggleProb(\''+num+'\')" data-num="'+num+'">'+
+      '<div class="prob-num">'+num+'</div>'+
+      (hasYt?'<div class="prob-yt">▶</div>':'')+
+      '<div class="prob-check"></div>'+
+      '</div>';
+  });
+  document.getElementById('probGrid').innerHTML=html||'<div class="empty-msg">문제가 없습니다</div>';
+  updateQCnt();
+  renderYtPanel(tb);
+}
+
+function toggleProb(num){
+  if(!activeTbId||!currentStuId) return;
+  var isChecked=!!myQuestions[num];
+  if(isChecked){
+    myQuestions[num]=false;
+    db.ref('smTbQuestions/'+activeTbId+'/'+num+'/'+currentStuId).remove();
+  }else{
+    myQuestions[num]=true;
+    db.ref('smTbQuestions/'+activeTbId+'/'+num+'/'+currentStuId).set({
+      stuName:currentStuName, checkedAt:Date.now()
+    });
+  }
+  // 셀 업데이트
+  var cell=document.querySelector('[data-num="'+num+'"]');
+  if(cell){
+    cell.classList.toggle('checked',!!myQuestions[num]);
+  }
+  updateQCnt();
+}
+
+function updateQCnt(){
+  var cnt=Object.values(myQuestions).filter(Boolean).length;
+  document.getElementById('qCntBadge').textContent=cnt+'개 질문';
+}
+
+function renderYtPanel(tb){
+  var problems=tb.problems||{};
+  var ytItems=Object.entries(problems)
+    .filter(function([,p]){return !!(p&&p.youtubeUrl)})
+    .sort(function([a],[b]){
+      var na=parseFloat(a), nb=parseFloat(b);
+      if(!isNaN(na)&&!isNaN(nb)) return na-nb;
+      return a.localeCompare(b);
+    });
+
+  if(!ytItems.length){
+    document.getElementById('ytPanel').style.display='none';
+    return;
+  }
+  document.getElementById('ytPanel').style.display='block';
+  var html='';
+  ytItems.forEach(function([num,p]){
+    html+='<a class="yt-item" href="'+p.youtubeUrl+'" target="_blank" rel="noopener">'+
+      '<div class="yt-play"></div>'+
+      '<div class="yt-info">'+
+        '<div class="yt-prob">'+num+'번 문제 풀이</div>'+
+        '<div style="font-size:12px;color:var(--fg2);font-weight:300">'+(p.title||'풀이 영상')+'</div>'+
+      '</div>'+
+      '</a>';
+  });
+  document.getElementById('ytList').innerHTML=html;
+}
+</script>
+</body>
+</html>
