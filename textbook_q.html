@@ -313,13 +313,11 @@ function selectTb(tbId){
   var tb=tbData[tbId];
   document.getElementById('tbNameDisplay').textContent=tb.title;
 
-  // 내 질문 로드
-  db.ref('smTbQuestions/'+tbId+'/').once('value',function(s){
-    var all=s.val()||{};
+  // 내 질문만 로드 (다른 학생 데이터 안 받음)
+  db.ref('smTbQuestions/'+tbId+'/'+currentStuId).once('value',function(s){
+    var mine=s.val()||{};
     myQuestions={};
-    Object.entries(all).forEach(function([probNum,stuMap]){
-      if(stuMap&&stuMap[currentStuId]) myQuestions[probNum]=true;
-    });
+    Object.keys(mine).forEach(function(probNum){ myQuestions[probNum]=true; });
     renderGrid(tb);
   });
 }
@@ -354,11 +352,11 @@ function toggleProb(num){
   var isChecked=!!myQuestions[num];
   if(isChecked){
     myQuestions[num]=false;
-    db.ref('smTbQuestions/'+activeTbId+'/'+num+'/'+currentStuId).remove();
+    db.ref('smTbQuestions/'+activeTbId+'/'+currentStuId+'/'+num).remove();
   }else{
     myQuestions[num]=true;
-    db.ref('smTbQuestions/'+activeTbId+'/'+num+'/'+currentStuId).set({
-      stuName:currentStuName, checkedAt:Date.now()
+    db.ref('smTbQuestions/'+activeTbId+'/'+currentStuId+'/'+num).set({
+      checkedAt:Date.now()
     });
   }
   // 셀 업데이트
