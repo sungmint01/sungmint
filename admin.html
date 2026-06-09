@@ -887,7 +887,10 @@ async function saveTb(){
   // 기존 문제의 유튜브 링크 보존
   var existProbs=(tbSets[tid]||{}).problems||{};
   var problems={};
-  nums.forEach(num=>{ problems[num]=existProbs[num]||{}; });
+  nums.forEach(num=>{
+    var ep=existProbs[num]||{};
+    problems[num]=Object.keys(ep).length?ep:{exists:1};
+  });
 
   await db.ref('smTextbooks/'+tid).set({title,problems,createdAt:Date.now()});
   tbSets[tid]={title,problems,createdAt:Date.now()};
