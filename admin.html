@@ -441,6 +441,10 @@ textarea.inp{resize:vertical;min-height:68px}
           <!-- 학생 교재 배정 -->
           <div style="font-size:14px;font-weight:600;color:#1E1B3A;margin-bottom:10px">학생 교재 배정</div>
           <div id="tbAssignList"></div>
+
+          <!-- 기타 질문 목록 -->
+          <div style="font-size:14px;font-weight:600;color:#1E1B3A;margin:20px 0 10px">📝 기타 질문</div>
+          <div id="freeQAdminList"></div>
         </div>
 
         <!-- 교재 등록/수정 모달 -->
@@ -713,8 +717,9 @@ function loadTextbookData(){
   Promise.all([
     db.ref('smTextbooks').once('value'),
     db.ref('smTbQuestions').once('value'),
-    db.ref('smStudents').once('value')
-  ]).then(([ts,qs,ss])=>{
+    db.ref('smStudents').once('value'),
+    db.ref('smFreeQuestions').once('value')
+  ]).then(([ts,qs,ss,fqs])=>{
     tbSets=ts.val()||{};
     var rawQ=qs.val()||{};
     var stuMap=ss.val()||{};
@@ -731,6 +736,7 @@ function loadTextbookData(){
     });
     renderTbList();
     renderTbAssignList();
+    renderFreeQAdmin(fqs.val()||{});
   });
 }
 
@@ -795,6 +801,38 @@ function renderTbList(){
       </div>
     </div>`;
   }).join('');
+}
+
+
+function renderFreeQAdmin(rawFQ){
+  var el=document.getElementById('freeQAdminList');
+  if(!el) return;
+  // 전체 펼치기: {stuId:{pushId:{bookName,page,probNum,stuName,createdAt}}}
+  var all=[];
+  Object.entries(rawFQ).forEach(([sid,items])=>{
+    Object.entries(items||{}).forEach(([pid,q])=>{
+      all.push({sid,pid,...q});
+    });
+  });
+  all.sort((a,b)=>b.createdAt-a.createdAt);
+  if(!all.length){
+    el.innerHTML='<div style="color:#A8A4C0;font-size:13px;padding:8px">기타 질문이 없습니다</div>';
+    return;
+  }
+  el.innerHTML=all.map(q=>{
+    var d=new Date(q.createdAt);
+    var ds=(d.getMonth()+1)+'/'+(d.getDate())+' '+(d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();
+    return `<div style="display:flex;align-items:center;justify-content:space-between;background:#F0EEFF;border-radius:12px;padding:10px 14px;margin-bottom:8px">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:#42407A">${q.stuName||q.sid} · 📖 ${q.bookName}</div>
+        <div style="font-size:11px;color:#6A6688">${q.page}p · ${q.probNum}번 <span style="color:#B0AACF;margin-left:6px">${ds}</span></div>
+      </div>
+      <button onclick="deleteFreeQAdmin('${q.sid}','${q.pid}')" style="border:none;background:none;color:#C4B9F0;font-size:16px;cursor:pointer;padding:4px">✕</button>
+    </div>`;
+  }).join('');
+}
+function deleteFreeQAdmin(sid,pid){
+  db.ref('smFreeQuestions/'+sid+'/'+pid).remove().then(()=>loadTextbookData());
 }
 
 function renderTbAssignList(){
