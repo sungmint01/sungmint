@@ -368,6 +368,8 @@ function onTbLoaded(){
   }else{
     // 여러 교재 - 선택 화면
     document.getElementById('tbSelectWrap').style.display='block';
+    document.getElementById('freeQSection').style.display='block';
+    loadFreeQList();
     var html='';
     ids.forEach(function(tbId){
       var tb=tbData[tbId];
@@ -616,6 +618,54 @@ function renderYtPanel(tb){
   });
   document.getElementById('ytList').innerHTML=html;
 }
+</script>
+
+
+<script>
+(function(){
+  var url=new URL(location.href);
+  var urlVer=url.searchParams.get('_v');
+  if(urlVer){
+    localStorage.setItem('smv',urlVer);
+    url.searchParams.delete('_v');
+    history.replaceState(null,'',url.toString());
+  }
+
+  function getDB(){
+    try{
+      if(typeof firebase==='undefined') return null;
+      if(firebase.apps&&firebase.apps.length>0) return firebase.database();
+      if(typeof SM_CONFIG==='undefined'||!SM_CONFIG.apiKey||SM_CONFIG.apiKey.includes('여기에')) return null;
+      firebase.initializeApp(SM_CONFIG);
+      return firebase.database();
+    }catch(e){return null;}
+  }
+
+  var _smvRef=null;
+  function doCheck(){
+    var db=getDB();
+    if(!db) return;
+    if(_smvRef) return;
+    var urlVer=new URL(location.href).searchParams.get('_v');
+    if(urlVer) localStorage.setItem('smv',urlVer);
+    _smvRef=db.ref('smAppVersion');
+    _smvRef.on('value',function(s){
+      var sv=String(s.val()||'');
+      if(!sv) return;
+      var lv=localStorage.getItem('smv')||'';
+      if(lv===sv) return;
+      if(location.search.indexOf('_v='+sv)!==-1) return;
+      location.replace(location.pathname+'?_v='+sv);
+    });
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){doCheck();});
+  }else{doCheck();}
+  document.addEventListener('visibilitychange',function(){
+    if(document.visibilityState==='visible') doCheck();
+  });
+})();
 </script>
 </body>
 </html>
