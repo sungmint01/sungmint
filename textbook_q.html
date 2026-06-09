@@ -79,25 +79,27 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--fg);
 .tb-cnt{font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;color:var(--fg3)}
 
 /* PROBLEM GRID */
-.prob-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:4px}
-.prob-cell{position:relative;aspect-ratio:1;border-radius:12px;
-  background:var(--bg);border:1.5px solid transparent;
+.prob-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:4px}
+@media(max-width:360px){.prob-grid{grid-template-columns:repeat(6,1fr)}}
+/* prob-cell: 기본=회색, 체크=빨강, 영상=초록, 둘다=초록테두리+빨강배경 */
+.prob-cell{position:relative;border-radius:10px;
+  background:#fff;border:1.5px solid rgba(120,100,200,.15);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  cursor:pointer;transition:.15s;gap:2px}
+  cursor:pointer;transition:.12s;padding:7px 4px;min-width:0}
 .prob-cell:hover{border-color:var(--p2);background:rgba(157,145,238,.05)}
-.prob-cell.checked{background:linear-gradient(135deg,rgba(157,145,238,.2),rgba(188,180,248,.2));
-  border-color:var(--p1)}
-.prob-cell.has-yt{border-color:var(--warm);background:rgba(232,121,90,.06)}
-.prob-cell.checked.has-yt{background:linear-gradient(135deg,rgba(232,121,90,.15),rgba(232,121,90,.08));
-  border-color:var(--warm)}
-.prob-num{font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;color:var(--fg)}
-.prob-cell.checked .prob-num{color:var(--p1)}
-.prob-cell.has-yt .prob-num{color:var(--warm)}
-.prob-yt{font-size:10px;color:var(--warm);line-height:1}
-.prob-check{position:absolute;top:4px;right:4px;width:12px;height:12px;
-  background:var(--p1);border-radius:50%;display:none}
-.prob-cell.checked .prob-check{display:block}
-.prob-cell.has-yt.checked .prob-check{background:var(--warm)}
+.prob-cell.checked{background:rgba(239,68,68,.1);border-color:#ef4444}
+.prob-cell.has-yt{border-color:#56A08A;background:rgba(86,160,138,.08)}
+.prob-cell.checked.has-yt{background:rgba(239,68,68,.1);border-color:#56A08A;
+  outline:2px solid rgba(239,68,68,.4)}
+.prob-num{font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:700;
+  color:var(--fg);line-height:1}
+.prob-cell.checked .prob-num{color:#ef4444}
+.prob-cell.has-yt .prob-num{color:#56A08A}
+.prob-cell.checked.has-yt .prob-num{color:#ef4444}
+.prob-yt-dot{width:5px;height:5px;border-radius:50%;background:#56A08A;margin-top:2px;display:none}
+.prob-cell.has-yt .prob-yt-dot{display:block}
+/* 영상 있으면 클릭 가능 커서 강조 */
+.prob-cell.has-yt{cursor:pointer}
 
 /* YOUTUBE PANEL */
 .yt-panel{background:var(--surface);border-radius:18px;padding:16px;
@@ -123,6 +125,35 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--fg);
 
 /* EMPTY */
 .empty-msg{text-align:center;padding:32px;color:var(--fg3);font-size:13px;font-weight:300}
+
+/* 범위 선택 */
+.range-bar{background:var(--surface);border-radius:14px;padding:12px 14px;
+  box-shadow:0 2px 12px var(--shadow);margin-bottom:10px;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.range-inp{width:64px;padding:7px 8px;border:1.5px solid var(--border);border-radius:8px;
+  font-size:13px;font-family:inherit;color:var(--fg);text-align:center;outline:none}
+.range-inp:focus{border-color:var(--p1)}
+.range-btn{padding:7px 12px;border:none;border-radius:8px;font-size:12px;font-weight:700;
+  cursor:pointer;font-family:inherit}
+.range-btn.check{background:rgba(239,68,68,.12);color:#ef4444}
+.range-btn.uncheck{background:rgba(120,100,200,.1);color:var(--p1)}
+.range-btn.all-uncheck{background:var(--bg);color:var(--fg3)}
+/* 섹션 그룹 */
+.sec-header{font-family:'Plus Jakarta Sans',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:1.5px;color:var(--fg3);text-transform:uppercase;
+  padding:6px 0 4px;margin-top:10px}
+.sec-header:first-child{margin-top:0}
+/* 영상 바텀시트 */
+.yt-sheet{position:fixed;inset:0;z-index:200;display:none;align-items:flex-end;justify-content:center}
+.yt-sheet.open{display:flex}
+.yt-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5)}
+.yt-panel{position:relative;z-index:1;background:#fff;border-radius:24px 24px 0 0;
+  width:100%;max-width:480px;padding:20px 18px 36px;
+  animation:slideUp .22s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.yt-sheet-handle{width:36px;height:4px;background:var(--border);border-radius:4px;
+  margin:0 auto 16px}
+.yt-embed{width:100%;aspect-ratio:16/9;border-radius:12px;border:none;margin-top:10px}
 </style>
 </head>
 <body>
@@ -168,6 +199,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--fg);
       </div>
     </div>
 
+    <!-- 영상 바텀시트 -->
+    <div class="yt-sheet" id="ytSheet" onclick="closeYtSheet(event)">
+      <div class="yt-overlay"></div>
+      <div class="yt-panel">
+        <div class="yt-sheet-handle"></div>
+        <div id="ytSheetTitle" style="font-size:15px;font-weight:700;color:#1E1B3A;margin-bottom:4px"></div>
+        <div id="ytSheetSub" style="font-size:12px;color:#6A6688;margin-bottom:8px"></div>
+        <iframe id="ytSheetFrame" class="yt-embed" allowfullscreen></iframe>
+      </div>
+    </div>
+
     <!-- 문제 목록 -->
     <div id="probSection" style="display:none">
       <div class="card">
@@ -180,14 +222,24 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--fg);
             font-weight:700;color:var(--p1);background:rgba(157,145,238,.12);padding:4px 10px;
             border-radius:20px">0개 질문</div>
         </div>
+        <!-- 범위 선택 -->
+        <div class="range-bar">
+          <span style="font-size:12px;color:var(--fg2);font-weight:500">범위 선택</span>
+          <input class="range-inp" type="number" id="rangeFrom" placeholder="시작" min="1">
+          <span style="color:var(--fg3);font-size:13px">~</span>
+          <input class="range-inp" type="number" id="rangeTo" placeholder="끝" min="1">
+          <button class="range-btn check" onclick="rangeCheck(true)">✓ 체크</button>
+          <button class="range-btn uncheck" onclick="rangeCheck(false)">✗ 해제</button>
+          <button class="range-btn all-uncheck" onclick="clearAll()">전체 해제</button>
+        </div>
         <div class="legend">
           <div class="legend-item">
-            <div class="legend-dot" style="background:linear-gradient(135deg,rgba(157,145,238,.4),rgba(188,180,248,.3));border:1.5px solid var(--p1)"></div>
-            질문 체크
+            <div class="legend-dot" style="background:rgba(239,68,68,.15);border:1.5px solid #ef4444"></div>
+            내 질문
           </div>
           <div class="legend-item">
-            <div class="legend-dot" style="background:rgba(232,121,90,.15);border:1.5px solid var(--warm)"></div>
-            영상 있음
+            <div class="legend-dot" style="background:rgba(86,160,138,.15);border:1.5px solid #56A08A"></div>
+            영상 있음 (클릭→시청)
           </div>
         </div>
         <div class="prob-grid" id="probGrid"></div>
@@ -331,22 +383,52 @@ function renderGrid(tb){
     if(!isNaN(na)&&!isNaN(nb)) return na-nb;
     return a.localeCompare(b,'ko');
   });
+  activeTbNums=nums;
 
+  // 50개 단위 섹션 그룹
+  var SECTION=50;
   var html='';
-  nums.forEach(function(num){
-    var p=problems[num]||{};
-    var hasYt=!!(p.youtubeUrl);
-    var isChecked=!!myQuestions[num];
-    var cls='prob-cell'+(isChecked?' checked':'')+(hasYt?' has-yt':'');
-    html+='<div class="'+cls+'" onclick="toggleProb(\''+num+'\')" data-num="'+num+'">'+
-      '<div class="prob-num">'+num+'</div>'+
-      (hasYt?'<div class="prob-yt">▶</div>':'')+
-      '<div class="prob-check"></div>'+
-      '</div>';
-  });
+  var numNums=nums.filter(function(n){return !isNaN(parseFloat(n));});
+  var strNums=nums.filter(function(n){return isNaN(parseFloat(n));});
+
+  if(nums.length>SECTION){
+    // 숫자형 문제는 구간별 그룹
+    var min=parseFloat(numNums[0])||1;
+    var max=parseFloat(numNums[numNums.length-1])||1;
+    for(var s=Math.floor((min-1)/SECTION)*SECTION+1; s<=max; s+=SECTION){
+      var e=s+SECTION-1;
+      var secNums=numNums.filter(function(n){var v=parseFloat(n);return v>=s&&v<=e;});
+      if(!secNums.length) continue;
+      html+='<div class="sec-header">'+s+'~'+Math.min(e,max)+'번</div>';
+      html+='<div class="prob-grid">';
+      secNums.forEach(function(num){html+=buildCell(num,problems[num]||{});});
+      html+='</div>';
+    }
+    if(strNums.length){
+      html+='<div class="sec-header">기타</div><div class="prob-grid">';
+      strNums.forEach(function(num){html+=buildCell(num,problems[num]||{});});
+      html+='</div>';
+    }
+  }else{
+    html='<div class="prob-grid">';
+    nums.forEach(function(num){html+=buildCell(num,problems[num]||{});});
+    html+='</div>';
+  }
   document.getElementById('probGrid').innerHTML=html||'<div class="empty-msg">문제가 없습니다</div>';
   updateQCnt();
-  renderYtPanel(tb);
+}
+
+function buildCell(num,p){
+  var hasYt=!!(p&&p.youtubeUrl);
+  var isChecked=!!myQuestions[num];
+  var cls='prob-cell'+(isChecked?' checked':'')+(hasYt?' has-yt':'');
+  // 영상 있으면 클릭=영상, 없으면 클릭=체크토글
+  var action=hasYt?'openYtSheet(\''+num+'\')':'toggleProb(\''+num+'\')';
+  return '<div class="'+cls+'" onclick="'+action+'" data-num="'+num+'">'+
+    '<div class="prob-num">'+num+'</div>'+
+    '<div class="prob-yt-dot"></div>'+
+    (isChecked&&hasYt?'<div style="position:absolute;top:3px;right:3px;font-size:8px;cursor:pointer" onclick="event.stopPropagation();toggleProb(\''+num+'\')" title="체크 해제">✕</div>':'')+
+    '</div>';
 }
 
 function toggleProb(num){
@@ -361,12 +443,72 @@ function toggleProb(num){
       checkedAt:Date.now()
     });
   }
-  // 셀 업데이트
+  // 셀 재빌드
   var cell=document.querySelector('[data-num="'+num+'"]');
-  if(cell){
-    cell.classList.toggle('checked',!!myQuestions[num]);
+  if(cell&&activeTbId){
+    var tb=tbData[activeTbId]||{};
+    var newCell=buildCell(num,(tb.problems||{})[num]||{});
+    var tmp=document.createElement('div');
+    tmp.innerHTML=newCell;
+    cell.parentNode.replaceChild(tmp.firstChild,cell);
   }
   updateQCnt();
+}
+
+var activeTbNums=[];
+
+function rangeCheck(checked){
+  var from=parseInt(document.getElementById('rangeFrom').value)||0;
+  var to=parseInt(document.getElementById('rangeTo').value)||0;
+  if(!from||!to||from>to){alert('범위를 올바르게 입력하세요');return;}
+  var updates={};
+  activeTbNums.forEach(function(num){
+    var v=parseFloat(num);
+    if(isNaN(v)||v<from||v>to) return;
+    if(checked&&!myQuestions[num]){
+      myQuestions[num]=true;
+      updates['smTbQuestions/'+activeTbId+'/'+currentStuId+'/'+num]={checkedAt:Date.now()};
+    }else if(!checked&&myQuestions[num]){
+      myQuestions[num]=false;
+      updates['smTbQuestions/'+activeTbId+'/'+currentStuId+'/'+num]=null;
+    }
+  });
+  if(Object.keys(updates).length) db.ref().update(updates);
+  renderGrid(tbData[activeTbId]||{});
+}
+
+function clearAll(){
+  if(!confirm('전체 체크를 해제할까요?')) return;
+  var removes=[];
+  Object.keys(myQuestions).forEach(function(num){
+    if(myQuestions[num]){
+      myQuestions[num]=false;
+      removes.push(db.ref('smTbQuestions/'+activeTbId+'/'+currentStuId+'/'+num).remove());
+    }
+  });
+  if(removes.length) Promise.all(removes);
+  renderGrid(tbData[activeTbId]||{});
+}
+
+function openYtSheet(num){
+  var tb=tbData[activeTbId]||{};
+  var p=(tb.problems||{})[num]||{};
+  if(!p.youtubeUrl) return;
+  // YouTube URL → embed URL 변환
+  var url=p.youtubeUrl;
+  var embedUrl=url.replace('watch?v=','embed/').replace('youtu.be/','www.youtube.com/embed/');
+  if(embedUrl.includes('?')) embedUrl=embedUrl.split('?')[0];
+  document.getElementById('ytSheetTitle').textContent=(tb.title||'')+' · '+num+'번 문제';
+  document.getElementById('ytSheetSub').textContent=p.title||'풀이 영상';
+  document.getElementById('ytSheetFrame').src=embedUrl;
+  document.getElementById('ytSheet').classList.add('open');
+}
+
+function closeYtSheet(e){
+  if(e&&e.target===document.querySelector('.yt-overlay')||e===undefined){
+    document.getElementById('ytSheet').classList.remove('open');
+    document.getElementById('ytSheetFrame').src='';
+  }
 }
 
 function updateQCnt(){
