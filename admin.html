@@ -707,6 +707,8 @@ function showTextbookMgr(){
 }
 
 var tbQuestions={};
+var _tbCollapsed={};
+function toggleTbCollapse(tid){_tbCollapsed[tid]=_tbCollapsed[tid]===false;renderTbList();}
 function loadTextbookData(){
   Promise.all([
     db.ref('smTextbooks').once('value'),
@@ -737,28 +739,59 @@ function renderTbList(){
   var arr=Object.entries(tbSets).sort(([,a],[,b])=>(b.createdAt||0)-(a.createdAt||0));
   if(!arr.length){el.innerHTML='<div style="color:#A8A4C0;font-size:13px;padding:8px">등록된 교재가 없습니다</div>';return;}
   el.innerHTML=arr.map(([tid,tb])=>{
-    var pcnt=Object.keys(tb.problems||{}).length;
+    var probNums=Object.keys(tb.problems||{});
+    var pcnt=probNums.length;
     var ytcnt=Object.values(tb.problems||{}).filter(p=>p&&p.youtubeUrl).length;
+    // 질문 상태 집계
+    var qByProb=tbQuestions[tid]||{};
+    var pendingCnt=0, totalQProb=0;
+    probNums.forEach(num=>{
+      var qList=qByProb[num]||[];
+      if(qList.length>0){
+        totalQProb++;
+        var hasYt=!!((tb.problems[num]||{}).youtubeUrl);
+        if(!hasYt) pendingCnt++;
+      }
+    });
+    // 교재 상태 색상: 미해결 질문 있으면 빨강, 질문 있고 모두 영상등록 완료면 초록
+    var statusColor, statusText, statusBg;
+    if(totalQProb===0){ statusColor='#A8A4C0'; statusText='질문 없음'; statusBg='rgba(168,164,192,.1)'; }
+    else if(pendingCnt>0){ statusColor='#ef4444'; statusText='질문 '+pendingCnt+'개 대기'; statusBg='rgba(239,68,68,.1)'; }
+    else { statusColor='#56A08A'; statusText='모두 완료'; statusBg='rgba(86,160,138,.12)'; }
+    var collapsed=_tbCollapsed[tid]!==false; // 기본 접힘
     return `<div style="background:#F0EEFF;border-radius:14px;padding:14px;margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div>
-          <div style="font-size:14px;font-weight:600">${tb.title}</div>
-          <div style="font-size:11px;color:#A8A4C0;font-family:'Plus Jakarta Sans',sans-serif">${pcnt}문제 · 영상 ${ytcnt}개</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="toggleTbCollapse('${tid}')">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:13px;color:#6A6688;transition:.15s;display:inline-block;transform:rotate(${collapsed?'0':'90'}deg)">▶</span>
+          <div>
+            <div style="font-size:14px;font-weight:600">${tb.title}</div>
+            <div style="font-size:11px;color:#A8A4C0;font-family:'Plus Jakarta Sans',sans-serif">${pcnt}문제 · 영상 ${ytcnt}개</div>
+          </div>
         </div>
-        <div style="display:flex;gap:6px">
-          <button onclick="openTbEdit('${tid}')" style="padding:5px 10px;border:none;border-radius:8px;background:#fff;color:#6A6688;font-size:11px;cursor:pointer;font-family:inherit">수정</button>
-          <button onclick="deleteTb('${tid}')" style="padding:5px 10px;border:none;border-radius:8px;background:#fff;color:#ef4444;font-size:11px;cursor:pointer;font-family:inherit">삭제</button>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:11px;font-weight:700;color:${statusColor};background:${statusBg};padding:3px 9px;border-radius:20px">${statusText}</span>
         </div>
       </div>
-      <div style="font-size:11px;color:#6A6688;margin-bottom:8px">🔴숫자=질문 학생수 · 클릭→질문자/영상등록</div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px">
-        ${Object.keys(tb.problems||{}).sort((a,b)=>{var na=parseFloat(a),nb=parseFloat(b);return(!isNaN(na)&&!isNaN(nb))?na-nb:a.localeCompare(b,'ko')}).map(num=>{
-          var p=(tb.problems||{})[num]||{};
-          var hasYt=!!(p.youtubeUrl);
-          var qList=((tbQuestions[tid]||{})[num])||[];
-          var qCnt=qList.length;
-          return `<button onclick="openProbDetail('${tid}','${num}')" style="position:relative;padding:5px 9px;border:1.5px solid ${qCnt?'#ef4444':hasYt?'#E8795A':'rgba(120,100,200,.2)'};border-radius:8px;background:${qCnt?'rgba(239,68,68,.08)':hasYt?'rgba(232,121,90,.1)':'#fff'};color:${qCnt?'#ef4444':hasYt?'#E8795A':'#6A6688'};font-size:11px;cursor:pointer;font-family:inherit;font-weight:600">${num}${hasYt?'▶':''}${qCnt?' <span style="background:#ef4444;color:#fff;border-radius:10px;padding:0 5px;font-size:9px;margin-left:1px">'+qCnt+'</span>':''}</button>`;
-        }).join('')}
+      <div style="display:${collapsed?'none':'block'};margin-top:12px">
+        <div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:8px">
+          <button onclick="event.stopPropagation();openTbEdit('${tid}')" style="padding:5px 10px;border:none;border-radius:8px;background:#fff;color:#6A6688;font-size:11px;cursor:pointer;font-family:inherit">교재 수정</button>
+          <button onclick="event.stopPropagation();deleteTb('${tid}')" style="padding:5px 10px;border:none;border-radius:8px;background:#fff;color:#ef4444;font-size:11px;cursor:pointer;font-family:inherit">삭제</button>
+        </div>
+        <div style="font-size:11px;color:#6A6688;margin-bottom:8px">🔴=미해결 질문 · 🟢=영상등록 완료 · 클릭→상세</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px">
+          ${probNums.sort((a,b)=>{var na=parseFloat(a),nb=parseFloat(b);return(!isNaN(na)&&!isNaN(nb))?na-nb:a.localeCompare(b,'ko')}).map(num=>{
+            var p=(tb.problems||{})[num]||{};
+            var hasYt=!!(p.youtubeUrl);
+            var qList=qByProb[num]||[];
+            var qCnt=qList.length;
+            var bc,bg,fc;
+            if(qCnt>0&&!hasYt){ bc='#ef4444'; bg='rgba(239,68,68,.1)'; fc='#ef4444'; }
+            else if(qCnt>0&&hasYt){ bc='#56A08A'; bg='rgba(86,160,138,.12)'; fc='#56A08A'; }
+            else if(hasYt){ bc='#E8795A'; bg='rgba(232,121,90,.1)'; fc='#E8795A'; }
+            else { bc='rgba(120,100,200,.2)'; bg='#fff'; fc='#6A6688'; }
+            return `<button onclick="openProbDetail('${tid}','${num}')" style="position:relative;padding:5px 9px;border:1.5px solid ${bc};border-radius:8px;background:${bg};color:${fc};font-size:11px;cursor:pointer;font-family:inherit;font-weight:600">${num}${hasYt?'▶':''}${qCnt?' <span style="background:'+fc+';color:#fff;border-radius:10px;padding:0 5px;font-size:9px;margin-left:1px">'+qCnt+'</span>':''}</button>`;
+          }).join('')}
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -769,25 +802,48 @@ function renderTbAssignList(){
     var stuList=Object.entries(s.val()||{}).sort(([,a],[,b])=>(a.name||'').localeCompare(b.name||'','ko'));
     db.ref('smTbAssign').once('value',as=>{
       var assigns=as.val()||{};
-      var tbOpts='<option value="">없음</option>'+Object.entries(tbSets).map(([tid,tb])=>`<option value="${tid}">${tb.title}</option>`).join('');
+      var tbArr=Object.entries(tbSets);
+      if(!tbArr.length){
+        document.getElementById('tbAssignList').innerHTML='<div style="color:#A8A4C0;font-size:13px">교재를 먼저 등록하세요</div>';
+        return;
+      }
       document.getElementById('tbAssignList').innerHTML=
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
-        stuList.map(([sid,s])=>`
-          <div style="background:#F0EEFF;border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center">
-            <div style="font-size:13px;font-weight:500">${s.name}</div>
-            <select onchange="assignTb('${sid}',this.value)" style="font-size:11px;border:1.5px solid rgba(120,100,200,.2);border-radius:8px;padding:4px 6px;font-family:inherit;background:#fff;color:#1E1B3A">
-              ${tbOpts.replace(`value="${assigns[sid]||''}"`,`value="${assigns[sid]||''}" selected`)}
-            </select>
-          </div>`).join('')+
-        '</div>';
+        stuList.map(([sid,s])=>{
+          // 현재 배정된 교재들 (단일 or 배열)
+          var cur=assigns[sid]||[];
+          if(typeof cur==='string') cur=[cur];
+          var curSet=new Set(cur);
+          return `<div style="background:#F0EEFF;border-radius:12px;padding:10px 12px;margin-bottom:8px">
+            <div style="font-size:13px;font-weight:600;margin-bottom:8px">${s.name}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              ${tbArr.map(([tid,tb])=>`
+                <label style="display:flex;align-items:center;gap:5px;cursor:pointer;
+                  background:${curSet.has(tid)?'rgba(157,145,238,.2)':'#fff'};
+                  border:1.5px solid ${curSet.has(tid)?'#9D91EE':'rgba(120,100,200,.15)'};
+                  border-radius:8px;padding:5px 10px;font-size:12px">
+                  <input type="checkbox" ${curSet.has(tid)?'checked':''} 
+                    onchange="toggleTbAssign('${sid}','${tid}',this.checked)"
+                    style="accent-color:#9D91EE;width:14px;height:14px">
+                  ${tb.title}
+                </label>`).join('')}
+            </div>
+          </div>`;
+        }).join('');
     });
   });
 }
 
-function assignTb(stuId,tbId){
-  if(tbId) db.ref('smTbAssign/'+stuId).set(tbId);
-  else db.ref('smTbAssign/'+stuId).remove();
+async function toggleTbAssign(stuId,tbId,checked){
+  var snap=await db.ref('smTbAssign/'+stuId).get();
+  var cur=snap.val()||[];
+  if(typeof cur==='string') cur=[cur];
+  if(checked){ if(!cur.includes(tbId)) cur.push(tbId); }
+  else { cur=cur.filter(t=>t!==tbId); }
+  if(cur.length) await db.ref('smTbAssign/'+stuId).set(cur);
+  else await db.ref('smTbAssign/'+stuId).remove();
+  renderTbAssignList();
 }
+function assignTb(stuId,tbId){ toggleTbAssign(stuId,tbId,!!tbId); }
 
 function openTbCreate(){
   document.getElementById('tbEditId').value='';

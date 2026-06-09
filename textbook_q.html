@@ -132,8 +132,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--fg);
   <div class="lbox">
     <div class="lbox-badge">📖 Textbook Q</div>
     <h1>교재 질문</h1>
-    <div class="sub">이름을 입력하고 교재 문제를 확인하세요</div>
-    <input class="inp" type="text" id="nameInp" placeholder="이름 입력" autocomplete="off"
+    <div class="sub">학생 비밀번호를 입력하세요</div>
+    <input class="inp" type="password" id="pwInp" placeholder="비밀번호 입력" autocomplete="off"
       onkeydown="if(event.key==='Enter')doLogin()">
     <button class="btn-pri" onclick="doLogin()">확인 →</button>
     <div class="errmsg" id="errLogin"></div>
@@ -221,16 +221,18 @@ function getDB(){
   }catch(e){return null;}
 }
 
-function doLogin(){
-  const name=document.getElementById('nameInp').value.trim();
-  if(!name){document.getElementById('errLogin').textContent='이름을 입력하세요';return;}
+async function doLogin(){
+  const pw=document.getElementById('pwInp').value;
+  if(!pw){document.getElementById('errLogin').textContent='비밀번호를 입력하세요';return;}
   db=getDB();
   if(!db){document.getElementById('errLogin').textContent='서버 연결 실패';return;}
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pw));
+  const hash=[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
   db.ref('smStudents').once('value',function(s){
     const all=s.val()||{};
-    const entry=Object.entries(all).find(([,v])=>v.name===name);
+    const entry=Object.entries(all).find(([,v])=>v.studentPwHash===hash);
     if(!entry){
-      document.getElementById('errLogin').textContent='등록된 학생이 아닙니다';
+      document.getElementById('errLogin').textContent='비밀번호가 올바르지 않습니다';
       return;
     }
     currentStuId=entry[0];
@@ -244,7 +246,7 @@ function doLogout(){
   assignedTbIds=[]; tbData={}; myQuestions={};
   document.getElementById('app').style.display='none';
   document.getElementById('loginPage').style.display='flex';
-  document.getElementById('nameInp').value='';
+  document.getElementById('pwInp').value='';
   document.getElementById('errLogin').textContent='';
 }
 
@@ -253,13 +255,13 @@ function loadApp(){
   document.getElementById('app').style.display='block';
   document.getElementById('hdrName').textContent=currentStuName;
 
-  // 배정 교재 로드
+  // 배정 교재 로드 (단일 문자열 또는 배열 모두 처리)
   db.ref('smTbAssign/'+currentStuId).once('value',function(s){
     const val=s.val();
     if(!val){showNoTb();return;}
-    // 단일 or 배열
-    assignedTbIds=Array.isArray(val)?val:(typeof val==='object'?Object.values(val):[val]);
-    assignedTbIds=assignedTbIds.filter(Boolean);
+    if(Array.isArray(val)) assignedTbIds=val.filter(Boolean);
+    else if(typeof val==='string') assignedTbIds=[val];
+    else assignedTbIds=Object.values(val).filter(Boolean);
     if(!assignedTbIds.length){showNoTb();return;}
     loadTextbooks();
   });
