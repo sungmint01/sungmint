@@ -206,11 +206,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--fg);
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
           <input id="fqBook" type="text" placeholder="책 이름" maxlength="40"
             style="padding:9px 12px;border:1.5px solid rgba(120,100,200,.2);border-radius:10px;font-size:13px;font-family:inherit;background:#F8F6FF;color:#42407A;outline:none">
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:8px;width:100%">
             <input id="fqPage" type="number" placeholder="페이지" min="1"
-              style="flex:1;padding:9px 12px;border:1.5px solid rgba(120,100,200,.2);border-radius:10px;font-size:13px;font-family:inherit;background:#F8F6FF;color:#42407A;outline:none">
+              style="width:0;flex:1;min-width:0;padding:9px 12px;border:1.5px solid rgba(120,100,200,.2);border-radius:10px;font-size:13px;font-family:inherit;background:#F8F6FF;color:#42407A;outline:none">
             <input id="fqProb" type="text" placeholder="문제번호" maxlength="10"
-              style="flex:1;padding:9px 12px;border:1.5px solid rgba(120,100,200,.2);border-radius:10px;font-size:13px;font-family:inherit;background:#F8F6FF;color:#42407A;outline:none">
+              style="width:0;flex:1;min-width:0;padding:9px 12px;border:1.5px solid rgba(120,100,200,.2);border-radius:10px;font-size:13px;font-family:inherit;background:#F8F6FF;color:#42407A;outline:none">
           </div>
         </div>
         <button onclick="submitFreeQ()" style="width:100%;padding:10px;background:linear-gradient(135deg,#BCB4F8,#9D91EE);border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">등록</button>
@@ -553,6 +553,7 @@ function closeYtSheet(e){
     document.getElementById('ytSheet').classList.remove('open');
     document.getElementById('ytSheetFrame').src='';
     ytSheetNum=null;
+    document.getElementById('ytSheetToggleBtn').style.display='';
   }
 }
 
@@ -575,8 +576,10 @@ function submitFreeQ(){
 function loadFreeQList(){
   if(!currentStuId) return;
   db.ref('smFreeQuestions/'+currentStuId).orderByChild('createdAt').once('value',function(s){
+    _freeQDetailData={};
     var items=s.val()||{};
     var arr=Object.entries(items).sort(function(a,b){return b[1].createdAt-a[1].createdAt;});
+    arr.forEach(function(e){_freeQDetailData[e[0]]=e[1];});
     var el=document.getElementById('fqMyList');
     if(!el) return;
     if(!arr.length){el.innerHTML='<div style="font-size:12px;color:#A8A4C0;text-align:center;padding:8px">등록된 질문이 없습니다</div>';return;}
@@ -584,16 +587,31 @@ function loadFreeQList(){
       var id=entry[0],q=entry[1];
       var d=new Date(q.createdAt);
       var ds=(d.getMonth()+1)+'/'+(d.getDate())+' '+(d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();
-      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#F8F6FF;border-radius:10px;margin-bottom:6px">'+
+      return '<div onclick="openFreeQDetail(\''+id+'\')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#F8F6FF;border-radius:10px;margin-bottom:6px">'+
         '<div><div style="font-size:13px;font-weight:600;color:#42407A">'+q.bookName+'</div>'+
         '<div style="font-size:11px;color:#6A6688">'+q.page+'p · '+q.probNum+'번 <span style="color:#B0AACF;margin-left:4px">'+ds+'</span></div></div>'+
-        '<button onclick="deleteFreeQ(\''+id+'\')" style="border:none;background:none;color:#C4B9F0;font-size:15px;cursor:pointer;padding:4px">✕</button>'+
+        '<span style="color:#C4B9F0;font-size:13px;padding:4px">›</span>'+
       '</div>';
     }).join('');
   });
 }
 function deleteFreeQ(id){
   db.ref('smFreeQuestions/'+currentStuId+'/'+id).remove().then(loadFreeQList);
+}
+var _freeQDetailId=null;
+var _freeQDetailData={};
+function openFreeQDetail(id){
+  // freeQ 상세를 위한 간이 바텀시트: ytSheet 재활용
+  _freeQDetailId=id;
+  var q=_freeQDetailData[id]||{};
+  var title=q.bookName||'';
+  var sub=(q.page||'')+'p · '+(q.probNum||'')+'번';
+  document.getElementById('ytSheetTitle').textContent=title;
+  document.getElementById('ytSheetSub').innerHTML=sub+
+    ' &nbsp;<button onclick="deleteFreeQ(\''+id+'\');closeYtSheet();" style="border:none;background:rgba(239,68,68,.1);color:#ef4444;border-radius:8px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">삭제</button>';
+  document.getElementById('ytSheetToggleBtn').style.display='none';
+  document.getElementById('ytSheetFrame').src='';
+  document.getElementById('ytSheet').classList.add('open');
 }
 function updateQCnt(){
   var cnt=Object.values(myQuestions).filter(Boolean).length;
