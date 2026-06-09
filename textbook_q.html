@@ -271,6 +271,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--fg);
       <div id="fqMyList" style="margin-top:14px"></div>
     </div>
   </div>
+
 </div>
 
 <script>
@@ -574,7 +575,7 @@ function loadFreeQList(){
           '<div style="font-size:13px;font-weight:600;color:#42407A">📖 '+q.bookName+'</div>'+
           '<div style="font-size:11px;color:#6A6688">'+q.page+'p · '+q.probNum+'번 <span style="color:#B0AACF;margin-left:4px">'+ds+'</span></div>'+
         '</div>'+
-        '<button onclick="deleteFreeQ(''+currentStuId+'',''+id+'')" style="border:none;background:none;color:#C4B9F0;font-size:15px;cursor:pointer;padding:4px">✕</button>'+
+        '<button onclick="deleteFreeQ(\'' +currentStuId+ '\',\'' +id+ '\')" style="border:none;background:none;color:#C4B9F0;font-size:15px;cursor:pointer;padding:4px">✕</button>'+
       '</div>';
     }).join('');
   });
