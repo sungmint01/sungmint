@@ -438,13 +438,13 @@ textarea.inp{resize:vertical;min-height:68px}
           <!-- 교재 목록 -->
           <div id="tbList" style="margin-bottom:20px"></div>
 
+          <!-- 기타 질문 목록 -->
+          <div style="font-size:14px;font-weight:600;color:#1E1B3A;margin-bottom:10px">📝 기타 질문</div>
+          <div id="freeQAdminList" style="margin-bottom:20px"></div>
+
           <!-- 학생 교재 배정 -->
           <div style="font-size:14px;font-weight:600;color:#1E1B3A;margin-bottom:10px">학생 교재 배정</div>
           <div id="tbAssignList"></div>
-
-          <!-- 기타 질문 목록 -->
-          <div style="font-size:14px;font-weight:600;color:#1E1B3A;margin:20px 0 10px">📝 기타 질문</div>
-          <div id="freeQAdminList"></div>
         </div>
 
         <!-- 교재 등록/수정 모달 -->
@@ -723,7 +723,6 @@ function loadTextbookData(){
     tbSets=ts.val()||{};
     var rawQ=qs.val()||{};
     var stuMap=ss.val()||{};
-    // {tid}/{stuId}/{num} → {tid}/{num}/[{stuId,name}]
     tbQuestions={};
     Object.entries(rawQ).forEach(([tid,stuData])=>{
       tbQuestions[tid]={};
@@ -735,8 +734,8 @@ function loadTextbookData(){
       });
     });
     renderTbList();
-    renderTbAssignList();
     renderFreeQAdmin(fqs.val()||{});
+    renderTbAssignList();
   });
 }
 
@@ -807,7 +806,6 @@ function renderTbList(){
 function renderFreeQAdmin(rawFQ){
   var el=document.getElementById('freeQAdminList');
   if(!el) return;
-  // 전체 펼치기: {stuId:{pushId:{bookName,page,probNum,stuName,createdAt}}}
   var all=[];
   Object.entries(rawFQ).forEach(([sid,items])=>{
     Object.entries(items||{}).forEach(([pid,q])=>{
@@ -815,10 +813,7 @@ function renderFreeQAdmin(rawFQ){
     });
   });
   all.sort((a,b)=>b.createdAt-a.createdAt);
-  if(!all.length){
-    el.innerHTML='<div style="color:#A8A4C0;font-size:13px;padding:8px">기타 질문이 없습니다</div>';
-    return;
-  }
+  if(!all.length){el.innerHTML='<div style="color:#A8A4C0;font-size:13px;padding:8px">기타 질문이 없습니다</div>';return;}
   el.innerHTML=all.map(q=>{
     var d=new Date(q.createdAt);
     var ds=(d.getMonth()+1)+'/'+(d.getDate())+' '+(d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();
