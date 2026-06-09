@@ -199,25 +199,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--fg);
       </div>
     </div>
 
-    <!-- 기타 질문 섹션 -->
-    <div id="freeQSection" style="display:none">
-      <div class="card">
-        <div class="card-title" style="margin-bottom:12px">📝 기타 질문</div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
-          <input id="fqBook" type="text" placeholder="책 이름" maxlength="40"
-            style="padding:9px 12px;border:1.5px solid rgba(120,100,200,.2);border-radius:10px;font-size:13px;font-family:inherit;background:#fff;color:#42407A;outline:none">
-          <div style="display:flex;gap:8px">
-            <input id="fqPage" type="number" placeholder="페이지" min="1"
-              style="flex:1;padding:9px 12px;border:1.5px solid rgba(120,100,200,.2);border-radius:10px;font-size:13px;font-family:inherit;background:#fff;color:#42407A;outline:none">
-            <input id="fqProb" type="text" placeholder="문제번호" maxlength="10"
-              style="flex:1;padding:9px 12px;border:1.5px solid rgba(120,100,200,.2);border-radius:10px;font-size:13px;font-family:inherit;background:#fff;color:#42407A;outline:none">
-          </div>
-        </div>
-        <button onclick="submitFreeQ()" style="width:100%;padding:10px;background:linear-gradient(135deg,#BCB4F8,#9D91EE);border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">질문 등록</button>
-        <div id="fqMyList" style="margin-top:14px"></div>
-      </div>
-    </div>
-
     <!-- 영상 바텀시트 -->
     <div class="yt-sheet" id="ytSheet" onclick="closeYtSheet(event)">
       <div class="yt-overlay"></div>
@@ -229,6 +210,33 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--fg);
         </div>
         <div id="ytSheetSub" style="font-size:12px;color:#6A6688;margin-bottom:8px"></div>
         <iframe id="ytSheetFrame" class="yt-embed" allowfullscreen></iframe>
+      </div>
+    </div>
+
+    <!-- 기타질문 플로팅 버튼 -->
+    <div id="freeQBtn" style="display:none;position:fixed;bottom:24px;right:20px;z-index:100">
+      <button onclick="openFreeQSheet()" style="background:linear-gradient(135deg,#BCB4F8,#9D91EE);border:none;border-radius:99px;padding:12px 20px;color:#fff;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 4px 14px rgba(157,145,238,.5)">+ 기타 질문</button>
+    </div>
+
+    <!-- 기타질문 바텀시트 -->
+    <div class="yt-sheet" id="freeQSheet" onclick="closeFreeQSheet(event)">
+      <div class="yt-overlay"></div>
+      <div class="yt-panel">
+        <div class="yt-sheet-handle"></div>
+        <div style="font-size:15px;font-weight:700;color:#1E1B3A;margin-bottom:16px">기타 질문 등록</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+          <input id="fqBook" type="text" placeholder="책 이름" maxlength="40"
+            style="padding:11px 14px;border:1.5px solid rgba(120,100,200,.2);border-radius:12px;font-size:14px;font-family:inherit;background:#F8F6FF;color:#42407A;outline:none">
+          <div style="display:flex;gap:8px">
+            <input id="fqPage" type="number" placeholder="페이지" min="1"
+              style="flex:1;padding:11px 14px;border:1.5px solid rgba(120,100,200,.2);border-radius:12px;font-size:14px;font-family:inherit;background:#F8F6FF;color:#42407A;outline:none">
+            <input id="fqProb" type="text" placeholder="문제번호" maxlength="10"
+              style="flex:1;padding:11px 14px;border:1.5px solid rgba(120,100,200,.2);border-radius:12px;font-size:14px;font-family:inherit;background:#F8F6FF;color:#42407A;outline:none">
+          </div>
+        </div>
+        <button onclick="submitFreeQ()" style="width:100%;padding:12px;background:linear-gradient(135deg,#BCB4F8,#9D91EE);border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer">등록</button>
+        <div style="font-size:13px;font-weight:700;color:#42407A;margin:18px 0 10px">내 질문 목록</div>
+        <div id="fqMyList"></div>
       </div>
     </div>
 
@@ -345,8 +353,7 @@ function showNoTb(){
   document.getElementById('noTbMsg').style.display='block';
   document.getElementById('tbSelectWrap').style.display='none';
   document.getElementById('probSection').style.display='none';
-  document.getElementById('freeQSection').style.display='block';
-  loadFreeQList();
+  document.getElementById('freeQBtn').style.display='block';
 }
 
 function loadTextbooks(){
@@ -370,8 +377,7 @@ function onTbLoaded(){
   }else{
     // 여러 교재 - 선택 화면
     document.getElementById('tbSelectWrap').style.display='block';
-    document.getElementById('freeQSection').style.display='block';
-    loadFreeQList();
+    document.getElementById('freeQBtn').style.display='block';
     var html='';
     ids.forEach(function(tbId){
       var tb=tbData[tbId];
@@ -389,8 +395,7 @@ function selectTb(tbId){
   document.getElementById('tbSelectWrap').style.display='none';
   document.getElementById('noTbMsg').style.display='none';
   document.getElementById('probSection').style.display='block';
-  document.getElementById('freeQSection').style.display='block';
-  loadFreeQList();
+  document.getElementById('freeQBtn').style.display='block';
 
   var tb=tbData[tbId];
   document.getElementById('tbNameDisplay').textContent=tb.title;
@@ -555,6 +560,15 @@ function closeYtSheet(e){
 }
 
 
+function openFreeQSheet(){
+  document.getElementById('freeQSheet').classList.add('open');
+  loadFreeQList();
+}
+function closeFreeQSheet(e){
+  if(e&&e.target===document.querySelector('#freeQSheet .yt-overlay')||e===undefined){
+    document.getElementById('freeQSheet').classList.remove('open');
+  }
+}
 function submitFreeQ(){
   if(!currentStuId) return;
   var book=(document.getElementById('fqBook').value||'').trim();
@@ -582,7 +596,7 @@ function loadFreeQList(){
       var d=new Date(q.createdAt);
       var ds=(d.getMonth()+1)+'/'+(d.getDate())+' '+(d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();
       return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#F8F6FF;border-radius:10px;margin-bottom:6px">'+
-        '<div><div style="font-size:13px;font-weight:600;color:#42407A">📖 '+q.bookName+'</div>'+
+        '<div><div style="font-size:13px;font-weight:600;color:#42407A">'+q.bookName+'</div>'+
         '<div style="font-size:11px;color:#6A6688">'+q.page+'p · '+q.probNum+'번 <span style="color:#B0AACF;margin-left:4px">'+ds+'</span></div></div>'+
         '<button onclick="deleteFreeQ(\''+id+'\')" style="border:none;background:none;color:#C4B9F0;font-size:15px;cursor:pointer;padding:4px">✕</button>'+
       '</div>';

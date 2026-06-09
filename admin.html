@@ -803,6 +803,7 @@ function renderTbList(){
 }
 
 
+var _freeQTarget={sid:null,pid:null};
 function renderFreeQAdmin(rawFQ){
   var el=document.getElementById('freeQAdminList');
   if(!el) return;
@@ -817,17 +818,27 @@ function renderFreeQAdmin(rawFQ){
   el.innerHTML=all.map(q=>{
     var d=new Date(q.createdAt);
     var ds=(d.getMonth()+1)+'/'+(d.getDate())+' '+(d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();
-    return `<div style="display:flex;align-items:center;justify-content:space-between;background:#F0EEFF;border-radius:12px;padding:10px 14px;margin-bottom:8px">
-      <div>
-        <div style="font-size:13px;font-weight:600;color:#42407A">${q.stuName||q.sid} · 📖 ${q.bookName}</div>
-        <div style="font-size:11px;color:#6A6688">${q.page}p · ${q.probNum}번 <span style="color:#B0AACF;margin-left:6px">${ds}</span></div>
-      </div>
-      <button onclick="deleteFreeQAdmin('${q.sid}','${q.pid}')" style="border:none;background:none;color:#C4B9F0;font-size:16px;cursor:pointer;padding:4px">✕</button>
+    return `<div onclick="openFreeQModal('${q.sid}','${q.pid}','${(q.stuName||q.sid).replace(/'/g,"\'")}','${q.bookName.replace(/'/g,"\'")}','${q.page}','${q.probNum}','${ds}')"
+      style="cursor:pointer;background:#F0EEFF;border-radius:12px;padding:10px 14px;margin-bottom:8px">
+      <div style="font-size:13px;font-weight:600;color:#42407A">${q.stuName||q.sid} · ${q.bookName}</div>
+      <div style="font-size:11px;color:#6A6688">${q.page}p · ${q.probNum}번 <span style="color:#B0AACF;margin-left:6px">${ds}</span></div>
     </div>`;
   }).join('');
 }
-function deleteFreeQAdmin(sid,pid){
-  db.ref('smFreeQuestions/'+sid+'/'+pid).remove().then(()=>loadTextbookData());
+function openFreeQModal(sid,pid,stuName,bookName,page,probNum,ds){
+  _freeQTarget={sid,pid};
+  document.getElementById('freeQModalTitle').textContent=stuName+' · '+bookName;
+  document.getElementById('freeQModalSub').textContent=page+'p · '+probNum+'번  ('+ds+')';
+  var m=document.getElementById('freeQModal');
+  m.style.display='flex';
+}
+function closeFreeQModal(){
+  document.getElementById('freeQModal').style.display='none';
+}
+function deleteFreeQAdmin(){
+  var {sid,pid}=_freeQTarget;
+  if(!sid||!pid) return;
+  db.ref('smFreeQuestions/'+sid+'/'+pid).remove().then(()=>{closeFreeQModal();loadTextbookData();});
 }
 
 function renderTbAssignList(){
@@ -2830,5 +2841,17 @@ document.getElementById('rm').addEventListener('click',e=>{if(e.target.id==='rm'
       </div>
     </div>
   </div>
+
+<!-- 기타질문 상세 모달 -->
+<div id="freeQModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:900;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:20px;padding:24px;width:320px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+    <div style="font-size:15px;font-weight:700;color:#1E1B3A;margin-bottom:4px" id="freeQModalTitle"></div>
+    <div style="font-size:12px;color:#6A6688;margin-bottom:16px" id="freeQModalSub"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="deleteFreeQAdmin()" style="padding:8px 16px;border:none;border-radius:10px;background:rgba(239,68,68,.1);color:#ef4444;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">삭제</button>
+      <button onclick="closeFreeQModal()" style="padding:8px 16px;border:none;border-radius:10px;background:#F0EEFF;color:#9D91EE;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">닫기</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
