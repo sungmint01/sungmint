@@ -192,7 +192,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--fg);
     </div>
 
     <!-- 교재 선택 (여러 권 배정된 경우) -->
-    <div id="tbSelectWrap" style="display:none">
+    <div id="tbSelectWrap">
       <div class="card">
         <div class="card-title">📚 교재 선택</div>
         <div id="tbSelectList"></div>
@@ -200,7 +200,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--fg);
     </div>
 
     <!-- 기타 질문 (항상 표시) -->
-    <div id="freeQCard" style="display:none">
+    <div id="freeQCard">
       <div class="card" style="margin-top:0">
         <div class="card-title" style="margin-bottom:12px">기타 질문</div>
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
@@ -237,8 +237,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--fg);
       <div class="yt-overlay"></div>
       <div class="yt-panel">
         <div class="yt-sheet-handle"></div>
-        <div id="fqDetailTitle" style="font-size:15px;font-weight:700;color:#1E1B3A;margin-bottom:6px"></div>
-        <div id="fqDetailInfo" style="font-size:13px;color:#6A6688;margin-bottom:20px"></div>
+        <div id="fqDetailTitle" style="font-size:15px;font-weight:700;color:#1E1B3A;margin-bottom:4px"></div>
+        <div id="fqDetailInfo" style="font-size:13px;color:#6A6688;margin-bottom:12px"></div>
+        <div id="fqDetailYt" style="display:none;margin-bottom:16px">
+          <div style="font-size:12px;font-weight:600;color:#42407A;margin-bottom:6px">▶ 풀이 영상</div>
+          <iframe id="fqDetailFrame" class="yt-embed" allowfullscreen></iframe>
+        </div>
         <button onclick="deleteFreeQFromSheet()" style="width:100%;padding:10px;border:none;border-radius:10px;background:rgba(239,68,68,.1);color:#ef4444;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">삭제</button>
       </div>
     </div>
@@ -252,7 +256,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--fg);
               <div class="card-title">문제 목록</div>
               <div style="display:flex;gap:6px">
                 <button onclick="toggleProbBody()" id="probCollapseBtn" style="border:none;background:#F0EEFF;border-radius:8px;padding:4px 10px;font-size:11px;color:#9D91EE;font-weight:700;cursor:pointer;font-family:inherit">접기</button>
-                <button onclick="backToTbSelect()" style="border:none;background:#F0EEFF;border-radius:8px;padding:4px 10px;font-size:11px;color:#9D91EE;font-weight:700;cursor:pointer;font-family:inherit">교재 변경</button>
               </div>
             </div>
             <div id="tbNameDisplay" style="font-size:14px;font-weight:600;color:var(--fg)"></div>
@@ -365,9 +368,7 @@ function loadApp(){
 
 function showNoTb(){
   document.getElementById('noTbMsg').style.display='block';
-  document.getElementById('tbSelectWrap').style.display='none';
   document.getElementById('probSection').style.display='none';
-  document.getElementById('freeQCard').style.display='block';
   loadFreeQList();
 }
 
@@ -391,8 +392,6 @@ function onTbLoaded(){
     selectTb(ids[0]);
   }else{
     // 여러 교재 - 선택 화면
-    document.getElementById('tbSelectWrap').style.display='block';
-    document.getElementById('freeQCard').style.display='block';
     loadFreeQList();
     var html='';
     ids.forEach(function(tbId){
@@ -419,17 +418,10 @@ function toggleProbBody(){
     btn.textContent='펼치기';
   }
 }
-function backToTbSelect(){
-  document.getElementById('probSection').style.display='none';
-  document.getElementById('tbSelectWrap').style.display='block';
-  activeTbId=null;
-}
 function selectTb(tbId){
   activeTbId=tbId;
-  document.getElementById('tbSelectWrap').style.display='none';
   document.getElementById('noTbMsg').style.display='none';
   document.getElementById('probSection').style.display='block';
-  document.getElementById('freeQCard').style.display='block';
   loadFreeQList();
 
   var tb=tbData[tbId];
@@ -638,11 +630,24 @@ function openFreeQDetail(id){
   var q=_freeQDetailData[id]||{};
   document.getElementById('fqDetailTitle').textContent=q.bookName||'';
   document.getElementById('fqDetailInfo').textContent=(q.page||'')+'p · '+(q.probNum||'')+'번';
+  var ytWrap=document.getElementById('fqDetailYt');
+  var ytFrame=document.getElementById('fqDetailFrame');
+  if(q.youtubeUrl){
+    var url=q.youtubeUrl;
+    var embed=url.replace('watch?v=','embed/').replace('youtu.be/','www.youtube.com/embed/');
+    if(embed.includes('?')) embed=embed.split('?')[0];
+    ytFrame.src=embed;
+    ytWrap.style.display='block';
+  }else{
+    ytFrame.src='';
+    ytWrap.style.display='none';
+  }
   document.getElementById('freeQDetailSheet').classList.add('open');
 }
 function closeFreeQDetailSheet(e){
   if(!e||e.target===document.querySelector('#freeQDetailSheet .yt-overlay')){
     document.getElementById('freeQDetailSheet').classList.remove('open');
+    document.getElementById('fqDetailFrame').src='';
   }
 }
 function deleteFreeQFromSheet(){

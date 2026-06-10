@@ -832,8 +832,12 @@ function openFreeQModal(sid,pid,stuName,bookName,page,probNum,ds){
   document.getElementById('ytTbId').value='__freeQ__';
   document.getElementById('ytProbNum').value=pid;
   document.getElementById('ytModalProbLabel').textContent=stuName+' · '+bookName+' '+page+'p '+probNum+'번  ('+ds+')';
-  document.getElementById('ytTitleInp').value='';
-  document.getElementById('ytUrlInp').value='';
+  // 기존 저장된 유튜브 URL 로드
+  db.ref('smFreeQuestions/'+sid+'/'+pid).once('value',function(s){
+    var q=s.val()||{};
+    document.getElementById('ytTitleInp').value=q.ytTitle||'';
+    document.getElementById('ytUrlInp').value=q.youtubeUrl||'';
+  });
   document.getElementById('probQList').innerHTML=
     '<div style="background:rgba(239,68,68,.06);border:1.5px solid rgba(239,68,68,.2);border-radius:12px;padding:10px 12px">'+
     '<div style="font-size:12px;font-weight:600;color:#ef4444;margin-bottom:4px">질문한 학생</div>'+
@@ -842,8 +846,6 @@ function openFreeQModal(sid,pid,stuName,bookName,page,probNum,ds){
     '<div style="margin-top:10px;display:flex;justify-content:flex-end">'+
     '<button onclick="deleteFreeQAdmin()" style="padding:7px 16px;border:none;border-radius:10px;background:rgba(239,68,68,.1);color:#ef4444;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">질문 삭제</button>'+
     '</div>';
-  // 풀이영상 섹션 숨김
-  document.getElementById('ytModal').querySelectorAll('[data-yt-only]').forEach(el=>el.style.display='none');
   document.getElementById('ytModal').style.display='flex';
 }
 function closeFreeQModal(){closeYtModal();}
@@ -996,7 +998,17 @@ function openYtModal(tbId,probNum){openProbDetail(tbId,probNum);}
 function closeYtModal(){document.getElementById('ytModal').style.display='none';}
 
 async function saveYtLink(){
-  if(document.getElementById('ytTbId').value==='__freeQ__'){closeYtModal();return;}
+  if(document.getElementById('ytTbId').value==='__freeQ__'){
+    var {sid,pid}=_freeQTarget;
+    if(!sid||!pid){closeYtModal();return;}
+    var title=document.getElementById('ytTitleInp').value.trim();
+    var url=document.getElementById('ytUrlInp').value.trim();
+    db.ref('smFreeQuestions/'+sid+'/'+pid).update({ytTitle:title,youtubeUrl:url}).then(()=>{
+      closeYtModal();
+      loadTextbookData();
+    });
+    return;
+  }
   var tbId=document.getElementById('ytTbId').value;
   var probNum=document.getElementById('ytProbNum').value;
   var title=document.getElementById('ytTitleInp').value.trim();
