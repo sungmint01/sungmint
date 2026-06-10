@@ -250,7 +250,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--fg);
           <div>
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
               <div class="card-title">문제 목록</div>
-              <button onclick="backToTbSelect()" style="border:none;background:#F0EEFF;border-radius:8px;padding:4px 10px;font-size:11px;color:#9D91EE;font-weight:700;cursor:pointer;font-family:inherit">교재 변경</button>
+              <div style="display:flex;gap:6px">
+                <button onclick="toggleProbBody()" id="probCollapseBtn" style="border:none;background:#F0EEFF;border-radius:8px;padding:4px 10px;font-size:11px;color:#9D91EE;font-weight:700;cursor:pointer;font-family:inherit">접기</button>
+                <button onclick="backToTbSelect()" style="border:none;background:#F0EEFF;border-radius:8px;padding:4px 10px;font-size:11px;color:#9D91EE;font-weight:700;cursor:pointer;font-family:inherit">교재 변경</button>
+              </div>
             </div>
             <div id="tbNameDisplay" style="font-size:14px;font-weight:600;color:var(--fg)"></div>
           </div>
@@ -258,6 +261,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--fg);
             font-weight:700;color:var(--p1);background:rgba(157,145,238,.12);padding:4px 10px;
             border-radius:20px">0개 질문</div>
         </div>
+        <div id="probBody">
         <!-- 범위 선택 -->
         <div class="range-bar">
           <span style="font-size:12px;color:var(--fg2);font-weight:500">범위 선택</span>
@@ -287,6 +291,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--fg);
         <div class="yt-title">▶ 풀이 영상</div>
         <div id="ytList"></div>
       </div>
+      </div><!-- /probBody -->
     </div>
   </div>
 </div>
@@ -299,6 +304,8 @@ var assignedTbIds=[];
 var activeTbId=null;
 var tbData={};
 var myQuestions={};
+var _freeQDetailId=null;
+var _freeQDetailData={};
 
 function getDB(){
   try{
@@ -399,6 +406,19 @@ function onTbLoaded(){
   }
 }
 
+
+function toggleProbBody(){
+  var body=document.getElementById('probBody');
+  var btn=document.getElementById('probCollapseBtn');
+  if(!body) return;
+  if(body.style.display==='none'){
+    body.style.display='';
+    btn.textContent='접기';
+  }else{
+    body.style.display='none';
+    btn.textContent='펼치기';
+  }
+}
 function backToTbSelect(){
   document.getElementById('probSection').style.display='none';
   document.getElementById('tbSelectWrap').style.display='block';
@@ -613,8 +633,6 @@ function loadFreeQList(){
 function deleteFreeQ(id){
   db.ref('smFreeQuestions/'+currentStuId+'/'+id).remove().then(loadFreeQList);
 }
-var _freeQDetailId=null;
-var _freeQDetailData={};
 function openFreeQDetail(id){
   _freeQDetailId=id;
   var q=_freeQDetailData[id]||{};
