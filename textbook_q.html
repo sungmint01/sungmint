@@ -194,8 +194,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--fg);
     <!-- 교재 선택 (여러 권 배정된 경우) -->
     <div id="tbSelectWrap">
       <div class="card">
-        <div class="card-title">📚 교재 선택</div>
-        <div id="tbSelectList"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleTbList()">
+          <div class="card-title">📚 교재 선택</div>
+          <span id="tbListToggleIcon" style="font-size:13px;color:#9D91EE;font-weight:700">▼</span>
+        </div>
+        <div id="tbSelectList" style="display:none;margin-top:8px"></div>
       </div>
     </div>
 
@@ -387,25 +390,32 @@ function loadTextbooks(){
 function onTbLoaded(){
   var ids=Object.keys(tbData);
   if(!ids.length){showNoTb();return;}
-  if(ids.length===1){
-    // 교재 1개 - 바로 표시
-    selectTb(ids[0]);
-  }else{
-    // 여러 교재 - 선택 화면
-    loadFreeQList();
-    var html='';
-    ids.forEach(function(tbId){
-      var tb=tbData[tbId];
-      var cnt=Object.keys(tb.problems||{}).length;
-      html+='<div class="tb-item" onclick="selectTb(\''+tbId+'\')">'+
-        '<div><div class="tb-name">'+tb.title+'</div></div>'+
-        '<div class="tb-cnt">'+cnt+'문제</div></div>';
-    });
-    document.getElementById('tbSelectList').innerHTML=html;
-  }
+  loadFreeQList();
+  var html='';
+  ids.forEach(function(tbId){
+    var tb=tbData[tbId];
+    var cnt=Object.keys(tb.problems||{}).length;
+    html+='<div class="tb-item" onclick="selectTb(\''+tbId+'\')">'+
+      '<div><div class="tb-name">'+tb.title+'</div></div>'+
+      '<div class="tb-cnt">'+cnt+'문제</div></div>';
+  });
+  document.getElementById('tbSelectList').innerHTML=html;
 }
 
 
+
+function toggleTbList(){
+  var list=document.getElementById('tbSelectList');
+  var icon=document.getElementById('tbListToggleIcon');
+  if(!list) return;
+  if(list.style.display==='none'){
+    list.style.display='';
+    icon.textContent='▲';
+  }else{
+    list.style.display='none';
+    icon.textContent='▼';
+  }
+}
 function toggleProbBody(){
   var body=document.getElementById('probBody');
   var btn=document.getElementById('probCollapseBtn');
@@ -436,54 +446,81 @@ function selectTb(tbId){
 
 function renderGrid(tb){
   var problems=tb.problems||{};
-  var nums=Object.keys(problems).sort(function(a,b){
-    var na=parseFloat(a), nb=parseFloat(b);
-    if(!isNaN(na)&&!isNaN(nb)) return na-nb;
-    return a.localeCompare(b,'ko');
-  });
+  var nums=Object.keys(problems);
   activeTbNums=nums;
-
-  // 50개 단위 섹션 그룹
-  var SECTION=50;
   var html='';
-  var numNums=nums.filter(function(n){return !isNaN(parseFloat(n));});
-  var strNums=nums.filter(function(n){return isNaN(parseFloat(n));});
 
-  if(nums.length>SECTION){
-    // 숫자형 문제는 구간별 그룹
-    var min=parseFloat(numNums[0])||1;
-    var max=parseFloat(numNums[numNums.length-1])||1;
-    for(var s=Math.floor((min-1)/SECTION)*SECTION+1; s<=max; s+=SECTION){
-      var e=s+SECTION-1;
-      var secNums=numNums.filter(function(n){var v=parseFloat(n);return v>=s&&v<=e;});
-      if(!secNums.length) continue;
-      html+='<div class="sec-header">'+s+'~'+Math.min(e,max)+'번</div>';
+  // JSON 등록 교재 판별: section 필드가 있으면 섹션 모드
+  var hasSection=nums.some(function(n){return !!(problems[n]&&problems[n].section);});
+
+  if(hasSection){
+    // 섹션별로 그루핑
+    var groups={};
+    var groupOrder=[];
+    nums.forEach(function(n){
+      var p=problems[n]||{};
+      var sec=p.section||'기타';
+      var kind=p.kind||'';
+      var label=sec+(kind?(' · '+kind):'');
+      if(!groups[label]){groups[label]=[];groupOrder.push(label);}
+      groups[label].push(n);
+    });
+    groupOrder.forEach(function(label){
+      var grpNums=groups[label];
+      html+='<div class="sec-header" style="font-size:11px">'+label+'</div>';
       html+='<div class="prob-grid">';
-      secNums.forEach(function(num){html+=buildCell(num,problems[num]||{});});
+      grpNums.forEach(function(n){
+        var p=problems[n]||{};
+        html+=buildCell(n,p,p.num||n);
+      });
       html+='</div>';
-    }
-    if(strNums.length){
-      html+='<div class="sec-header">기타</div><div class="prob-grid">';
-      strNums.forEach(function(num){html+=buildCell(num,problems[num]||{});});
-      html+='</div>';
-    }
+    });
   }else{
-    html='<div class="prob-grid">';
-    nums.forEach(function(num){html+=buildCell(num,problems[num]||{});});
-    html+='</div>';
+    // 기존 방식 (숫자 번호)
+    nums.sort(function(a,b){
+      var na=parseFloat(a),nb=parseFloat(b);
+      if(!isNaN(na)&&!isNaN(nb)) return na-nb;
+      return a.localeCompare(b,'ko');
+    });
+    var SECTION=50;
+    var numNums=nums.filter(function(n){return !isNaN(parseFloat(n));});
+    var strNums=nums.filter(function(n){return isNaN(parseFloat(n));});
+    if(nums.length>SECTION){
+      var min=parseFloat(numNums[0])||1;
+      var max=parseFloat(numNums[numNums.length-1])||1;
+      for(var s=Math.floor((min-1)/SECTION)*SECTION+1;s<=max;s+=SECTION){
+        var e=s+SECTION-1;
+        var secNums=numNums.filter(function(n){var v=parseFloat(n);return v>=s&&v<=e;});
+        if(!secNums.length) continue;
+        html+='<div class="sec-header">'+s+'~'+Math.min(e,max)+'번</div>';
+        html+='<div class="prob-grid">';
+        secNums.forEach(function(num){html+=buildCell(num,problems[num]||{});});
+        html+='</div>';
+      }
+      if(strNums.length){
+        html+='<div class="sec-header">기타</div><div class="prob-grid">';
+        strNums.forEach(function(num){html+=buildCell(num,problems[num]||{});});
+        html+='</div>';
+      }
+    }else{
+      html='<div class="prob-grid">';
+      nums.forEach(function(num){html+=buildCell(num,problems[num]||{});});
+      html+='</div>';
+    }
   }
   document.getElementById('probGrid').innerHTML=html||'<div class="empty-msg">문제가 없습니다</div>';
   updateQCnt();
 }
 
-function buildCell(num,p){
+function buildCell(num,p,displayNum){
+  if(displayNum===undefined) displayNum=num;
   var hasYt=!!(p&&p.youtubeUrl);
   var isChecked=!!myQuestions[num];
   var cls='prob-cell'+(isChecked?' checked':'')+(hasYt?' has-yt':'');
   // 영상 있으면 클릭=영상, 없으면 클릭=체크토글
   var action=hasYt?'openYtSheet(\''+num+'\')':'toggleProb(\''+num+'\')';
   return '<div class="'+cls+'" onclick="'+action+'" data-num="'+num+'">'+
-    '<div class="prob-num">'+num+'</div>'+
+    '<div class="prob-num">'+displayNum+'</div>'+
     '<div class="prob-yt-dot"></div>'+
     (isChecked&&hasYt?'<div style="position:absolute;top:3px;right:3px;font-size:8px;cursor:pointer" onclick="event.stopPropagation();toggleProb(\''+num+'\')" title="체크 해제">✕</div>':'')+
     '</div>';
