@@ -232,12 +232,26 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--fg);
       </div>
     </div>
 
+    <!-- 기타질문 상세 바텀시트 -->
+    <div class="yt-sheet" id="freeQDetailSheet" onclick="closeFreeQDetailSheet(event)">
+      <div class="yt-overlay"></div>
+      <div class="yt-panel">
+        <div class="yt-sheet-handle"></div>
+        <div id="fqDetailTitle" style="font-size:15px;font-weight:700;color:#1E1B3A;margin-bottom:6px"></div>
+        <div id="fqDetailInfo" style="font-size:13px;color:#6A6688;margin-bottom:20px"></div>
+        <button onclick="deleteFreeQFromSheet()" style="width:100%;padding:10px;border:none;border-radius:10px;background:rgba(239,68,68,.1);color:#ef4444;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">삭제</button>
+      </div>
+    </div>
+
     <!-- 문제 목록 -->
     <div id="probSection" style="display:none">
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <div>
-            <div class="card-title" style="margin-bottom:2px">문제 목록</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+              <div class="card-title">문제 목록</div>
+              <button onclick="backToTbSelect()" style="border:none;background:#F0EEFF;border-radius:8px;padding:4px 10px;font-size:11px;color:#9D91EE;font-weight:700;cursor:pointer;font-family:inherit">교재 변경</button>
+            </div>
             <div id="tbNameDisplay" style="font-size:14px;font-weight:600;color:var(--fg)"></div>
           </div>
           <div id="qCntBadge" style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;
@@ -385,6 +399,11 @@ function onTbLoaded(){
   }
 }
 
+function backToTbSelect(){
+  document.getElementById('probSection').style.display='none';
+  document.getElementById('tbSelectWrap').style.display='block';
+  activeTbId=null;
+}
 function selectTb(tbId){
   activeTbId=tbId;
   document.getElementById('tbSelectWrap').style.display='none';
@@ -395,9 +414,6 @@ function selectTb(tbId){
 
   var tb=tbData[tbId];
   document.getElementById('tbNameDisplay').textContent=tb.title;
-
-  // 내 질문만 로드 (다른 학생 데이터 안 받음)
-  loadFreeQList();
   db.ref('smTbQuestions/'+tbId+'/'+currentStuId).once('value',function(s){
     var mine=s.val()||{};
     myQuestions={};
@@ -553,7 +569,6 @@ function closeYtSheet(e){
     document.getElementById('ytSheet').classList.remove('open');
     document.getElementById('ytSheetFrame').src='';
     ytSheetNum=null;
-    document.getElementById('ytSheetToggleBtn').style.display='';
   }
 }
 
@@ -601,17 +616,23 @@ function deleteFreeQ(id){
 var _freeQDetailId=null;
 var _freeQDetailData={};
 function openFreeQDetail(id){
-  // freeQ 상세를 위한 간이 바텀시트: ytSheet 재활용
   _freeQDetailId=id;
   var q=_freeQDetailData[id]||{};
-  var title=q.bookName||'';
-  var sub=(q.page||'')+'p · '+(q.probNum||'')+'번';
-  document.getElementById('ytSheetTitle').textContent=title;
-  document.getElementById('ytSheetSub').innerHTML=sub+
-    ' &nbsp;<button onclick="deleteFreeQ(\''+id+'\');closeYtSheet();" style="border:none;background:rgba(239,68,68,.1);color:#ef4444;border-radius:8px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">삭제</button>';
-  document.getElementById('ytSheetToggleBtn').style.display='none';
-  document.getElementById('ytSheetFrame').src='';
-  document.getElementById('ytSheet').classList.add('open');
+  document.getElementById('fqDetailTitle').textContent=q.bookName||'';
+  document.getElementById('fqDetailInfo').textContent=(q.page||'')+'p · '+(q.probNum||'')+'번';
+  document.getElementById('freeQDetailSheet').classList.add('open');
+}
+function closeFreeQDetailSheet(e){
+  if(!e||e.target===document.querySelector('#freeQDetailSheet .yt-overlay')){
+    document.getElementById('freeQDetailSheet').classList.remove('open');
+  }
+}
+function deleteFreeQFromSheet(){
+  if(!_freeQDetailId) return;
+  db.ref('smFreeQuestions/'+currentStuId+'/'+_freeQDetailId).remove().then(function(){
+    document.getElementById('freeQDetailSheet').classList.remove('open');
+    loadFreeQList();
+  });
 }
 function updateQCnt(){
   var cnt=Object.values(myQuestions).filter(Boolean).length;
