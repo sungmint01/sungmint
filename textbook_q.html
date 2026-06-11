@@ -542,7 +542,8 @@ function toggleProb(num){
   var cell=document.querySelector('[data-num="'+num+'"]');
   if(cell&&activeTbId){
     var tb=tbData[activeTbId]||{};
-    var newCell=buildCell(num,(tb.problems||{})[num]||{});
+    var _p=(tb.problems||{})[num]||{};
+    var newCell=buildCell(num,_p,_p.num||num);
     var tmp=document.createElement('div');
     tmp.innerHTML=newCell;
     cell.parentNode.replaceChild(tmp.firstChild,cell);
@@ -594,7 +595,8 @@ function openYtSheet(num){
   var url=p.youtubeUrl;
   var embedUrl=url.replace('watch?v=','embed/').replace('youtu.be/','www.youtube.com/embed/');
   if(embedUrl.includes('?')) embedUrl=embedUrl.split('?')[0];
-  document.getElementById('ytSheetTitle').textContent=(tb.title||'')+' · '+num+'번 문제';
+  var _dispNum=((tb.problems||{})[num]||{}).num||num;
+  document.getElementById('ytSheetTitle').textContent=(tb.title||'')+' · '+_dispNum+'번 문제';
   document.getElementById('ytSheetSub').textContent=p.title||'풀이 영상';
   document.getElementById('ytSheetFrame').src=embedUrl;
   document.getElementById('ytSheet').classList.add('open');
