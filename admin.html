@@ -920,21 +920,24 @@ function countJsonProblems(d){
 }
 function jsonToProblems(d){
   var problems={};
+  // kind별 사전순 정렬용 prefix (Firebase는 key 사전순 반환)
+  var kindPrefix={'개념CHECK':'1','유제':'2','연습문제':'3'};
   (d.chapters||[]).forEach(ch=>{
     (ch.sections||[]).forEach(sec=>{
       (sec.subsections||[]).forEach(sub=>{
         var page=sub.page||0;
         var sectionLabel=sec.title+' > '+sub.title;
         Object.entries(sub.problems||{}).forEach(([kind,arr])=>{
+          var kp=kindPrefix[kind]||'2';
           arr.forEach(num=>{
-            var key=sec.id+'-'+kind+'-'+num;
+            var key=sec.id+'-'+kp+kind+'-'+num;
             problems[key]={exists:1,section:sectionLabel,kind:kind,num:num,page:page};
           });
         });
       });
       var exPage=(sec.연습문제||{}).page||0;
       ((sec.연습문제||{}).problems||[]).forEach(num=>{
-        var key=sec.id+'-연습-'+num;
+        var key=sec.id+'-3연습문제-'+num;
         problems[key]={exists:1,section:sec.title,kind:'연습문제',num:num,page:exPage};
       });
     });
