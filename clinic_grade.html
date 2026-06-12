@@ -225,9 +225,9 @@ body{font-family:'Noto Sans KR','MaruBuri',sans-serif;background:var(--bg);min-h
         <div class="direct-score-wrap">
           <div class="score-hint" style="margin-bottom:16px">맞은 개수와 푼 개수를 입력하세요</div>
           <div class="direct-score-row">
-            <input class="score-inp" type="number" id="directScore" min="0" placeholder="0">
+            <input class="score-inp" type="number" id="directScore" min="0" step="0.1" placeholder="0">
             <span class="score-slash">/</span>
-            <input class="score-inp" type="number" id="directTotal" min="0" placeholder="0">
+            <input class="score-inp" type="number" id="directTotal" min="0" step="0.1" placeholder="0">
           </div>
           <div class="score-hint">맞은 개수 / 푼 개수</div>
         </div>
@@ -297,9 +297,9 @@ body{font-family:'Noto Sans KR','MaruBuri',sans-serif;background:var(--bg);min-h
         <div class="direct-score-wrap">
           <div class="score-hint" style="margin-bottom:16px">맞은 개수와 푼 개수를 입력하세요</div>
           <div class="direct-score-row">
-            <input class="score-inp" type="number" id="hwDirectScore" min="0" placeholder="0">
+            <input class="score-inp" type="number" id="hwDirectScore" min="0" step="0.1" placeholder="0">
             <span class="score-slash">/</span>
-            <input class="score-inp" type="number" id="hwDirectTotal" min="0" placeholder="0">
+            <input class="score-inp" type="number" id="hwDirectTotal" min="0" step="0.1" placeholder="0">
           </div>
         </div>
       </div>
@@ -504,8 +504,8 @@ function hwBuildGrid(){
 async function hwSubmit(){
   let score,total,wrong=[],stuAnswers={};
   if(_hwGradeTab==='direct'){
-    score=parseInt(document.getElementById('hwDirectScore').value)||0;
-    total=parseInt(document.getElementById('hwDirectTotal').value)||0;
+    score=parseFloat(document.getElementById('hwDirectScore').value)||0;
+    total=parseFloat(document.getElementById('hwDirectTotal').value)||0;
     if(!total){document.getElementById('hwErr3').textContent='푼 개수를 입력하세요';return;}
     if(score>total){document.getElementById('hwErr3').textContent='맞은 개수가 푼 개수보다 클 수 없습니다';return;}
     document.getElementById('hwErr3').textContent='';
@@ -807,8 +807,8 @@ async function submitGrade(){
   }
   if(_gradeTab==='direct'){
     // 직접 점수 입력
-    score=parseInt(document.getElementById('directScore').value)||0;
-    total=parseInt(document.getElementById('directTotal').value)||0;
+    score=parseFloat(document.getElementById('directScore').value)||0;
+    total=parseFloat(document.getElementById('directTotal').value)||0;
     if(!total){document.getElementById('err3').textContent='푼 개수를 입력하세요';return;}
     if(score>total){document.getElementById('err3').textContent='맞은 개수가 푼 개수보다 클 수 없습니다';return;}
     document.getElementById('err3').textContent='';
