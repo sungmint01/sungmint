@@ -299,7 +299,7 @@ textarea.inp{resize:vertical;min-height:68px}
     <div class="ico">📚</div>
     <h1>관리자 로그인</h1>
     <p class="sub">성민T 학생관리 시스템</p>
-    <input class="inp" type="password" id="pwIn" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')doLogin()">
+    <input class="inp" type="password" id="pwIn" placeholder="비밀번호 입력" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="btn-pri" onclick="doLogin()">로그인</button>
     <div class="errmsg" id="lerr"></div>
   </div>

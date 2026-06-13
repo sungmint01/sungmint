@@ -177,7 +177,7 @@ body{font-family:'Noto Sans KR','MaruBuri',sans-serif;background:#F0EEFF;color:#
     <div class="ico">✏️</div>
     <h1>성민T 학생</h1>
     <p class="sub">Student Portal</p>
-    <input class="inp" type="password" id="pwIn" placeholder="학생 비밀번호 입력" onkeydown="if(event.key==='Enter')doLogin()">
+    <input class="inp" type="password" id="pwIn" placeholder="학생 비밀번호 입력" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="btn-pri" onclick="doLogin()">로그인</button>
     <div class="errmsg" id="lerr"></div>
     <a class="back-link" href="./main.html">← 홈으로</a>
