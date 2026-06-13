@@ -438,6 +438,10 @@ textarea.inp{resize:vertical;min-height:68px}
           <!-- 교재 목록 -->
           <div id="tbList" style="margin-bottom:20px"></div>
 
+          <!-- 기타 질문 목록 -->
+          <div style="font-size:14px;font-weight:600;color:#1E1B3A;margin:20px 0 10px">📝 기타 질문</div>
+          <div id="freeQAdminList" style="margin-bottom:20px"></div>
+
           <!-- 학생 교재 배정 -->
           <div style="font-size:14px;font-weight:600;color:#1E1B3A;margin-bottom:10px">학생 교재 배정</div>
           <div id="tbAssignList"></div>
@@ -446,18 +450,26 @@ textarea.inp{resize:vertical;min-height:68px}
         <!-- 교재 등록/수정 모달 -->
         <div id="tbModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;display:none;align-items:center;justify-content:center">
           <div style="background:#fff;border-radius:20px;padding:26px;width:340px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,.18);max-height:90vh;overflow-y:auto">
-            <div style="font-size:15px;font-weight:700;margin-bottom:16px" id="tbModalTitle">교재 등록</div>
+            <div style="font-size:15px;font-weight:700;margin-bottom:12px" id="tbModalTitle">교재 등록</div>
             <input type="hidden" id="tbEditId">
             <div style="margin-bottom:10px">
               <label style="font-size:12px;color:#6A6688;display:block;margin-bottom:4px">교재 제목</label>
-              <input class="inp" id="tbTitleInp" placeholder="예: 공통수학1 올림포스" style="width:100%">
+              <input class="inp" id="tbTitleInp" placeholder="예: 수학의 바이블 미적분" style="width:100%">
             </div>
-            <div style="margin-bottom:14px">
-              <label style="font-size:12px;color:#6A6688;display:block;margin-bottom:4px">문제 번호 목록</label>
+            <div style="display:flex;gap:0;margin-bottom:12px;border-radius:10px;overflow:hidden;border:1.5px solid rgba(120,100,200,.2)">
+              <button id="tbTabManual" onclick="switchTbTab('manual')" style="flex:1;padding:8px;border:none;background:#9D91EE;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">직접 입력</button>
+              <button id="tbTabJson" onclick="switchTbTab('json')" style="flex:1;padding:8px;border:none;background:#F0EEFF;color:#9D91EE;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">JSON 등록</button>
+            </div>
+            <div id="tbPanelManual">
               <div style="font-size:11px;color:#A8A4C0;margin-bottom:4px">쉼표로 구분 또는 범위 (예: 1-50 또는 1,2,3,4a,4b)</div>
               <textarea class="inp" id="tbProblemsInp" rows="3" placeholder="1-50 또는 1,2,3,4a,4b,5" style="width:100%;resize:vertical"></textarea>
             </div>
-            <div style="display:flex;gap:8px">
+            <div id="tbPanelJson" style="display:none">
+              <div style="font-size:11px;color:#A8A4C0;margin-bottom:6px">mic_problems.json 파일 내용을 붙여넣으세요</div>
+              <textarea class="inp" id="tbJsonInp" rows="6" placeholder='{"title":"...","chapters":[...]}' style="width:100%;resize:vertical;font-size:11px;font-family:monospace"></textarea>
+              <div id="tbJsonPreview" style="font-size:11px;color:#56A08A;margin-top:6px"></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:14px">
               <button onclick="closeTbModal()" style="flex:1;padding:10px;border:none;border-radius:10px;background:#f1f5f9;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">취소</button>
               <button onclick="saveTb()" style="flex:2;padding:10px;border:none;border-radius:10px;background:linear-gradient(135deg,#9D91EE,#BCB4F8);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">저장</button>
             </div>
@@ -713,12 +725,12 @@ function loadTextbookData(){
   Promise.all([
     db.ref('smTextbooks').once('value'),
     db.ref('smTbQuestions').once('value'),
-    db.ref('smStudents').once('value')
-  ]).then(([ts,qs,ss])=>{
+    db.ref('smStudents').once('value'),
+    db.ref('smFreeQuestions').once('value')
+  ]).then(([ts,qs,ss,fqs])=>{
     tbSets=ts.val()||{};
     var rawQ=qs.val()||{};
     var stuMap=ss.val()||{};
-    // {tid}/{stuId}/{num} → {tid}/{num}/[{stuId,name}]
     tbQuestions={};
     Object.entries(rawQ).forEach(([tid,stuData])=>{
       tbQuestions[tid]={};
@@ -730,6 +742,7 @@ function loadTextbookData(){
       });
     });
     renderTbList();
+    renderFreeQAdmin(fqs.val()||{});
     renderTbAssignList();
   });
 }
@@ -795,6 +808,141 @@ function renderTbList(){
       </div>
     </div>`;
   }).join('');
+}
+
+
+var _tbTabMode='manual';
+function switchTbTab(mode){
+  _tbTabMode=mode;
+  document.getElementById('tbPanelManual').style.display=mode==='manual'?'':'none';
+  document.getElementById('tbPanelJson').style.display=mode==='json'?'':'none';
+  document.getElementById('tbTabManual').style.background=mode==='manual'?'#9D91EE':'#F0EEFF';
+  document.getElementById('tbTabManual').style.color=mode==='manual'?'#fff':'#9D91EE';
+  document.getElementById('tbTabJson').style.background=mode==='json'?'#9D91EE':'#F0EEFF';
+  document.getElementById('tbTabJson').style.color=mode==='json'?'#fff':'#9D91EE';
+}
+document.addEventListener('DOMContentLoaded',function(){
+  var el=document.getElementById('tbJsonInp');
+  if(el) el.addEventListener('input',previewTbJson);
+});
+function previewTbJson(){
+  var raw=document.getElementById('tbJsonInp').value.trim();
+  var prev=document.getElementById('tbJsonPreview');
+  if(!raw){prev.textContent='';return;}
+  try{
+    var d=JSON.parse(raw);
+    var cnt=countJsonProblems(d);
+    prev.textContent='✓ 인식됨: '+d.title+' ('+cnt+'문제)';
+    prev.style.color='#56A08A';
+  }catch(e){
+    prev.textContent='JSON 형식 오류';
+    prev.style.color='#ef4444';
+  }
+}
+function countJsonProblems(d){
+  var cnt=0;
+  (d.chapters||[]).forEach(ch=>{
+    (ch.sections||[]).forEach(sec=>{
+      (sec.subsections||[]).forEach(sub=>{
+        Object.values(sub.problems||{}).forEach(arr=>{cnt+=arr.length;});
+      });
+      cnt+=(sec.연습문제||{problems:[]}).problems.length;
+    });
+  });
+  return cnt;
+}
+function jsonToProblems(d){
+  var problems={};
+  var kindPrefix={'개념CHECK':'1','유제':'2','연습문제':'3'};
+  (d.chapters||[]).forEach(ch=>{
+    (ch.sections||[]).forEach(sec=>{
+      (sec.subsections||[]).forEach(sub=>{
+        var page=sub.page||0;
+        var sectionLabel=sec.title+' > '+sub.title;
+        Object.entries(sub.problems||{}).forEach(([kind,arr])=>{
+          var kp=kindPrefix[kind]||'2';
+          arr.forEach(num=>{
+            var key=sec.id+'-'+kp+kind+'-'+num;
+            problems[key]={exists:1,section:sectionLabel,kind:kind,num:num,page:page};
+          });
+        });
+      });
+      var exPage=(sec.연습문제||{}).page||0;
+      ((sec.연습문제||{}).problems||[]).forEach(num=>{
+        var key=sec.id+'-3연습문제-'+num;
+        problems[key]={exists:1,section:sec.title,kind:'연습문제',num:num,page:exPage};
+      });
+    });
+  });
+  return problems;
+}
+
+var _freeQTarget={sid:null,pid:null};
+function renderFreeQAdmin(rawFQ){
+  var el=document.getElementById('freeQAdminList');
+  if(!el) return;
+  var all=[];
+  Object.entries(rawFQ).forEach(([sid,items])=>{
+    Object.entries(items||{}).forEach(([pid,q])=>{
+      all.push({sid,pid,...q});
+    });
+  });
+  all.sort((a,b)=>b.createdAt-a.createdAt);
+  if(!all.length){el.innerHTML='<div style="color:#A8A4C0;font-size:13px;padding:8px">기타 질문이 없습니다</div>';return;}
+  el.innerHTML=all.map(q=>{
+    var d=new Date(q.createdAt);
+    var ds=(d.getMonth()+1)+'/'+(d.getDate())+' '+(d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();
+    var hasImg=!!q.hasImage;
+    return `<div onclick="openFreeQModal('${q.sid}','${q.pid}','${(q.stuName||q.sid).replace(/'/g,"\'")}','${(q.bookName||'').replace(/'/g,"\'")}','${q.page||''}','${q.probNum||''}','${ds}','${hasImg}')"
+      style="cursor:pointer;background:#F0EEFF;border-radius:12px;padding:10px 14px;margin-bottom:8px">
+      <div style="font-size:13px;font-weight:600;color:#42407A">${q.stuName||q.sid} · ${q.bookName||(hasImg?'📷 사진 질문':'(내용 없음)')}</div>
+      <div style="font-size:11px;color:#6A6688">${q.page?q.page+'p · ':''}${q.probNum?q.probNum+'번 ':''}<span style="color:#B0AACF;margin-left:6px">${ds}</span></div>
+    </div>`;
+  }).join('');
+}
+function openFreeQModal(sid,pid,stuName,bookName,page,probNum,ds,hasImg){
+  _freeQTarget={sid,pid};
+  document.getElementById('ytTbId').value='__freeQ__';
+  document.getElementById('ytProbNum').value=pid;
+  var titleTxt=stuName+' · '+(bookName||(hasImg==='true'?'📷 사진 질문':'기타 질문'));
+  var subTxt=(page?page+'p · ':'')+(probNum?probNum+'번  ':'')+' ('+ds+')';
+  document.getElementById('ytModalProbLabel').textContent=titleTxt;
+  var qHtml='<div style="background:rgba(239,68,68,.06);border:1.5px solid rgba(239,68,68,.2);border-radius:12px;padding:10px 12px;margin-bottom:10px">'+
+    '<div style="font-size:12px;font-weight:600;color:#ef4444;margin-bottom:4px">질문한 학생</div>'+
+    '<span style="background:#fff;border-radius:8px;padding:3px 9px;font-size:12px;color:#1E1B3A">'+stuName+'</span>'+
+    '<div style="font-size:11px;color:#6A6688;margin-top:6px">'+subTxt+'</div>'+
+    '</div>';
+  if(hasImg==='true'){
+    qHtml+='<div id="freeQAdminImg" style="margin-bottom:10px"><div style="font-size:12px;color:#A8A4C0">이미지 로딩 중...</div></div>';
+  }
+  qHtml+='<div style="display:flex;justify-content:flex-end">'+
+    '<button onclick="deleteFreeQAdmin()" style="padding:7px 16px;border:none;border-radius:10px;background:rgba(239,68,68,.1);color:#ef4444;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">질문 삭제</button>'+
+    '</div>';
+  document.getElementById('probQList').innerHTML=qHtml;
+  // 유튜브 입력란 로드
+  db.ref('smFreeQuestions/'+sid+'/'+pid).once('value',function(s){
+    var q=s.val()||{};
+    document.getElementById('ytTitleInp').value=q.ytTitle||'';
+    document.getElementById('ytUrlInp').value=q.youtubeUrl||'';
+  });
+  // 이미지 로드
+  if(hasImg==='true'){
+    db.ref('smFreeQImages/'+sid+'/'+pid).once('value',function(s){
+      var src=s.val();
+      var el=document.getElementById('freeQAdminImg');
+      if(el) el.innerHTML=src?'<img src="'+src+'" style="width:100%;border-radius:10px;max-height:300px;object-fit:contain">':'';
+    });
+  }
+  document.getElementById('ytModal').style.display='flex';
+}
+function closeFreeQModal(){closeYtModal();}
+function deleteFreeQAdmin(){
+  var {sid,pid}=_freeQTarget;
+  if(!sid||!pid) return;
+  db.ref('smFreeQuestions/'+sid+'/'+pid).remove();
+  db.ref('smFreeQImages/'+sid+'/'+pid).remove();
+  closeYtModal();
+  loadTextbookData();
 }
 
 function renderTbAssignList(){
@@ -867,34 +1015,42 @@ function closeTbModal(){document.getElementById('tbModal').style.display='none';
 
 async function saveTb(){
   var title=document.getElementById('tbTitleInp').value.trim();
-  var probsRaw=document.getElementById('tbProblemsInp').value.trim();
-  if(!title||!probsRaw){toast('제목과 문제 번호를 입력하세요');return;}
-
-  // 문제 번호 파싱 (범위 또는 쉼표)
-  var nums=[];
-  probsRaw.split(',').forEach(seg=>{
-    seg=seg.trim();
-    var m=seg.match(/^(\d+)-(\d+)$/);
-    if(m){
-      var s=parseInt(m[1]),e=parseInt(m[2]);
-      for(var i=s;i<=e;i++) nums.push(String(i));
-    }else if(seg) nums.push(seg);
-  });
-
+  if(!title){toast('교재 제목을 입력하세요');return;}
   var editId=document.getElementById('tbEditId').value;
   var tid=editId||db.ref('smTextbooks').push().key;
-
-  // 기존 문제의 유튜브 링크 보존
   var existProbs=(tbSets[tid]||{}).problems||{};
   var problems={};
-  nums.forEach(num=>{
-    var ep=existProbs[num]||{};
-    problems[num]=Object.keys(ep).length?ep:{exists:1};
-  });
-
+  if(_tbTabMode==='json'){
+    var raw=document.getElementById('tbJsonInp').value.trim();
+    if(!raw){toast('JSON을 입력하세요');return;}
+    try{
+      var jsonData=JSON.parse(raw);
+      problems=jsonToProblems(jsonData);
+      Object.keys(problems).forEach(key=>{
+        if(existProbs[key]&&existProbs[key].youtubeUrl){
+          problems[key].youtubeUrl=existProbs[key].youtubeUrl;
+          problems[key].ytTitle=existProbs[key].ytTitle||'';
+        }
+      });
+    }catch(e){toast('JSON 파싱 오류');return;}
+  }else{
+    var probsRaw=document.getElementById('tbProblemsInp').value.trim();
+    if(!probsRaw){toast('문제 번호를 입력하세요');return;}
+    var nums=[];
+    probsRaw.split(',').forEach(seg=>{
+      seg=seg.trim();
+      var m=seg.match(/^(\d+)-(\d+)$/);
+      if(m){var s=parseInt(m[1]),e=parseInt(m[2]);for(var i=s;i<=e;i++)nums.push(String(i));}
+      else if(seg) nums.push(seg);
+    });
+    nums.forEach(num=>{
+      var ep=existProbs[num]||{};
+      problems[num]=Object.keys(ep).length?ep:{exists:1};
+    });
+  }
   await db.ref('smTextbooks/'+tid).set({title,problems,createdAt:Date.now()});
   tbSets[tid]={title,problems,createdAt:Date.now()};
-  toast('✅ 교재 저장됨');
+  toast('✅ 교재 저장됨 ('+Object.keys(problems).length+'문제)');
   closeTbModal();
   renderTbList();
 }
@@ -940,6 +1096,16 @@ function openYtModal(tbId,probNum){openProbDetail(tbId,probNum);}
 function closeYtModal(){document.getElementById('ytModal').style.display='none';}
 
 async function saveYtLink(){
+  if(document.getElementById('ytTbId').value==='__freeQ__'){
+    var {sid,pid}=_freeQTarget;
+    if(!sid||!pid){closeYtModal();return;}
+    var title=document.getElementById('ytTitleInp').value.trim();
+    var url=document.getElementById('ytUrlInp').value.trim();
+    db.ref('smFreeQuestions/'+sid+'/'+pid).update({ytTitle:title,youtubeUrl:url}).then(()=>{
+      closeYtModal();loadTextbookData();
+    });
+    return;
+  }
   var tbId=document.getElementById('ytTbId').value;
   var probNum=document.getElementById('ytProbNum').value;
   var title=document.getElementById('ytTitleInp').value.trim();
