@@ -273,9 +273,10 @@ function today(){
   if(d.getHours()<3) d.setDate(d.getDate()-1);
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
-// 계획 플래너: 자정 기준 (변경 없음)
+// 계획 플래너: 오후 10시 이후 → 다음날
 function todayForPlan(){
   const d=new Date();
+  if(d.getHours()>=22) d.setDate(d.getDate()+1);
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 // 완료 플래너: 새벽 4시 기준
