@@ -273,6 +273,17 @@ function today(){
   if(d.getHours()<3) d.setDate(d.getDate()-1);
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
+// 계획 플래너: 자정 기준 (변경 없음)
+function todayForPlan(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+// 완료 플래너: 새벽 4시 기준
+function todayForDone(){
+  const d=new Date();
+  if(d.getHours()<4) d.setDate(d.getDate()-1);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
 let db, stuId = null, stuData = null, selectedFile = null, sessions = {}, planType = 'plan', plannerData = {}, planYear, planMonth, od4pData = {};
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -284,7 +295,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (!firebase.apps.length) firebase.initializeApp(SM_CONFIG);
     db = firebase.database();
   } catch(e) { alert('Firebase 오류: ' + e.message); return; }
-  document.getElementById('planDate').value = today();
+  document.getElementById('planDate').value = todayForPlan();
 });
 
 async function doLogin() {
@@ -407,6 +418,7 @@ function setType(t) {
   planType = t;
   document.getElementById('typePlan').className = 'type-btn' + (t === 'plan' ? ' sel' : '');
   document.getElementById('typeDone').className = 'type-btn' + (t === 'done' ? ' sel' : '');
+  document.getElementById('planDate').value = t === 'done' ? todayForDone() : todayForPlan();
 }
 
 function onFileSelect(e) {
