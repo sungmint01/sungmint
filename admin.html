@@ -1773,7 +1773,9 @@ async function applyClinicResultsToSessions(cid){
     const sesData = snap.val()||{};
     const sesList = Object.entries(sesData);
     if(!sesList.length) continue; // 세션 없으면 건너뜀 (새 세션 생성 안 함)
-    const newEntry = cs.title+', '+r.score+'/'+r.total+'점';
+    const newEntry = (r.score===null||r.score===undefined)
+      ? cs.title+', '+r.total+'문항'
+      : cs.title+', '+r.score+'/'+r.total+'점';
     // 우선순위: ①이미 이 클리닉 cli 있는 세션 ②클리닉 날짜 세션(hwC 있는 것) ③클리닉 날짜 세션(아무거나) ④가장 최근
     let target =
       sesList.find(([,s])=>s.cli&&s.cli.includes(cs.title)) ||
