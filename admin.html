@@ -439,8 +439,19 @@ textarea.inp{resize:vertical;min-height:68px}
           <div id="tbList" style="margin-bottom:20px"></div>
 
           <!-- 기타 질문 목록 -->
-          <div style="font-size:14px;font-weight:600;color:#1E1B3A;margin:20px 0 10px">📝 기타 질문</div>
-          <div id="freeQAdminList" style="margin-bottom:20px"></div>
+          <div id="freeQAdminCard" style="background:#F0EEFF;border-radius:14px;padding:14px;margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="toggleFreeQCollapse()">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span id="freeQCollapseIcon" style="font-size:13px;color:#6A6688;transition:.15s;display:inline-block;transform:rotate(0deg)">▶</span>
+                <div>
+                  <div style="font-size:14px;font-weight:600">📝 기타 질문</div>
+                  <div id="freeQAdminSub" style="font-size:11px;color:#A8A4C0">-</div>
+                </div>
+              </div>
+              <div><span id="freeQAdminStatus" style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px"></span></div>
+            </div>
+            <div id="freeQAdminList" style="display:none;margin-top:12px"></div>
+          </div>
 
           <!-- 학생 교재 배정 -->
           <div style="font-size:14px;font-weight:600;color:#1E1B3A;margin-bottom:10px">학생 교재 배정</div>
@@ -878,9 +889,17 @@ function jsonToProblems(d){
 }
 
 var _freeQTarget={sid:null,pid:null};
+var _freeQCollapsed=true;
+function toggleFreeQCollapse(){
+  _freeQCollapsed=!_freeQCollapsed;
+  document.getElementById('freeQAdminList').style.display=_freeQCollapsed?'none':'block';
+  document.getElementById('freeQCollapseIcon').style.transform=_freeQCollapsed?'rotate(0deg)':'rotate(90deg)';
+}
 function renderFreeQAdmin(rawFQ){
-  var el=document.getElementById('freeQAdminList');
-  if(!el) return;
+  var listEl=document.getElementById('freeQAdminList');
+  var statusEl=document.getElementById('freeQAdminStatus');
+  var subEl=document.getElementById('freeQAdminSub');
+  if(!listEl) return;
   var all=[];
   Object.entries(rawFQ).forEach(([sid,items])=>{
     Object.entries(items||{}).forEach(([pid,q])=>{
@@ -888,15 +907,40 @@ function renderFreeQAdmin(rawFQ){
     });
   });
   all.sort((a,b)=>b.createdAt-a.createdAt);
-  if(!all.length){el.innerHTML='<div style="color:#A8A4C0;font-size:13px;padding:8px">기타 질문이 없습니다</div>';return;}
-  el.innerHTML=all.map(q=>{
+  var total=all.length;
+  var pending=all.filter(q=>!q.youtubeUrl).length;
+  // 상태 뱃지
+  if(total===0){
+    statusEl.textContent='질문 없음';
+    statusEl.style.color='#A8A4C0';
+    statusEl.style.background='rgba(168,164,192,.1)';
+    subEl.textContent='등록된 질문이 없습니다';
+  } else if(pending>0){
+    statusEl.textContent='질문 '+pending+'개 대기';
+    statusEl.style.color='#ef4444';
+    statusEl.style.background='rgba(239,68,68,.1)';
+    subEl.textContent='총 '+total+'건';
+  } else {
+    statusEl.textContent='모두 완료';
+    statusEl.style.color='#56A08A';
+    statusEl.style.background='rgba(86,160,138,.12)';
+    subEl.textContent='총 '+total+'건 · 모두 영상 등록됨';
+  }
+  if(!all.length){listEl.innerHTML='<div style="color:#A8A4C0;font-size:13px;padding:8px">기타 질문이 없습니다</div>';return;}
+  listEl.innerHTML=all.map(q=>{
     var d=new Date(q.createdAt);
     var ds=(d.getMonth()+1)+'/'+(d.getDate())+' '+(d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();
     var hasImg=!!q.hasImage;
+    var hasSol=!!(q.youtubeUrl);
+    var bc=hasSol?'#56A08A':'#ef4444';
+    var bg=hasSol?'rgba(86,160,138,.08)':'rgba(239,68,68,.06)';
     return `<div onclick="openFreeQModal('${q.sid}','${q.pid}','${(q.stuName||q.sid).replace(/'/g,"\'")}','${(q.bookName||'').replace(/'/g,"\'")}','${q.page||''}','${q.probNum||''}','${ds}','${hasImg}')"
-      style="cursor:pointer;background:#F0EEFF;border-radius:12px;padding:10px 14px;margin-bottom:8px">
-      <div style="font-size:13px;font-weight:600;color:#42407A">${q.stuName||q.sid} · ${q.bookName||(hasImg?'📷 사진 질문':'(내용 없음)')}</div>
-      <div style="font-size:11px;color:#6A6688">${q.page?q.page+'p · ':''}${q.probNum?q.probNum+'번 ':''}<span style="color:#B0AACF;margin-left:6px">${ds}</span></div>
+      style="cursor:pointer;background:${bg};border:1.5px solid ${bc}22;border-radius:12px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:#42407A">${q.stuName||q.sid} · ${q.bookName||(hasImg?'📷 사진 질문':'기타 질문')}</div>
+        <div style="font-size:11px;color:#6A6688">${q.page?q.page+'p · ':''}${q.probNum?q.probNum+'번 ':''}<span style="color:#B0AACF;margin-left:6px">${ds}</span></div>
+      </div>
+      <span style="font-size:10px;font-weight:700;color:${bc};background:${bg};padding:2px 8px;border-radius:10px;white-space:nowrap">${hasSol?'완료':'대기'}</span>
     </div>`;
   }).join('');
 }
