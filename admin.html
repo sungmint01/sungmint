@@ -1993,8 +1993,9 @@ async function applyClinicResultsToSessions(cid){
       (cs.date && sesList.find(([,s])=>s.date===cs.date)) ||
       sesList.sort(([,a],[,b])=>((b.upd||b.at||0)-(a.upd||a.at||0)))[0];
     if(target){
-      // 기존 cli에서 같은 제목 줄 교체, 없으면 추가
-      const prevCli = (target[1].cli||'').trim();
+      // Firebase에서 최신 cli 값 직접 읽기 (캐시 문제 방지)
+      const freshSnap = await db.ref('smSessions/'+stuId+'/'+target[0]+'/cli').get();
+      const prevCli = (freshSnap.val()||'').trim();
       let lines = prevCli ? prevCli.split('\n') : [];
       const idx = lines.findIndex(l=>l.startsWith(cs.title));
       if(idx>=0) lines[idx]=newEntry;
