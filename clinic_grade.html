@@ -165,6 +165,10 @@ body{font-family:'Noto Sans KR','MaruBuri',sans-serif;background:var(--bg);min-h
 
   <!-- Step 2: 클리닉 / 숙제 선택 -->
   <div id="step2" style="display:none">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <button onclick="setStep(1)" style="border:none;background:#F0EEFF;border-radius:10px;padding:7px 14px;font-size:13px;color:#9D91EE;font-weight:700;cursor:pointer;font-family:inherit">← 뒤로</button>
+      <div id="step2StuName" style="font-size:14px;font-weight:700;color:#1E1B3A"></div>
+    </div>
     <div class="card" id="clinicSelectCard">
       <div class="card-title">📋 클리닉 선택</div>
       <div id="clinicItems"><div class="ps-empty">해당 클리닉이 없습니다</div></div>
@@ -203,7 +207,6 @@ body{font-family:'Noto Sans KR','MaruBuri',sans-serif;background:var(--bg);min-h
       <div class="grade-toggle">
         <button class="grade-tab on" id="tabAns" onclick="switchGradeTab('ans')">📝 답 입력</button>
         <button class="grade-tab" id="tabDirect" onclick="switchGradeTab('direct')">🔢 점수 직접 입력</button>
-        <button class="grade-tab" id="tabTotalOnly" onclick="switchGradeTab('totalOnly')">📋 푼 문제 수만 입력</button>
         <button class="grade-tab" id="tabText" onclick="switchGradeTab('text')">✍️ 직접 내용 작성</button>
       </div>
       <div id="ansMode">
@@ -226,20 +229,11 @@ body{font-family:'Noto Sans KR','MaruBuri',sans-serif;background:var(--bg);min-h
         <div class="direct-score-wrap">
           <div class="score-hint" style="margin-bottom:16px">맞은 개수와 푼 개수를 입력하세요</div>
           <div class="direct-score-row">
-            <input class="score-inp" type="number" id="directScore" min="0" step="0.1" placeholder="0">
+            <input class="score-inp" type="number" id="directScore" min="0" placeholder="0">
             <span class="score-slash">/</span>
-            <input class="score-inp" type="number" id="directTotal" min="0" step="0.1" placeholder="0">
+            <input class="score-inp" type="number" id="directTotal" min="0" placeholder="0">
           </div>
           <div class="score-hint">맞은 개수 / 푼 개수</div>
-        </div>
-      </div>
-      <div id="totalOnlyMode" style="display:none">
-        <div class="direct-score-wrap">
-          <div class="score-hint" style="margin-bottom:16px">푼 문제 수를 입력하세요</div>
-          <div class="direct-score-row">
-            <input class="score-inp" type="number" id="totalOnlyVal" min="0" step="0.1" placeholder="0">
-          </div>
-          <div class="score-hint">푼 문제 수</div>
         </div>
       </div>
       <div id="textMode" style="display:none">
@@ -307,9 +301,9 @@ body{font-family:'Noto Sans KR','MaruBuri',sans-serif;background:var(--bg);min-h
         <div class="direct-score-wrap">
           <div class="score-hint" style="margin-bottom:16px">맞은 개수와 푼 개수를 입력하세요</div>
           <div class="direct-score-row">
-            <input class="score-inp" type="number" id="hwDirectScore" min="0" step="0.1" placeholder="0">
+            <input class="score-inp" type="number" id="hwDirectScore" min="0" placeholder="0">
             <span class="score-slash">/</span>
-            <input class="score-inp" type="number" id="hwDirectTotal" min="0" step="0.1" placeholder="0">
+            <input class="score-inp" type="number" id="hwDirectTotal" min="0" placeholder="0">
           </div>
         </div>
       </div>
@@ -514,8 +508,8 @@ function hwBuildGrid(){
 async function hwSubmit(){
   let score,total,wrong=[],stuAnswers={};
   if(_hwGradeTab==='direct'){
-    score=parseFloat(document.getElementById('hwDirectScore').value)||0;
-    total=parseFloat(document.getElementById('hwDirectTotal').value)||0;
+    score=parseInt(document.getElementById('hwDirectScore').value)||0;
+    total=parseInt(document.getElementById('hwDirectTotal').value)||0;
     if(!total){document.getElementById('hwErr3').textContent='푼 개수를 입력하세요';return;}
     if(score>total){document.getElementById('hwErr3').textContent='맞은 개수가 푼 개수보다 클 수 없습니다';return;}
     document.getElementById('hwErr3').textContent='';
@@ -583,6 +577,8 @@ function renderClinicList(){
 function selectClinic(cid){
   selectedClinicId=cid;
   selectedClinic=clinicData[cid];
+  var _el=document.getElementById('step3ClinicName');
+  if(_el) _el.textContent=clinicData[cid]&&clinicData[cid].title||'';
   renderFilteredClinicList(currentStuId, allStudents[currentStuId]||{});
   // Go to step3
   resetAttend();
@@ -615,10 +611,9 @@ function goStep2(){
   }
   err.textContent=''; sugg.textContent='';
   currentStuId=entry[0]; currentStuName=entry[1].name;
-  // Filter clinics/hw for this student
   renderFilteredClinicList(entry[0],entry[1]);
   renderFilteredHwList(entry[0],entry[1]);
-  // 오늘 직접입력 기록이 있으면 폼에 로드
+  document.getElementById('step2StuName').textContent=entry[1].name;
   setStep(2);
 }
 
@@ -716,6 +711,21 @@ function goStep3(){
     pdfWrap.innerHTML='';
     pdfWrap.style.display='none';
   }
+  // 이전 입력값 복원
+  try{
+    var _saved=localStorage.getItem('cgLast_'+currentStuId+'_'+selectedClinicId);
+    if(_saved){
+      var _r=JSON.parse(_saved);
+      if(_r.isTotalOnly){
+        switchGradeTab('totalOnly');
+        document.getElementById('totalOnlyVal').value=_r.total||'';
+      }else if(_r.isDirect){
+        switchGradeTab('direct');
+        document.getElementById('directScore').value=_r.score||'';
+        document.getElementById('directTotal').value=_r.total||'';
+      }
+    }
+  }catch(e){}
   setStep(3);
 }
 
@@ -734,11 +744,9 @@ function switchGradeTab(tab){
   _gradeTab=tab;
   document.getElementById('tabAns').className='grade-tab'+(tab==='ans'?' on':'');
   document.getElementById('tabDirect').className='grade-tab'+(tab==='direct'?' on':'');
-  document.getElementById('tabTotalOnly').className='grade-tab'+(tab==='totalOnly'?' on':'');
   document.getElementById('tabText').className='grade-tab'+(tab==='text'?' on':'');
   document.getElementById('ansMode').style.display=tab==='ans'?'':'none';
   document.getElementById('directMode').style.display=tab==='direct'?'':'none';
-  document.getElementById('totalOnlyMode').style.display=tab==='totalOnly'?'':'none';
   document.getElementById('textMode').style.display=tab==='text'?'':'none';
 }
 
@@ -817,15 +825,10 @@ async function submitGrade(){
     setStep(4);
     return;
   }
-  if(_gradeTab==='totalOnly'){
-    total=parseFloat(document.getElementById('totalOnlyVal').value)||0;
-    if(!total){document.getElementById('err3').textContent='푼 문제 수를 입력하세요';return;}
-    score=null;
-    document.getElementById('err3').textContent='';
-  } else if(_gradeTab==='direct'){
+  if(_gradeTab==='direct'){
     // 직접 점수 입력
-    score=parseFloat(document.getElementById('directScore').value)||0;
-    total=parseFloat(document.getElementById('directTotal').value)||0;
+    score=parseInt(document.getElementById('directScore').value)||0;
+    total=parseInt(document.getElementById('directTotal').value)||0;
     if(!total){document.getElementById('err3').textContent='푼 개수를 입력하세요';return;}
     if(score>total){document.getElementById('err3').textContent='맞은 개수가 푼 개수보다 클 수 없습니다';return;}
     document.getElementById('err3').textContent='';
@@ -848,6 +851,7 @@ async function submitGrade(){
     score=score||0;
   }
   lastResult={stuAnswers,score,total,wrong,isDirect:_gradeTab==='direct'||_gradeTab==='totalOnly',isTotalOnly:_gradeTab==='totalOnly'};
+  try{localStorage.setItem('cgLast_'+currentStuId+'_'+selectedClinicId,JSON.stringify(lastResult));}catch(e){}
   // Save result
   const result={name:currentStuName,answers:stuAnswers,score,total,wrong,gradedAt:Date.now()};
   await db.ref('smClinicResults/'+selectedClinicId+'/'+currentStuId).set(result);
@@ -955,6 +959,12 @@ function setStepDot(n){
     const d=document.getElementById('sd'+i);
     if(d) d.className='step-dot'+(i<=n?' active':'');
   });
+}
+
+function backToStep2(){
+  ['step3','step4','hwStep3','hwStep4'].forEach(id=>document.getElementById(id)&&(document.getElementById(id).style.display='none'));
+  document.getElementById('step2').style.display='';
+  setStepDot(2);
 }
 function setStep(n){
   [1,2,3,4].forEach(i=>{
