@@ -589,6 +589,10 @@ function selectClinic(cid){
   resetAttend();
   buildAnsGrid();
   document.getElementById('step3Title').textContent='📝 '+currentStuName+' 채점';
+  switchGradeTab('ans');
+  document.getElementById('directScore').value='';
+  document.getElementById('directTotal').value='';
+  document.getElementById('totalOnlyVal').value='';
   try{
     var _saved=localStorage.getItem('cgLast_'+currentStuId+'_'+selectedClinicId);
     if(_saved){
@@ -718,6 +722,10 @@ function goStep3(){
   resetAttend();
   buildAnsGrid();
   document.getElementById('step3Title').textContent='📝 '+currentStuName+' 채점';
+  switchGradeTab('ans');
+  document.getElementById('directScore').value='';
+  document.getElementById('directTotal').value='';
+  document.getElementById('totalOnlyVal').value='';
   try{
     var _saved=localStorage.getItem('cgLast_'+currentStuId+'_'+selectedClinicId);
     if(_saved){
@@ -806,11 +814,6 @@ function buildAnsGrid(){
           else submitGrade();
         }
       });
-    }
-    // If previous submission exists, also restore direct score
-    if(prev&&_gradeTab==='direct'){
-      document.getElementById('directScore').value=prev.score||'';
-      document.getElementById('directTotal').value=prev.total||'';
     }
   });
 }
