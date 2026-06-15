@@ -884,16 +884,25 @@ async function submitGrade(){
   const isAbsent=document.getElementById('chkAbsent').checked;
   const isLate=document.getElementById('chkLate').checked;
   const todayStr=today();
-  const cliText=selectedClinic.title+', '+score+'/'+total+'점';
+  const newCliEntry=(score===null||score===undefined)
+    ? selectedClinic.title+', '+total+'문항'
+    : selectedClinic.title+', '+score+'/'+total+'점';
   // cli/absent/late만 업데이트 (다른 필드 건드리지 않음)
   const existingSes=await findOrCreateSession(currentStuId, todayStr);
   if(existingSes){
+    // 기존 cli에서 같은 클리닉 제목 줄 교체, 없으면 추가
+    const freshCliSnap=await db.ref('smSessions/'+currentStuId+'/'+existingSes[0]+'/cli').get();
+    const prevCli=(freshCliSnap.val()||'').trim();
+    let cliLines=prevCli?prevCli.split('\n'):[];
+    const cliIdx=cliLines.findIndex(l=>l.startsWith(selectedClinic.title));
+    if(cliIdx>=0) cliLines[cliIdx]=newCliEntry;
+    else cliLines.push(newCliEntry);
     await db.ref('smSessions/'+currentStuId+'/'+existingSes[0]).update({
-      cli:cliText, absent:isAbsent, late:isLate, upd:Date.now()
+      cli:cliLines.join('\n'), absent:isAbsent, late:isLate, upd:Date.now()
     });
   }else{
     await db.ref('smSessions/'+currentStuId).push({
-      date:todayStr, cli:cliText, absent:isAbsent, late:isLate,
+      date:todayStr, cli:newCliEntry, absent:isAbsent, late:isLate,
       eval:null, at:Date.now(), upd:Date.now()
     });
   }
