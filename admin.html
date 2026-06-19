@@ -1125,7 +1125,10 @@ function openProbDetail(tbId,probNum){
     qHtml='<div style="background:rgba(239,68,68,.06);border:1.5px solid rgba(239,68,68,.2);border-radius:12px;padding:10px 12px">'+
       '<div style="font-size:12px;font-weight:600;color:#ef4444;margin-bottom:6px">🔴 질문한 학생 ('+qList.length+'명)</div>'+
       '<div style="display:flex;flex-wrap:wrap;gap:5px">'+
-      qList.map(q=>'<span style="background:#fff;border-radius:8px;padding:3px 9px;font-size:12px;color:#1E1B3A">'+q.name+'</span>').join('')+
+      qList.map(q=>`<span style="display:inline-flex;align-items:center;gap:4px;background:#fff;border-radius:8px;padding:3px 9px;font-size:12px;color:#1E1B3A">
+        ${q.name}
+        <button onclick="removeTbQuestion('${tbId}','${probNum}','${q.sid}')" style="border:none;background:none;color:#ef4444;font-size:12px;cursor:pointer;padding:0;line-height:1" title="체크 해제">✕</button>
+      </span>`).join('')+
       '</div></div>';
   }else{
     qHtml='<div style="background:#F0EEFF;border-radius:12px;padding:10px 12px;font-size:12px;color:#A8A4C0">아직 질문한 학생이 없습니다</div>';
@@ -1135,6 +1138,18 @@ function openProbDetail(tbId,probNum){
 }
 
 // 하위 호환
+
+function removeTbQuestion(tbId,probNum,stuId){
+  if(!confirm('이 학생의 질문 체크를 해제할까요?')) return;
+  db.ref('smTbQuestions/'+tbId+'/'+stuId+'/'+probNum).remove().then(()=>{
+    // 메모리에서도 제거
+    if(tbQuestions[tbId]&&tbQuestions[tbId][probNum]){
+      tbQuestions[tbId][probNum]=tbQuestions[tbId][probNum].filter(q=>q.sid!==stuId);
+    }
+    openProbDetail(tbId,probNum);
+    renderTbList();
+  });
+}
 function openYtModal(tbId,probNum){openProbDetail(tbId,probNum);}
 
 function closeYtModal(){document.getElementById('ytModal').style.display='none';}
