@@ -1493,6 +1493,8 @@ function showHwMgr(){
   ['empty','detail','consultView','plannerStatus','od4pStatus','clinicMgr','textbookMgr'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('hwMgr').style.display='';
   renderSidebar();
+  db.ref('smHwSets').off();
+  db.ref('smHwResults').off();
   db.ref('smHwSets').on('value',s=>{hwSets=s.val()||{};renderHwMgrList();});
   db.ref('smHwResults').on('value',s=>{hwResults=s.val()||{};renderHwMgrList();});
 }
@@ -1681,6 +1683,8 @@ function showClinicMgr(){
   document.getElementById('clinicMgr').style.display='';
   renderSidebar();
   // load clinic data
+  db.ref('smClinicSets').off();
+  db.ref('smClinicResults').off();
   db.ref('smClinicSets').on('value',s=>{clinicSets=s.val()||{};renderClinicList();});
   db.ref('smClinicResults').on('value',s=>{clinicResults=s.val()||{};renderClinicList();});
 }
@@ -2427,6 +2431,7 @@ function renderConsultView(){
   });
   el.innerHTML=html||'<p class="etbl">상담 요청이 없습니다</p>';
 }
+var _curSesListenRef=null;
 function selectStu(id){closeSidebar();
   // 학생 선택 시 해당 학생 플래너 메타데이터 갱신
   db.ref('smPlanners/'+id).get().then(s=>{planners[id]=s.val()||{};});
@@ -2435,7 +2440,10 @@ function selectStu(id){closeSidebar();
   document.getElementById('detail').style.display='';
   document.getElementById('consultView').style.display='none';
   renderHeader();renderSidebar();
-  db.ref(`smSessions/${id}`).on('value',s=>{sessions[id]=s.val()||{};renderCal();});
+  // 이전 학생 세션 리스너 해제 (메모리/대역폭 누수 방지)
+  if(_curSesListenRef) _curSesListenRef.off();
+  _curSesListenRef=db.ref(`smSessions/${id}`);
+  _curSesListenRef.on('value',s=>{sessions[id]=s.val()||{};renderCal();});
 }
 function renderHeader(){
   const s=students[uid_];if(!s)return;

@@ -546,11 +546,6 @@ async function hwSubmit(){
   document.getElementById('hwStep4').style.display='';
 }
 
-function hwReset(){
-  currentHwStuId=null;currentHwStuName='';selectedHwId=null;selectedHw=null;
-  ['hwStep2','hwStep3','hwStep4'].forEach(id=>document.getElementById(id).style.display='none');
-  renderHwList();
-}
 // ════ END 숙제 채점 JS ════
 
 async function loadData(){
@@ -711,49 +706,6 @@ function backToStep2(){
   ['step3','step4','hwStep3','hwStep4'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('step2').style.display='';
   setStepDot(2);
-}
-
-function goStep3(){
-  const err=document.getElementById('err2');
-  const sugg=document.getElementById('sugg2');
-  if(!currentStuId){err.textContent='학생을 먼저 선택하세요';return;}
-  // Student already identified in step1
-  err.textContent=''; sugg.textContent='';
-  resetAttend();
-  buildAnsGrid();
-  document.getElementById('step3Title').textContent='📝 '+currentStuName+' 채점';
-  switchGradeTab('ans');
-  document.getElementById('directScore').value='';
-  document.getElementById('directTotal').value='';
-  document.getElementById('totalOnlyVal').value='';
-  try{
-    var _saved=localStorage.getItem('cgLast_'+currentStuId+'_'+selectedClinicId);
-    if(_saved){
-      var _r=JSON.parse(_saved);
-      if(_r.isTotalOnly){
-        switchGradeTab('totalOnly');
-        document.getElementById('totalOnlyVal').value=_r.total||'';
-      }else if(_r.isDirect){
-        switchGradeTab('direct');
-        document.getElementById('directScore').value=_r.score||'';
-        document.getElementById('directTotal').value=_r.total||'';
-      }
-    }
-  }catch(e){}
-  // Show PDF if available
-  var pdfWrap=document.getElementById('pdfDownloadWrap');
-  if(selectedClinic.pdfData){
-    pdfWrap.innerHTML='<a class="pdf-download" href="'+selectedClinic.pdfData+'" download="'+(selectedClinic.pdfName||'해설.pdf')+'">'
-      +'<div class="pdf-icon">📄</div>'
-      +'<div class="pdf-info"><div class="pdf-title">해설 PDF 다운로드</div>'
-      +'<div class="pdf-hint">'+(selectedClinic.pdfName||'해설.pdf')+'</div></div>'
-      +'<span style="color:var(--acc);font-weight:700;font-size:18px">↓</span></a>';
-    pdfWrap.style.display='';
-  }else{
-    pdfWrap.innerHTML='';
-    pdfWrap.style.display='none';
-  }
-  setStep(3);
 }
 
 function insertMath(ch){
@@ -986,11 +938,6 @@ function resetAttend(){
   document.getElementById('chkAbsent').checked=false;
   document.getElementById('chkLate').checked=false;
 }
-function goBack(step){
-  if(step===2) setStep(1);
-  else if(step===3) setStep(2);
-}
-
 function setStepDot(n){
   [1,2,3].forEach(i=>{
     const d=document.getElementById('sd'+i);
@@ -1023,58 +970,6 @@ function backToTextEdit(){
   setStep(3);
 }
 
-async function loadDirectRecord(stuId){
-  const todayStr=today();
-  document.getElementById('errDirect').style.color='';
-  document.getElementById('errDirect').textContent='';
-  try{
-    const snap=await db.ref('smClinicResults/direct_'+todayStr+'/'+stuId).get();
-    const data=snap.val();
-    if(data){
-      document.getElementById('directTitle').value=data.title||'';
-      document.getElementById('dScore').value=data.score||'';
-      document.getElementById('dTotal').value=data.total||'';
-      document.getElementById('errDirect').style.color='#8B7DD8';
-      document.getElementById('errDirect').textContent='기존 기록 불러옴 — 수정 후 저장하세요';
-    }else{
-      document.getElementById('directTitle').value='';
-      document.getElementById('dScore').value='';
-      document.getElementById('dTotal').value='';
-    }
-  }catch(e){}
-}
-
-async function submitDirect(){
-  const title=document.getElementById('directTitle').value.trim()||'직접입력';
-  const score=parseInt(document.getElementById('dScore').value)||0;
-  const total=parseInt(document.getElementById('dTotal').value)||0;
-  const isAbsent=document.getElementById('dAbsent').checked;
-  const isLate=document.getElementById('dLate').checked;
-  const errEl=document.getElementById('errDirect');
-  if(!total){errEl.style.color='#ef4444';errEl.textContent='전체 개수를 입력하세요';return;}
-  if(score>total){errEl.style.color='#ef4444';errEl.textContent='맞은 개수가 전체보다 클 수 없습니다';return;}
-  errEl.textContent='';
-  const todayStr=today();
-  const cliText=title+', '+score+'/'+total+'점';
-  const existingSes=await findOrCreateSession(currentStuId,todayStr);
-  if(existingSes){
-    await db.ref('smSessions/'+currentStuId+'/'+existingSes[0]).update({
-      cli:cliText,absent:isAbsent,late:isLate,upd:Date.now()
-    });
-  }else{
-    await db.ref('smSessions/'+currentStuId).push({
-      date:todayStr,cli:cliText,absent:isAbsent,late:isLate,
-      eval:null,at:Date.now(),upd:Date.now()
-    });
-  }
-  await db.ref('smClinicResults/direct_'+todayStr+'/'+currentStuId).set({
-    name:currentStuName,score,total,title,isDirect:true,gradedAt:Date.now()
-  });
-  errEl.style.color='#56A08A';
-  errEl.textContent='✓ '+currentStuName+' 학생 기록 저장됨 ('+cliText+')';
-  document.getElementById('dAbsent').checked=false;
-  document.getElementById('dLate').checked=false;
-}
 </script>
 
 

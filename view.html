@@ -320,16 +320,6 @@ async function loadPlannerImg(pid){
 }
 
 
-async function loadPlannerImg(pid){
-  if(!pid)return null;
-  const cached=await PIC.get(pid);
-  if(cached)return cached;
-  const snap=await db.ref('smPlannerImages/'+pid).get();
-  const src=snap.val();
-  if(src)PIC.set(pid,src);
-  return src;
-}
-
 let db,sid_=null,recData={},sent=[],consultData={},calYear,calMonth,openDetailDate=null;
 function today(){
   const d=new Date();
@@ -649,20 +639,6 @@ window.addEventListener('focus', function(){
 
 function closeVPlanDetail(){document.getElementById('vPlanDetailOv').classList.remove('open');document.body.style.overflow='';}
 
-function vPlanImgClick(imgEl){
-  if(imgEl.dataset.hasFull==='1'){
-    var pid=imgEl.dataset.pid;
-    if(imgEl.dataset.fullSrc){openLbV(imgEl.dataset.fullSrc);return;}
-    imgEl.style.opacity='0.6';
-    db.ref('smPlannerImages/'+pid).once('value').then(function(snap){
-      var src=snap.val();
-      imgEl.style.opacity='1';
-      if(src){imgEl.dataset.fullSrc=src;openLbV(src);}
-      else{openLbV(imgEl.src);}
-    });
-  }else{openLbV(imgEl.src);}
-}
-
 function openLbV(src){document.getElementById('lbVImg').src=src;document.getElementById('lbV').classList.add('open');document.body.style.overflow='hidden';}
 function closeLbV(){document.getElementById('lbV').classList.remove('open');document.body.style.overflow='';}
 
@@ -763,19 +739,6 @@ function renderSent(){
   });
 })();
 
-function vLoadImg(el,pid){
-  if(!pid||!db) return;
-  el.textContent='로딩 중...';
-  loadPlannerImg(pid).then(function(src){
-    if(src){
-      var img=document.createElement('img');
-      img.className='vpdm-img';img.src=src;img.loading='lazy';
-      el.replaceWith(img);
-    } else {
-      el.textContent='사진 없음';
-    }
-  });
-}
 </script>
 
 </body>

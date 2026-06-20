@@ -558,39 +558,6 @@ function toggleProb(num){
 
 var activeTbNums=[];
 
-function rangeCheck(checked){
-  var from=parseInt(document.getElementById('rangeFrom').value)||0;
-  var to=parseInt(document.getElementById('rangeTo').value)||0;
-  if(!from||!to||from>to){alert('범위를 올바르게 입력하세요');return;}
-  var updates={};
-  activeTbNums.forEach(function(num){
-    var v=parseFloat(num);
-    if(isNaN(v)||v<from||v>to) return;
-    if(checked&&!myQuestions[num]){
-      myQuestions[num]=true;
-      updates['smTbQuestions/'+activeTbId+'/'+currentStuId+'/'+num]={checkedAt:Date.now()};
-    }else if(!checked&&myQuestions[num]){
-      myQuestions[num]=false;
-      updates['smTbQuestions/'+activeTbId+'/'+currentStuId+'/'+num]=null;
-    }
-  });
-  if(Object.keys(updates).length) db.ref().update(updates);
-  renderGrid(tbData[activeTbId]||{});
-}
-
-function clearAll(){
-  if(!confirm('전체 체크를 해제할까요?')) return;
-  var removes=[];
-  Object.keys(myQuestions).forEach(function(num){
-    if(myQuestions[num]){
-      myQuestions[num]=false;
-      removes.push(db.ref('smTbQuestions/'+activeTbId+'/'+currentStuId+'/'+num).remove());
-    }
-  });
-  if(removes.length) Promise.all(removes);
-  renderGrid(tbData[activeTbId]||{});
-}
-
 var ytSheetNum=null;
 function openYtSheet(num){
   var tb=tbData[activeTbId]||{};
@@ -702,9 +669,6 @@ function loadFreeQList(){
       '</div>';
     }).join('');
   });
-}
-function deleteFreeQ(id){
-  db.ref('smFreeQuestions/'+currentStuId+'/'+id).remove().then(loadFreeQList);
 }
 function openFreeQDetail(id){
   _freeQDetailId=id;
