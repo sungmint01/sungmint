@@ -864,7 +864,7 @@ function countJsonProblems(d){
 }
 function jsonToProblems(d){
   var problems={};
-  var kindPrefix={'개념CHECK':'1','유제':'2','연습문제':'3'};
+  var kindPrefix={'개념CHECK':'1','유제':'2','Level1':'3','Level2':'4','Level3':'5','연습문제':'6'};
   (d.chapters||[]).forEach(ch=>{
     (ch.sections||[]).forEach(sec=>{
       (sec.subsections||[]).forEach(sub=>{
