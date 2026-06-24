@@ -311,12 +311,17 @@ const PIC={
 };
 async function loadPlannerImg(pid){
   if(!pid)return null;
-  const cached=await PIC.get(pid);
-  if(cached)return cached;
-  const snap=await db.ref('smPlannerImages/'+pid).get();
-  const src=snap.val();
-  if(src)PIC.set(pid,src);
-  return src;
+  try{
+    const cached=await PIC.get(pid);
+    if(cached)return cached;
+    const snap=await db.ref('smPlannerImages/'+pid).get();
+    const src=snap.val();
+    if(src)PIC.set(pid,src);
+    return src||null;
+  }catch(e){
+    console.error('이미지 로드 실패:',pid,e);
+    return null;
+  }
 }
 
 

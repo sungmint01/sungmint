@@ -1312,12 +1312,17 @@ const PIC={
 };
 async function loadPlannerImg(pid){
   if(!pid)return null;
-  const cached=await PIC.get(pid);
-  if(cached)return cached;
-  const snap=await db.ref('smPlannerImages/'+pid).get();
-  const src=snap.val();
-  if(src)PIC.set(pid,src);
-  return src;
+  try{
+    const cached=await PIC.get(pid);
+    if(cached)return cached;
+    const snap=await db.ref('smPlannerImages/'+pid).get();
+    const src=snap.val();
+    if(src)PIC.set(pid,src);
+    return src||null;
+  }catch(e){
+    console.error('이미지 로드 실패:',pid,e);
+    return null;
+  }
 }
 
 function loadPvImg(el, pid){
@@ -2309,7 +2314,9 @@ async function openPlannerPreview(stuName, type, items, stuId){
           img.onclick=function(){openLightbox(this.src);};
           imgWrap.replaceWith(img);
         } else {
-          imgWrap.style.display='none';
+          // hasImage:true인데 이미지 없음 → 업로드 누락 안내
+          imgWrap.textContent='⚠️ 사진 없음 (학생 재업로드 필요)';
+          imgWrap.style.cssText='min-height:40px;background:#fef2f2;color:#ef4444;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;font-size:12px;font-weight:600';
         }
       });
     }

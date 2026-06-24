@@ -455,17 +455,25 @@ async function uploadPlanner() {
   msg.textContent = '';
 
   try {
-    // 중간 화질 단일 이미지로 저장
-    const imageData = await compressToBase64(selectedFile, 1600, 0.82);
-    fill.style.width = '70%';
+    // 압축 (용량 절감: 1280px, 0.7 품질)
+    let imageData = await compressToBase64(selectedFile, 1280, 0.7);
+    // 너무 크면 한 번 더 압축 (느린 네트워크에서 저장 실패 방지)
+    if (imageData.length > 1500000) {
+      imageData = await compressToBase64(selectedFile, 1000, 0.6);
+    }
+    if (imageData.length > 3000000) {
+      throw new Error('사진 용량이 너무 큽니다. 다른 사진을 사용해 주세요.');
+    }
+    fill.style.width = '50%';
     btn.innerHTML = '저장 중...';
 
     const newRef = db.ref(`smPlanners/${stuId}`).push();
     const pid = newRef.key;
-    // 메타데이터만 smPlanners에 저장 (이미지 제외 → 다운로드 절약)
-    await newRef.set({ date, type: planType, hasImage: true, ts: Date.now() });
-    // 이미지는 별도 경로에 저장 (필요할 때만 로드)
+    // ★ 이미지를 먼저 저장 (성공해야 메타 기록 → "사진 있다고 표시되는데 없음" 방지)
     await db.ref(`smPlannerImages/${pid}`).set(imageData);
+    fill.style.width = '80%';
+    // 이미지 저장 성공 후 메타데이터 기록
+    await newRef.set({ date, type: planType, hasImage: true, ts: Date.now() });
 
     fill.style.width = '100%';
     const label = planType === 'plan' ? '계획' : '완료';
@@ -752,12 +760,17 @@ const PIC={
 };
 async function loadPlannerImg(pid){
   if(!pid)return null;
-  const cached=await PIC.get(pid);
-  if(cached)return cached;
-  const snap=await db.ref('smPlannerImages/'+pid).get();
-  const src=snap.val();
-  if(src)PIC.set(pid,src);
-  return src;
+  try{
+    const cached=await PIC.get(pid);
+    if(cached)return cached;
+    const snap=await db.ref('smPlannerImages/'+pid).get();
+    const src=snap.val();
+    if(src)PIC.set(pid,src);
+    return src||null;
+  }catch(e){
+    console.error('이미지 로드 실패:',pid,e);
+    return null;
+  }
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
