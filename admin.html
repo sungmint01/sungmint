@@ -2522,7 +2522,9 @@ function renderCal(){
     if(dow===6)cell.classList.add('sat');
     if(rec){
       const ev=rec.eval!=null&&rec.eval>=0?rec.eval:null;
-      const bg=rec.absent?'#fee2e2':rec.late?'#ffedd5':ev===5?'#fefce8':ev===4?'#f0fdf4':ev===3?'#eff8ff':ev===2?'#fff7ed':ev===1||ev===0?'#fff5f5':'#fafbfc';
+      // 평가는 없지만 다른 기록(진도/코멘트/클리닉/숙제내용/특이사항/지난숙제)이 있으면 라벤더색 표시
+      const hasContent=!!(rec.prog||rec.comment||rec.cli||rec.hwC||rec.special||rec.prevHw);
+      const bg=rec.absent?'#fee2e2':rec.late?'#ffedd5':ev===5?'#fefce8':ev===4?'#f0fdf4':ev===3?'#eff8ff':ev===2?'#fff7ed':ev===1||ev===0?'#fff5f5':(ev===null&&hasContent?'#f3f0ff':'#fafbfc');
       cell.style.background=bg;
       const pp=rec.prog?rec.prog.slice(0,8)+(rec.prog.length>8?'…':''):'';
       cell.innerHTML=`<span class="cal-day-num">${d}</span><div class="cal-cell-body"><div class="cal-stars">${starsHtml(ev,rec.absent,rec.late)}</div>${pp&&!rec.absent?`<div class="cal-prog">${pp}</div>`:''}</div>`;
