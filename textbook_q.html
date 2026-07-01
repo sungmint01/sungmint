@@ -162,7 +162,7 @@ body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,
 <!-- LOGIN -->
 <div id="loginPage">
   <div class="lbox">
-    <div class="lbox-badge">📖 Textbook Q</div>
+    <div class="lbox-badge">Textbook Q</div>
     <h1>교재 질문</h1>
     <div class="sub">학생 비밀번호를 입력하세요</div>
     <input class="inp" type="password" id="pwInp" placeholder="비밀번호 입력" autocomplete="off"
@@ -188,7 +188,7 @@ body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,
     <!-- 교재 없을 때 -->
     <div id="noTbMsg" style="display:none">
       <div class="card">
-        <div class="empty-msg">📚 배정된 교재가 없습니다<br><br>선생님께 교재 배정을 요청하세요</div>
+        <div class="empty-msg">배정된 교재가 없습니다<br><br>선생님께 교재 배정을 요청하세요</div>
       </div>
     </div>
 
@@ -196,7 +196,7 @@ body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,
     <div id="tbSelectWrap">
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleTbList()">
-          <div class="card-title">📚 교재 선택</div>
+          <div class="card-title">교재 선택</div>
           <span id="tbListToggleIcon" style="font-size:13px;color:#8B7FD9;font-weight:700">▲</span>
         </div>
         <div id="tbSelectList" style="margin-top:8px"></div>
@@ -218,8 +218,7 @@ body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,
           </div>
           <!-- 이미지 업로드 -->
           <div style="display:flex;align-items:center;gap:8px">
-            <label for="fqImg" style="display:flex;align-items:center;gap:6px;padding:9px 14px;border:1.5px dashed rgba(120,100,200,.3);border-radius:10px;font-size:13px;color:#8B7FD9;cursor:pointer;background:#F8F6FF;flex:1;justify-content:center">
-              📷 사진 첨부
+            <label for="fqImg" style="display:flex;align-items:center;gap:6px;padding:9px 14px;border:1.5px dashed rgba(120,100,200,.3);border-radius:10px;font-size:13px;color:#8B7FD9;cursor:pointer;background:#F8F6FF;flex:1;justify-content:center"> 사진 첨부
             </label>
             <input id="fqImg" type="file" accept="image/*" capture="environment" style="display:none" onchange="onFqImgSelect(event)">
             <button id="fqImgClear" onclick="clearFqImg()" style="display:none;border:none;background:rgba(239,68,68,.1);color:#ef4444;border-radius:10px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">✕ 삭제</button>
@@ -286,12 +285,10 @@ body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,
 
         <div class="legend">
           <div class="legend-item">
-            <div class="legend-dot" style="background:rgba(239,68,68,.15);border:1.5px solid #ef4444"></div>
-            내 질문
+            <div class="legend-dot" style="background:rgba(239,68,68,.15);border:1.5px solid #ef4444"></div> 내 질문
           </div>
           <div class="legend-item">
-            <div class="legend-dot" style="background:rgba(86,160,138,.15);border:1.5px solid #56A08A"></div>
-            영상 있음 (클릭→시청)
+            <div class="legend-dot" style="background:rgba(86,160,138,.15);border:1.5px solid #56A08A"></div> 영상 있음 (클릭→시청)
           </div>
         </div>
         <div id="probGrid"></div>
@@ -664,7 +661,7 @@ function loadFreeQList(){
       var ds=(d.getMonth()+1)+'/'+(d.getDate())+' '+(d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();
       var hasImg=!!q.hasImage;
       return '<div onclick="openFreeQDetail(\''+id+'\')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#F8F6FF;border-radius:10px;margin-bottom:6px">'+
-        '<div><div style="font-size:13px;font-weight:600;color:#3D3860">'+(q.bookName||'(사진 질문)')+(hasImg?' 📷':'')+' </div>'+
+        '<div><div style="font-size:13px;font-weight:600;color:#3D3860">'+(q.bookName||'(사진 질문)')+(hasImg?' ':'')+' </div>'+
         '<div style="font-size:11px;color:#6A6688">'+(q.page?q.page+'p · ':'')+(q.probNum?q.probNum+'번 ':'')+' <span style="color:#B0AACF;margin-left:4px">'+ds+'</span></div></div>'+
         '<span style="color:#C4B9F0;font-size:13px;padding:4px">›</span>'+
       '</div>';

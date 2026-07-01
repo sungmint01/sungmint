@@ -25,7 +25,7 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
 #loginPage::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(200,210,230,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(200,210,230,0.04) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
 .lbox{background:#e4e8f4;border-radius:24px;padding:44px 36px 36px;width:320px;box-shadow:8px 8px 20px rgba(145,165,210,.6),-6px -6px 16px rgba(255,255,255,.9);text-align:center;position:relative}
 .lbox::before{display:none}
-.lico{width:58px;height:58px;background:linear-gradient(135deg,#8B7FD9,#A89BEB);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 18px;box-shadow:3px 3px 10px rgba(55,100,191,.4),-2px -2px 6px rgba(255,255,255,.6)}
+.lico{width:58px;height:58px;background:linear-gradient(135deg,#8B7FD9,#A89BEB);color:#fff;font-weight:800;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 18px;box-shadow:3px 3px 10px rgba(55,100,191,.4),-2px -2px 6px rgba(255,255,255,.6)}
 .lbox h1{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;font-size:24px;font-weight:800;color:#3D3860;margin-bottom:4px}
 .lbox .lsub{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;font-size:10px;color:#AAA5C8;letter-spacing:2px;margin-bottom:28px;text-transform:uppercase}
 .linp{width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px 14px;font-size:15px;font-family:inherit;outline:none;transition:.2s;background:#FBFAFF;letter-spacing:4px;margin-bottom:12px}
@@ -192,7 +192,7 @@ footer{text-align:center;padding:24px 0 12px;color:#cbd5e1;font-size:12px}
 <body>
 <div id="loginPage">
   <div class="lbox">
-    <div class="lico">📋</div>
+    <div class="lico">P</div>
     <h1>학부모 페이지</h1>
     <p class="lsub">For Parents</p>
     <input class="linp" type="password" id="pwIn" placeholder="비밀번호 입력" autocomplete="off" onkeydown="if(event.key==='Enter')doParentLogin()">
@@ -204,7 +204,7 @@ footer{text-align:center;padding:24px 0 12px;color:#cbd5e1;font-size:12px}
 <div id="load"><div><div class="sp"></div><p class="ld-txt">불러오는 중...</p></div></div>
 <div id="wrap">
   <div class="hdr">
-    <div class="hdr-badge">📚 수업 현황</div>
+    <div class="hdr-badge">수업 현황</div>
     <div class="hdr-name" id="hName"></div>
     <div class="hdr-tags"><span class="htag" id="hGrade"></span><span class="htag" id="hSubj"></span></div>
   </div>
@@ -215,7 +215,7 @@ footer{text-align:center;padding:24px 0 12px;color:#cbd5e1;font-size:12px}
       <div class="sc"><div class="sn" id="sLast">-</div><div class="sl">최근 등급</div></div>
     </div>
     <div class="card">
-      <div class="card-head">📅 수업 달력</div>
+      <div class="card-head">수업 달력</div>
       <div class="cal-wrap">
         <div class="cal-nav">
           <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
@@ -230,7 +230,7 @@ footer{text-align:center;padding:24px 0 12px;color:#cbd5e1;font-size:12px}
     </div>
     <!-- Planner calendar -->
     <div class="card">
-      <div class="card-head">📸 플래너 제출 달력</div>
+      <div class="card-head">플래너 제출 달력</div>
       <div class="plan-cal-wrap">
         <div class="plan-cal-nav">
           <button class="plan-cal-btn" onclick="changeVPlanMonth(-1)">‹</button>
@@ -251,7 +251,7 @@ footer{text-align:center;padding:24px 0 12px;color:#cbd5e1;font-size:12px}
       </div>
     </div>
     <div class="csec">
-      <h2>💬 상담 요청</h2>
+      <h2>상담 요청</h2>
       <p>선생님께 궁금한 점이나 전달하실 내용을 남겨주세요.<br>확인 후 연락드리겠습니다.</p>
       <input class="inp" id="cName" type="text" placeholder="보내는 분 (예: 홍길동 어머니)" style="margin-bottom:10px">
       <textarea class="inp" id="cContent" placeholder="내용을 입력해주세요"></textarea>
@@ -337,7 +337,7 @@ function today(){
 window.addEventListener('DOMContentLoaded',()=>{
   const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();
   if(typeof SM_CONFIG==='undefined'||!SM_CONFIG.apiKey||SM_CONFIG.apiKey.includes('여기에')){
-    document.getElementById('load').innerHTML='<div class="err"><div class="ei">⚙️</div><h2>설정 오류</h2><p>config.js 파일에 Firebase 설정이 필요합니다</p></div>';return;
+    document.getElementById('load').innerHTML='<div class="err"><div class="ei"></div><h2>설정 오류</h2><p>config.js 파일에 Firebase 설정이 필요합니다</p></div>';return;
   }
   try{if(!firebase.apps.length)firebase.initializeApp(SM_CONFIG);db=firebase.database();}
   catch(e){showErr('Firebase 오류',''+e.message);return;}
@@ -413,7 +413,7 @@ function loadStudentData(stuId, stu){
   if(stored)try{sent=JSON.parse(stored);}catch(e){}
   db.ref('smConsultations/'+sid_).on('value',function(s){try{consultData=s.val()||{};renderSent();}catch(e){console.error('consult render error:',e);}});
 }
-function showErr(title,msg){document.getElementById('load').innerHTML=`<div class="err"><div class="ei">😔</div><h2>${title}</h2><p>${msg}</p></div>`;}
+function showErr(title,msg){document.getElementById('load').innerHTML=`<div class="err"><div class="ei"></div><h2>${title}</h2><p>${msg}</p></div>`;}
 
 function starsHtml(n,absent,late){
   if(absent) return`<span style="color:#ef4444;font-weight:700;font-size:13px">✕</span>`;
@@ -501,7 +501,8 @@ function renderCal(){
     if(dow===6)cell.classList.add('sat');
     if(rec){
       const ev=rec.eval!=null&&rec.eval>=0?rec.eval:null;
-      const bg=rec.absent?'#fee2e2':rec.late?'#ffedd5':ev===5?'#fefce8':ev===4?'#f0fdf4':ev===3?'#eff8ff':ev===2?'#fff7ed':ev===1||ev===0?'#fff5f5':'#fafbfc';
+      const hasContent=!!(rec.prog||rec.comment||rec.cli||rec.hwC||rec.special||rec.prevHw);
+      const bg=rec.absent?'#fee2e2':rec.late?'#ffedd5':ev===5?'#fefce8':ev===4?'#f0fdf4':ev===3?'#eff8ff':ev===2?'#fff7ed':ev===1||ev===0?'#fff5f5':(ev===null&&hasContent?'#f3f0ff':'#fafbfc');
       cell.style.background=bg;
       const pp=rec.prog||'';
       cell.innerHTML=`<span class="cal-day-num">${d}</span><div class="cal-cell-body"><div class="cal-stars">${starsHtml(ev,rec.absent,rec.late)}</div>${pp&&!rec.absent?`<div class="cal-prog">${pp}</div>`:''}</div>`;
@@ -533,7 +534,7 @@ function showDetail(ds,rec){
     ?'<span style="color:#ef4444;font-weight:700;font-size:15px">✕</span> <span style="font-size:13px;font-weight:700;color:#b91c1c">결석</span>'
     :`<span class="dm-stars s${ev}">${ev>0?'★'.repeat(ev):'✕'}</span> <span style="font-size:13px;font-weight:700;color:#374151"> ${starsLabel(ev,absent)}</span>`;
   document.getElementById('dmBody').innerHTML=`
-    ${absent?'<div class="dm-absent">🚫 결석 처리된 날입니다</div>':''}
+    ${absent?'<div class="dm-absent">결석 처리된 날입니다</div>':''}
     <div class="dm-grid">
       <span class="dm-k">숙제완성도</span><span class="dm-v">${evHtml}</span>
       <span class="dm-k">진도</span><span class="dm-v">${rec.prog||'<span style="color:#cbd5e1;font-size:12px">없음</span>'}</span>
@@ -541,9 +542,9 @@ function showDetail(ds,rec){
       <span class="dm-k">오늘 숙제</span><span class="dm-v">${rec.hwC||'<span style="color:#cbd5e1;font-size:12px">없음</span>'}</span>
       <span class="dm-k">클리닉</span><span class="dm-v">${rec.cli?rec.cli.replace(/\n/g,'<br>'):'<span style="color:#cbd5e1;font-size:12px">없음</span>'}</span>
     </div>
-    ${rec.comment?`<div class="dm-comment">📝 숙제 코멘트: ${rec.comment.replace(/\n/g,'<br>')}</div>`:''}
-    ${rec.special?`<div class="dm-special">⚠️ 특이사항: ${rec.special.replace(/\n/g,'<br>')}</div>`:''}
-    ${rec.note?`<div class="dm-note">📌 ${rec.note.replace(/\n/g,'<br>')}</div>`:''}`;
+    ${rec.comment?`<div class="dm-comment">숙제 코멘트: ${rec.comment.replace(/\n/g,'<br>')}</div>`:''}
+    ${rec.special?`<div class="dm-special">특이사항: ${rec.special.replace(/\n/g,'<br>')}</div>`:''}
+    ${rec.note?`<div class="dm-note">${rec.note.replace(/\n/g,'<br>')}</div>`:''}`;
   openDetailDate=ds;
   document.getElementById('detailOv').classList.add('open');
   document.body.style.overflow='hidden';
@@ -604,8 +605,8 @@ function openVPlanDetail(ds,plans){
   document.getElementById('vpdmDate').textContent=p2[0]+'년 '+(+p2[1])+'월 '+(+p2[2])+'일';
   var html='';
   plans.sort(function(a,b){return(a.ts||0)-(b.ts||0);}).forEach(function(p){
-    var badge=p.type==='done'?'<span class="plan-type-badge badge-done">✅ 완료</span>':'<span class="plan-type-badge badge-plan">📋 계획</span>';
-    var cmt=p.comment?'<div class="vpdm-comment"><div class="vpdm-comment-head">✏️ 선생님 코멘트</div>'+p.comment.split('\n').join('<br>')+'</div>':'<div class="vpdm-no-comment">⏳ 코멘트 대기 중</div>';
+    var badge=p.type==='done'?'<span class="plan-type-badge badge-done">✅ 완료</span>':'<span class="plan-type-badge badge-plan">계획</span>';
+    var cmt=p.comment?'<div class="vpdm-comment"><div class="vpdm-comment-head">선생님 코멘트</div>'+p.comment.split('\n').join('<br>')+'</div>':'<div class="vpdm-no-comment">⏳ 코멘트 대기 중</div>';
     var thumbSrc=p.imageData||p.thumbData||p.imageUrl||'';
     var imgPart='';
     if(thumbSrc){
@@ -683,7 +684,7 @@ function renderSent(){
       </div>
       <div class="sent-body">${c.content||''}</div>
       ${c.reply
-        ?`<div class="sent-reply"><div class="sent-reply-head">✏️ 선생님 답변 · ${c.replyAt?new Date(c.replyAt).toLocaleString('ko-KR'):''}</div>${c.reply.replace(/\n/g,'<br>')}</div>`
+        ?`<div class="sent-reply"><div class="sent-reply-head">선생님 답변 · ${c.replyAt?new Date(c.replyAt).toLocaleString('ko-KR'):''}</div>${c.reply.replace(/\n/g,'<br>')}</div>`
         :`<div class="sent-no-reply">⏳ 아직 답변이 없습니다</div>`
       }
     </div>`).join('');

@@ -25,7 +25,7 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
 /* Login */
 #loginPage{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(150deg,#8B7FD9 0%,#A89BEB 45%,#D4A5C8 100%)}
 .lbox{background:#fff;border-radius:28px;padding:44px 36px;width:320px;box-shadow:0 20px 50px rgba(120,105,205,.28),0 6px 16px rgba(120,105,205,.14);text-align:center}
-.lbox .ico{width:60px;height:60px;background:linear-gradient(135deg,#8B7FD9,#A89BEB);border-radius:19px;display:flex;align-items:center;justify-content:center;font-size:27px;margin:0 auto 18px;box-shadow:0 8px 20px rgba(139,127,217,.35)}
+.lbox .ico{color:#fff;font-weight:800;width:60px;height:60px;background:linear-gradient(135deg,#8B7FD9,#A89BEB);border-radius:19px;display:flex;align-items:center;justify-content:center;font-size:27px;margin:0 auto 18px;box-shadow:0 8px 20px rgba(139,127,217,.35)}
 .lbox h1{font-family:'MaruBuri','Noto Sans KR',sans-serif;font-size:22px;margin-bottom:4px;background:linear-gradient(135deg,#8B7FD9,#A89BEB);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .lbox .sub{font-family:'Noto Sans KR','MaruBuri',sans-serif;font-size:10px;color:#AAA5C8;letter-spacing:2px;margin-bottom:28px;text-transform:uppercase}
 .inp{width:100%;border:1.5px solid #EAE6F5;border-radius:14px;padding:13px 16px;font-size:14px;font-family:inherit;outline:none;transition:.25s;margin-bottom:12px;background:#FBFAFF}
@@ -175,7 +175,7 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
 <!-- Login -->
 <div id="loginPage">
   <div class="lbox">
-    <div class="ico">✏️</div>
+    <div class="ico">S</div>
     <h1>성민T 학생</h1>
     <p class="sub">Student Portal</p>
     <input class="inp" type="password" id="pwIn" placeholder="학생 비밀번호 입력" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
@@ -189,7 +189,7 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
 <div id="app">
   <div class="hdr">
     <button class="logout-btn" onclick="logout()">로그아웃</button>
-    <div class="hdr-badge">✏️ Student</div>
+    <div class="hdr-badge">Student</div>
     <div class="hdr-name" id="stuName"></div>
     <div class="hdr-sub" id="stuSub"></div>
   </div>
@@ -210,33 +210,32 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
   <!-- Planner upload -->
   <div class="planner-card">
     <div class="pc-head">
-      <span class="pc-title">📸 플래너 제출</span>
+      <span class="pc-title">플래너 제출</span>
     </div>
     <div class="date-row">
       <span class="date-label">날짜</span>
       <input class="date-inp" type="date" id="planDate">
     </div>
     <div class="type-row">
-      <button class="type-btn sel" id="typePlan" onclick="setType('plan')">📋 계획 플래너<br><span style="font-size:10px;font-weight:400;color:#94a3b8">전날 밤 · 아침</span></button>
+      <button class="type-btn sel" id="typePlan" onclick="setType('plan')">계획 플래너<br><span style="font-size:10px;font-weight:400;color:#94a3b8">전날 밤 · 아침</span></button>
       <button class="type-btn" id="typeDone" onclick="setType('done')">✅ 완료 플래너<br><span style="font-size:10px;font-weight:400;color:#94a3b8">하루 끝</span></button>
     </div>
     <div class="upload-area" id="uploadArea">
       <input type="file" id="fileInput" accept="image/*" onchange="onFileSelect(event)">
-      <div class="upload-icon">📷</div>
+      <div class="upload-icon"></div>
       <div class="upload-text"><strong>사진 찍기 또는 선택</strong><br>플래너를 촬영하거나 갤러리에서 선택하세요</div>
     </div>
     <img class="preview-img" id="previewImg">
     <div class="prog-bar" id="progBar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
     <div class="upload-msg" id="uploadMsg"></div>
-    <button class="upload-btn" id="uploadBtn" onclick="uploadPlanner()" disabled>
-      📤 플래너 제출하기
+    <button class="upload-btn" id="uploadBtn" onclick="uploadPlanner()" disabled> 플래너 제출하기
     </button>
   </div>
 
   <!-- Planner calendar -->
   <div class="planner-card">
     <div class="pc-head">
-      <span class="pc-title">📋 제출 달력</span>
+      <span class="pc-title">제출 달력</span>
     </div>
     <div class="plan-cal-wrap">
       <div class="plan-cal-nav">
@@ -290,7 +289,7 @@ let db, stuId = null, stuData = null, selectedFile = null, sessions = {}, planTy
 
 window.addEventListener('DOMContentLoaded', () => {
   if (typeof SM_CONFIG === 'undefined' || !SM_CONFIG.apiKey || SM_CONFIG.apiKey.includes('여기에')) {
-    document.getElementById('loginPage').innerHTML = '<div style="color:#fff;text-align:center;padding:40px"><h2>⚠️ 설정 필요</h2></div>';
+    document.getElementById('loginPage').innerHTML = '<div style="color:#fff;text-align:center;padding:40px"><h2>설정 필요</h2></div>';
     return;
   }
   try {
@@ -407,7 +406,7 @@ function renderHomework() {
     const isToday = r.date === todayStr;
     return `<div class="hw-item">
       <div class="hw-item-date">
-        📅 ${y}년 ${+m}월 ${+d}일
+        ${y}년 ${+m}월 ${+d}일
         ${isToday ? '<span class="hw-item-today">오늘</span>' : ''}
       </div>
       <div class="hw-item-content">${r.hwC}</div>
@@ -486,7 +485,7 @@ async function uploadPlanner() {
     document.getElementById('fileInput').value = '';
     selectedFile = null;
     btn.disabled = false;
-    btn.innerHTML = '📤 플래너 제출하기';
+    btn.innerHTML = '플래너 제출하기';
     setTimeout(() => { msg.textContent = ''; }, 4000);
 
   } catch(e) {
@@ -495,7 +494,7 @@ async function uploadPlanner() {
     msg.className = 'upload-msg err';
     prog.style.display = 'none';
     btn.disabled = false;
-    btn.innerHTML = '📤 플래너 제출하기';
+    btn.innerHTML = '플래너 제출하기';
   }
 }
 
@@ -547,7 +546,7 @@ function renderPlannerComments() {
       items.push({type:'done', label:'어제 ✅ 완료 플래너', comment:p.comment||''});
     }
     if (p.date === todayStr && p.type === 'plan') {
-      items.push({type:'plan', label:'오늘 📋 계획 플래너', comment:p.comment||''});
+      items.push({type:'plan', label:'오늘 계획 플래너', comment:p.comment||''});
     }
   });
 
@@ -658,13 +657,13 @@ function openPlanDetail(ds, plans) {
     od4pDay.forEach(function(e){
       var scoreColor = e.total > 0 ? (e.score/e.total >= 0.8 ? '#166534' : e.score/e.total >= 0.5 ? '#92400e' : '#b91c1c') : '#374151';
       html += '<div style="background:#fffbeb;border-left:3px solid #f59e0b;border-radius:0 10px 10px 0;padding:12px 14px;margin-bottom:10px">';
-      html += '<div style="font-weight:700;color:#92400e;margin-bottom:6px;font-size:13px">📝 OD4P — ' + (e.subject||'') + '</div>';
+      html += '<div style="font-weight:700;color:#92400e;margin-bottom:6px;font-size:13px">OD4P — ' + (e.subject||'') + '</div>';
       if (e.total > 0) {
         html += '<div style="font-size:22px;font-weight:800;color:' + scoreColor + ';margin-bottom:4px">' + e.score + ' / ' + e.total + '점</div>';
         if (e.wrongNums && e.wrongNums.length > 0) {
           html += '<div style="font-size:11px;color:#ef4444;margin-top:2px">오답: ' + e.wrongNums.join('번, ') + '번</div>';
         } else {
-          html += '<div style="font-size:11px;color:#166534;margin-top:2px">🎉 모두 정답!</div>';
+          html += '<div style="font-size:11px;color:#166534;margin-top:2px">모두 정답!</div>';
         }
       } else {
         html += '<div style="font-size:12px;color:#92400e">' + Object.keys(e.answers).length + '문제 응시</div>';
@@ -675,9 +674,9 @@ function openPlanDetail(ds, plans) {
   plans.sort(function(a,b){ return (a.ts||0)-(b.ts||0); }).forEach(function(p) {
     var badge = p.type === 'done'
       ? '<span class="plan-type-badge badge-done">✅ 완료</span>'
-      : '<span class="plan-type-badge badge-plan">📋 계획</span>';
+      : '<span class="plan-type-badge badge-plan">계획</span>';
     var commentHtml = p.comment
-      ? '<div class="pdm-comment"><div class="pdm-comment-head">✏️ 선생님 코멘트</div>' + p.comment.split('\n').join('<br>') + '</div>'
+      ? '<div class="pdm-comment"><div class="pdm-comment-head">선생님 코멘트</div>' + p.comment.split('\n').join('<br>') + '</div>'
       : '<div class="pdm-no-comment">⏳ 코멘트 대기 중</div>';
     html += '<div class="pdm-item">';
     html += '<div class="pdm-item-head">' + badge + '</div>';
