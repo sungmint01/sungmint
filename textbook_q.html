@@ -23,14 +23,14 @@ body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,
   radial-gradient(ellipse 50% 40% at 90% 100%,rgba(86,160,138,.08) 0%,transparent 60%)}
 
 /* LOGIN */
-#loginPage{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
-.lbox{background:var(--surface);border-radius:24px;padding:36px 28px;width:100%;max-width:360px;
-  box-shadow:0 8px 32px var(--shadow)}
-.lbox-badge{display:inline-block;font-family:'Plus Jakarta Sans',sans-serif;font-size:10px;font-weight:600;
+#loginPage{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:linear-gradient(150deg,#8B7FD9 0%,#A89BEB 45%,#D4A5C8 100%)}
+.lbox{background:#fff;border-radius:28px;padding:44px 36px;width:320px;max-width:100%;box-shadow:0 20px 50px rgba(120,105,205,.28),0 6px 16px rgba(120,105,205,.14);text-align:center}
+.lbox .ico{color:#fff;font-weight:800;width:60px;height:60px;background:linear-gradient(135deg,#8B7FD9,#A89BEB);border-radius:19px;display:flex;align-items:center;justify-content:center;font-size:27px;margin:0 auto 18px;box-shadow:0 8px 20px rgba(139,127,217,.35)}
+.lbox-badge{display:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:10px;font-weight:600;
   letter-spacing:2.5px;text-transform:uppercase;color:var(--p1);background:rgba(157,145,238,.1);
   padding:4px 12px;border-radius:20px;margin-bottom:18px}
-.lbox h1{font-size:26px;font-weight:700;letter-spacing:-.5px;margin-bottom:4px}
-.lbox .sub{font-size:13px;color:var(--fg2);margin-bottom:24px;font-weight:300}
+.lbox h1{font-family:'MaruBuri','Noto Sans KR',sans-serif;font-size:22px;margin-bottom:4px;background:linear-gradient(135deg,#8B7FD9,#A89BEB);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.lbox .sub{font-size:10px;color:#AAA5C8;letter-spacing:2px;margin-bottom:28px;text-transform:uppercase}
 .inp{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;
   font-size:14px;font-family:inherit;color:var(--fg);background:#fff;outline:none;transition:.15s}
 .inp:focus{border-color:var(--p1);box-shadow:0 0 0 3px rgba(157,145,238,.15)}
@@ -162,7 +162,7 @@ body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,
 <!-- LOGIN -->
 <div id="loginPage">
   <div class="lbox">
-    <div class="lbox-badge">Textbook Q</div>
+    <div class="ico">📖</div>
     <h1>교재 질문</h1>
     <div class="sub">학생 비밀번호를 입력하세요</div>
     <input class="inp" type="password" id="pwInp" placeholder="비밀번호 입력" autocomplete="off"
