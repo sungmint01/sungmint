@@ -869,6 +869,7 @@ function countJsonProblems(d){
 }
 function jsonToProblems(d){
   var problems={};
+  var ord=0; // JSON 작성 순서 그대로 표시 순서 보장 (key 정렬 의존 제거)
   var kindPrefix={'개념CHECK':'1','개념다지기':'1','유제':'2','유형익히기':'2','Level1':'3','Level2':'4','Level3':'5','연습문제':'3','교과서완성하기':'6'};
   (d.chapters||[]).forEach(ch=>{
     (ch.sections||[]).forEach(sec=>{
@@ -881,7 +882,7 @@ function jsonToProblems(d){
             // 숫자면 key 정렬용으로 2자리 패딩 (Firebase 사전순 대응), 표시는 원본
             var padNum=(/^\d+$/.test(String(num)))?String(num).padStart(3,'0'):num;
             var key=sec.id+'-'+kp+kind+'-'+padNum;
-            problems[key]={exists:1,section:sectionLabel,kind:kind,num:num,page:page};
+            problems[key]={exists:1,section:sectionLabel,kind:kind,num:num,page:page,ord:ord++};
           });
         });
       });
@@ -889,7 +890,7 @@ function jsonToProblems(d){
       ((sec.연습문제||{}).problems||[]).forEach(num=>{
         var padNum=(/^\d+$/.test(String(num)))?String(num).padStart(3,'0'):num;
         var key=sec.id+'-3연습문제-'+padNum;
-        problems[key]={exists:1,section:sec.title,kind:'연습문제',num:num,page:exPage};
+        problems[key]={exists:1,section:sec.title,kind:'연습문제',num:num,page:exPage,ord:ord++};
       });
     });
   });

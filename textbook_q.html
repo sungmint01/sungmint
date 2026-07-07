@@ -450,6 +450,12 @@ function selectTb(tbId){
 function renderGrid(tb){
   var problems=tb.problems||{};
   var nums=Object.keys(problems);
+  // ord 필드가 있으면(신규 JSON 등록 교재) 작성 순서대로 정렬. 없으면 기존 순서 유지(하위 호환)
+  nums.sort(function(a,b){
+    var oa=(problems[a]||{}).ord, ob=(problems[b]||{}).ord;
+    if(oa!=null&&ob!=null) return oa-ob;
+    return 0;
+  });
   activeTbNums=nums;
   var html='';
 
