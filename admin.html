@@ -1730,10 +1730,12 @@ function renderClinicList(){
       resHtml+='<div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:6px">채점 결과 ('+resArr.length+'명)</div>';
       resArr.forEach(function([sid,r]){
         var wrong=r.wrong&&r.wrong.length?r.wrong.join(', '):'없음';
+        var noScore=(r.score===null||r.score===undefined);
+        var scoreTxt=r.isText?'내용 작성':(noScore?(r.total||0)+'문항':r.score+'/'+r.total+'점');
         resHtml+='<div class="cl-result-row" id="cr_'+cid+'_'+sid+'">';
         resHtml+='<span class="cl-result-name">'+r.name+'</span>';
-        resHtml+='<div style="text-align:right"><span class="cl-result-score">'+r.score+'/'+r.total+'점</span>';
-        resHtml+='<div class="cl-result-wrong">오답: '+wrong+'번</div>';
+        resHtml+='<div style="text-align:right"><span class="cl-result-score">'+scoreTxt+'</span>';
+        resHtml+=(r.isText||noScore)?'':'<div class="cl-result-wrong">오답: '+wrong+'번</div>';
         resHtml+='</div>';
         resHtml+='<div style="display:flex;gap:5px">';
         resHtml+='<button class="lnk le" style="font-size:10px" id="editCr_'+cid+'_'+sid+'">수정</button>';
