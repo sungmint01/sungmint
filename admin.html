@@ -821,17 +821,22 @@ function tbProbGridHtml(tid,tb,qByProb){
   keys.sort(function(a,b){
     var oa=(problems[a]||{}).ord, ob=(problems[b]||{}).ord;
     if(oa!=null&&ob!=null) return oa-ob;
+    var na=parseFloat(a), nb=parseFloat(b);
+    if(!isNaN(na)&&!isNaN(nb)&&String(na)===a&&String(nb)===b) return na-nb;
     return a.localeCompare(b,'ko');
   });
   var html='', curGrp=null, open=false;
   keys.forEach(function(key){
     var p=problems[key]||{};
-    var grp=(p.section||'기타')+' · '+(p.kind||'');
+    // 단원 정보가 없는 교재(수동 등록)는 헤더 없이 한 덩어리로
+    var grp=(p.section||p.kind)?((p.section||'')+(p.section&&p.kind?' · ':'')+(p.kind||'')):'';
     if(grp!==curGrp){
       if(open) html+='</div>';
       curGrp=grp; open=true;
-      var pg=p.page?' <span style="color:#A8A4C0;font-weight:500">'+p.page+'p</span>':'';
-      html+='<div style="font-size:11px;font-weight:700;color:#8B7FD9;margin:10px 0 5px">'+grp+pg+'</div>';
+      if(grp){
+        var pg=p.page?' <span style="color:#A8A4C0;font-weight:500">'+p.page+'p</span>':'';
+        html+='<div style="font-size:11px;font-weight:700;color:#8B7FD9;margin:10px 0 5px">'+grp+pg+'</div>';
+      }
       html+='<div style="display:flex;flex-wrap:wrap;gap:5px">';
     }
     var hasYt=!!p.youtubeUrl;
