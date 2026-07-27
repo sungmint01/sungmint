@@ -807,25 +807,46 @@ function renderTbList(){
           <button onclick="event.stopPropagation();deleteTb('${tid}')" style="padding:5px 10px;border:none;border-radius:8px;background:#fff;color:#ef4444;font-size:11px;cursor:pointer;font-family:inherit">삭제</button>
         </div>
         <div style="font-size:11px;color:#6A6688;margin-bottom:8px"><span style="color:#ef4444;font-weight:700">●</span> 미해결 질문 · <span style="color:#56A08A;font-weight:700">●</span> 영상등록 완료 · 클릭하면 상세</div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px">
-          ${probNums.sort((a,b)=>{var na=parseFloat(a),nb=parseFloat(b);return(!isNaN(na)&&!isNaN(nb))?na-nb:a.localeCompare(b,'ko')}).map(num=>{
-            var p=(tb.problems||{})[num]||{};
-            var hasYt=!!(p.youtubeUrl);
-            var qList=qByProb[num]||[];
-            var qCnt=qList.length;
-            var bc,bg,fc;
-            if(qCnt>0&&!hasYt){ bc='#ef4444'; bg='rgba(239,68,68,.1)'; fc='#ef4444'; }
-            else if(qCnt>0&&hasYt){ bc='#56A08A'; bg='rgba(86,160,138,.12)'; fc='#56A08A'; }
-            else if(hasYt){ bc='#E8795A'; bg='rgba(232,121,90,.1)'; fc='#E8795A'; }
-            else { bc='rgba(120,100,200,.2)'; bg='#fff'; fc='#6A6688'; }
-            return `<button onclick="openProbDetail('${tid}','${num}')" style="position:relative;padding:5px 9px;border:1.5px solid ${bc};border-radius:8px;background:${bg};color:${fc};font-size:11px;cursor:pointer;font-family:inherit;font-weight:600">${num}${hasYt?'▶':''}${qCnt?' <span style="background:'+fc+';color:#fff;border-radius:10px;padding:0 5px;font-size:9px;margin-left:1px">'+qCnt+'</span>':''}</button>`;
-          }).join('')}
-        </div>
+        ${tbProbGridHtml(tid,tb,qByProb)}
       </div>
     </div>`;
   }).join('');
 }
 
+
+// 교재 문제 그리드: 단원>소단원 · 종류별로 묶어 헤더를 달고, 버튼은 원본 번호만 짧게 표시
+function tbProbGridHtml(tid,tb,qByProb){
+  var problems=tb.problems||{};
+  var keys=Object.keys(problems);
+  keys.sort(function(a,b){
+    var oa=(problems[a]||{}).ord, ob=(problems[b]||{}).ord;
+    if(oa!=null&&ob!=null) return oa-ob;
+    return a.localeCompare(b,'ko');
+  });
+  var html='', curGrp=null, open=false;
+  keys.forEach(function(key){
+    var p=problems[key]||{};
+    var grp=(p.section||'기타')+' · '+(p.kind||'');
+    if(grp!==curGrp){
+      if(open) html+='</div>';
+      curGrp=grp; open=true;
+      var pg=p.page?' <span style="color:#A8A4C0;font-weight:500">'+p.page+'p</span>':'';
+      html+='<div style="font-size:11px;font-weight:700;color:#8B7FD9;margin:10px 0 5px">'+grp+pg+'</div>';
+      html+='<div style="display:flex;flex-wrap:wrap;gap:5px">';
+    }
+    var hasYt=!!p.youtubeUrl;
+    var qCnt=((qByProb||{})[key]||[]).length;
+    var bc,bg,fc;
+    if(qCnt>0&&!hasYt){ bc='#ef4444'; bg='rgba(239,68,68,.1)'; fc='#ef4444'; }
+    else if(qCnt>0&&hasYt){ bc='#56A08A'; bg='rgba(86,160,138,.12)'; fc='#56A08A'; }
+    else if(hasYt){ bc='#E8795A'; bg='rgba(232,121,90,.1)'; fc='#E8795A'; }
+    else { bc='rgba(120,100,200,.2)'; bg='#fff'; fc='#6A6688'; }
+    var label=(p.num!=null&&p.num!=='')?p.num:key;
+    html+='<button onclick="openProbDetail(\''+tid+'\',\''+key+'\')" style="position:relative;padding:5px 9px;border:1.5px solid '+bc+';border-radius:8px;background:'+bg+';color:'+fc+';font-size:11px;cursor:pointer;font-family:inherit;font-weight:600">'+label+(hasYt?'▶':'')+(qCnt?' <span style="background:'+fc+';color:#fff;border-radius:10px;padding:0 5px;font-size:9px;margin-left:1px">'+qCnt+'</span>':'')+'</button>';
+  });
+  if(open) html+='</div>';
+  return html||'<div style="font-size:11px;color:#A8A4C0">문제가 없습니다</div>';
+}
 
 var _tbTabMode='manual';
 function switchTbTab(mode){
