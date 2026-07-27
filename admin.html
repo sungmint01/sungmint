@@ -873,15 +873,17 @@ function jsonToProblems(d){
   var kindPrefix={'개념CHECK':'1','개념다지기':'1','유제':'2','유형익히기':'2','Level1':'3','Level2':'4','Level3':'5','연습문제':'3','교과서완성하기':'6'};
   (d.chapters||[]).forEach(ch=>{
     (ch.sections||[]).forEach(sec=>{
-      (sec.subsections||[]).forEach(sub=>{
+      (sec.subsections||[]).forEach((sub,subIdx)=>{
         var page=sub.page||0;
+        // 소단원마다 번호가 01부터 다시 시작하는 교재(개념ON 등) 대응: 키에 소단원 순번 포함
+        var si=String(subIdx+1).padStart(2,'0');
         var sectionLabel=sec.title+' > '+sub.title;
         Object.entries(sub.problems||{}).forEach(([kind,arr])=>{
           var kp=kindPrefix[kind]||'2';
           arr.forEach(num=>{
             // 숫자면 key 정렬용으로 2자리 패딩 (Firebase 사전순 대응), 표시는 원본
             var padNum=(/^\d+$/.test(String(num)))?String(num).padStart(3,'0'):num;
-            var key=sec.id+'-'+kp+kind+'-'+padNum;
+            var key=sec.id+'-'+si+'-'+kp+kind+'-'+padNum;
             problems[key]={exists:1,section:sectionLabel,kind:kind,num:num,page:page,ord:ord++};
           });
         });
@@ -1079,10 +1081,26 @@ async function saveTb(){
     try{
       var jsonData=JSON.parse(raw);
       problems=jsonToProblems(jsonData);
+      // 키 체계가 바뀌어도 풀이영상이 유실되지 않도록, 기존 문제를 종류+번호+단원으로도 색인
+      var byMeta={};
+      Object.keys(existProbs).forEach(function(ek){
+        var ep=existProbs[ek];
+        if(!ep||!ep.youtubeUrl) return;
+        var mk=(ep.kind||'')+'|'+(ep.num||'')+'|'+(ep.section||'');
+        if(byMeta[mk]===undefined) byMeta[mk]=ek; else byMeta[mk]=null; // 중복이면 매칭 포기
+      });
       Object.keys(problems).forEach(key=>{
+        var src=null;
         if(existProbs[key]&&existProbs[key].youtubeUrl){
-          problems[key].youtubeUrl=existProbs[key].youtubeUrl;
-          problems[key].ytTitle=existProbs[key].ytTitle||'';
+          src=existProbs[key];
+        }else{
+          var p=problems[key];
+          var mk=(p.kind||'')+'|'+(p.num||'')+'|'+(p.section||'');
+          if(byMeta[mk]) src=existProbs[byMeta[mk]];
+        }
+        if(src&&src.youtubeUrl){
+          problems[key].youtubeUrl=src.youtubeUrl;
+          problems[key].ytTitle=src.ytTitle||'';
         }
       });
     }catch(e){toast('JSON 파싱 오류');return;}
