@@ -1383,9 +1383,10 @@ function showApp(){
 async function cleanOldResults(){
   const limit=Date.now()-2*24*60*60*1000;
   try{
-    const [hwR,clR]=await Promise.all([
+    const [hwR,clR,clSets]=await Promise.all([
       db.ref('smHwResults').get(),
-      db.ref('smClinicResults').get()
+      db.ref('smClinicResults').get(),
+      db.ref('smClinicSets').get()
     ]);
     const del=[];
     Object.entries(hwR.val()||{}).forEach(function([setId,results]){
@@ -1397,6 +1398,21 @@ async function cleanOldResults(){
       Object.entries(results||{}).forEach(function([stuId,r]){
         if((r.gradedAt||0)<limit) del.push(db.ref('smClinicResults/'+setId+'/'+stuId).remove());
       });
+    });
+    // 클리닉 세트도 2일 지나면 함께 삭제 (date 기준, 없으면 createdAt / 둘 다 없으면 보존)
+    Object.entries(clSets.val()||{}).forEach(function([cid,cs]){
+      if(!cs) return;
+      var t=0;
+      if(cs.date){
+        var d=new Date(cs.date+'T23:59:59');
+        t=isNaN(d.getTime())?(cs.createdAt||0):d.getTime();
+      }else{
+        t=(cs.createdAt||0);
+      }
+      if(t&&t<limit){
+        del.push(db.ref('smClinicSets/'+cid).remove());
+        del.push(db.ref('smClinicResults/'+cid).remove());
+      }
     });
     if(del.length) await Promise.all(del);
   }catch(e){}
