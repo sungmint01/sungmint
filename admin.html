@@ -1101,6 +1101,7 @@ async function saveTb(){
   var tid=editId||db.ref('smTextbooks').push().key;
   var existProbs=(tbSets[tid]||{}).problems||{};
   var problems={};
+  var _qKeyMap={}; // 옛 키 -> 새 키 (질문 체크 이전용)
   if(_tbTabMode==='json'){
     var raw=document.getElementById('tbJsonInp').value.trim();
     if(!raw){toast('JSON을 입력하세요');return;}
@@ -1108,26 +1109,30 @@ async function saveTb(){
       var jsonData=JSON.parse(raw);
       problems=jsonToProblems(jsonData);
       // 키 체계가 바뀌어도 풀이영상이 유실되지 않도록, 기존 문제를 종류+번호+단원으로도 색인
-      var byMeta={};
+      var byMeta={}, usedOld={};
       Object.keys(existProbs).forEach(function(ek){
-        var ep=existProbs[ek];
-        if(!ep||!ep.youtubeUrl) return;
+        var ep=existProbs[ek]||{};
         var mk=(ep.kind||'')+'|'+(ep.num||'')+'|'+(ep.section||'');
         if(byMeta[mk]===undefined) byMeta[mk]=ek; else byMeta[mk]=null; // 중복이면 매칭 포기
       });
       Object.keys(problems).forEach(key=>{
-        var src=null;
-        if(existProbs[key]&&existProbs[key].youtubeUrl){
-          src=existProbs[key];
-        }else{
-          var p=problems[key];
+        var oldKey=null;
+        var p=problems[key];
+        if(existProbs[key]) oldKey=key;
+        else{
           var mk=(p.kind||'')+'|'+(p.num||'')+'|'+(p.section||'');
-          if(byMeta[mk]) src=existProbs[byMeta[mk]];
+          if(byMeta[mk]) oldKey=byMeta[mk];
+          // 수동 등록 교재(키=번호)를 JSON으로 전환하는 경우: 번호로 매칭
+          else if(p.num!=null&&existProbs[p.num]&&!usedOld[p.num]) oldKey=p.num;
         }
-        if(src&&src.youtubeUrl){
+        if(!oldKey||usedOld[oldKey]) return;
+        usedOld[oldKey]=1;
+        var src=existProbs[oldKey]||{};
+        if(src.youtubeUrl){
           problems[key].youtubeUrl=src.youtubeUrl;
           problems[key].ytTitle=src.ytTitle||'';
         }
+        if(oldKey!==key) _qKeyMap[oldKey]=key;
       });
     }catch(e){toast('JSON 파싱 오류');return;}
   }else{
@@ -1146,10 +1151,33 @@ async function saveTb(){
     });
   }
   await db.ref('smTextbooks/'+tid).set({title,problems,createdAt:Date.now()});
+  var movedQ=await migrateTbQuestionKeys(tid,_qKeyMap);
   tbSets[tid]={title,problems,createdAt:Date.now()};
-  toast('✅ 교재 저장됨 ('+Object.keys(problems).length+'문제)');
+  toast('✅ 교재 저장됨 ('+Object.keys(problems).length+'문제'+(movedQ?', 질문 '+movedQ+'건 이전':'')+')');
   closeTbModal();
   renderTbList();
+}
+
+// 교재 키 체계가 바뀌었을 때 학생 질문 체크(smTbQuestions)를 새 키로 이전
+async function migrateTbQuestionKeys(tid,keyMap){
+  if(!keyMap||!Object.keys(keyMap).length) return 0;
+  try{
+    var snap=await db.ref('smTbQuestions/'+tid).get();
+    var data=snap.val()||{};
+    var upd={}, moved=0;
+    Object.entries(data).forEach(function([sid,nums]){
+      Object.entries(nums||{}).forEach(function([oldKey,val]){
+        var nk=keyMap[oldKey];
+        if(!nk||nk===oldKey) return;
+        if((nums||{})[nk]!==undefined){ upd[sid+'/'+oldKey]=null; return; } // 새 키가 이미 있으면 옛 키만 정리
+        upd[sid+'/'+nk]=val;
+        upd[sid+'/'+oldKey]=null;
+        moved++;
+      });
+    });
+    if(Object.keys(upd).length) await db.ref('smTbQuestions/'+tid).update(upd);
+    return moved;
+  }catch(e){ return 0; }
 }
 
 async function deleteTb(tid){
