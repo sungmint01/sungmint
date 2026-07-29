@@ -438,6 +438,7 @@ textarea.inp{resize:vertical;min-height:68px}
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
             <div style="font-size:16px;font-weight:700;color:#1E1B3A">교재 관리</div>
             <button class="btn-sv" onclick="openTbCreate()" style="font-size:12px;padding:7px 12px">+ 교재 등록</button>
+            <button onclick="cleanOrphanTbQuestions()" id="cleanOrphanBtn" style="font-size:12px;padding:7px 12px;border:1px solid rgba(139,127,217,.25);border-radius:9px;background:#fff;color:#8B7FD9;cursor:pointer;font-family:inherit;font-weight:600;margin-left:6px">삭제된 학생 체크 정리</button>
           </div>
 
           <!-- 교재 목록 -->
@@ -2683,9 +2684,76 @@ async function saveStudent(){
   else{data.token=tuid();data.at=Date.now();await db.ref('smStudents').push(data);toast('학생이 추가되었습니다');}
   closeSM();
 }
+// smStudents에 없는(삭제된) 학생의 교재 질문 체크를 일괄 정리. 영상이 등록된 문제는 기록으로 남김
+async function cleanOrphanTbQuestions(){
+  var btn=document.getElementById('cleanOrphanBtn');
+  if(btn){ btn.disabled=true; btn.textContent='확인 중...'; }
+  try{
+    var res=await Promise.all([
+      db.ref('smTbQuestions').get(),
+      db.ref('smStudents').get(),
+      db.ref('smTextbooks').get()
+    ]);
+    var all=res[0].val()||{}, stu=res[1].val()||{}, books=res[2].val()||{};
+    var upd={}, cnt=0, kept=0, names={};
+    Object.keys(all).forEach(function(tid){
+      var probs=((books[tid]||{}).problems)||{};
+      Object.keys(all[tid]||{}).forEach(function(sid){
+        if(stu[sid]) return; // 살아 있는 학생은 건드리지 않음
+        names[sid]=1;
+        Object.keys(all[tid][sid]||{}).forEach(function(pk){
+          if((probs[pk]||{}).youtubeUrl){ kept++; return; }
+          upd[tid+'/'+sid+'/'+pk]=null; cnt++;
+        });
+      });
+    });
+    if(!cnt){
+      toast(kept?'정리할 항목 없음 (영상 있는 '+kept+'건은 유지)':'정리할 항목이 없습니다');
+      return;
+    }
+    if(!confirm('삭제된 학생 '+Object.keys(names).length+'명의 체크 '+cnt+'건을 해제할까요?\n영상이 등록된 '+kept+'건은 그대로 둡니다.\n\n되돌릴 수 없습니다.')) return;
+    if(btn) btn.textContent='정리 중...';
+    await db.ref('smTbQuestions').update(upd);
+    toast('✅ '+cnt+'건 정리 완료'+(kept?' (영상 '+kept+'건 유지)':''));
+    loadTextbookData();
+  }catch(e){
+    toast('정리 중 오류가 발생했습니다');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='삭제된 학생 체크 정리'; }
+  }
+}
+
+// 학생 삭제 시 그 학생의 교재 질문 체크를 해제. 단, 영상이 등록된 문제는 기록으로 남김
+async function purgeTbQuestionsForStudent(uid){
+  if(!uid) return 0;
+  try{
+    var qSnap=await db.ref('smTbQuestions').get();
+    var all=qSnap.val()||{};
+    // 어느 교재에도 이 학생 기록이 없으면 교재 데이터를 읽지 않고 종료
+    var tids=Object.keys(all).filter(function(tid){ return all[tid]&&all[tid][uid]; });
+    if(!tids.length) return 0;
+    var books=tbSets;
+    if(!books||!Object.keys(books).length){
+      var tSnap=await db.ref('smTextbooks').get();
+      books=tSnap.val()||{};
+    }
+    var upd={}, n=0;
+    tids.forEach(function(tid){
+      var probs=((books[tid]||{}).problems)||{};
+      Object.keys(all[tid][uid]||{}).forEach(function(pk){
+        if((probs[pk]||{}).youtubeUrl) return; // 영상 등록된 문제는 유지
+        upd[tid+'/'+uid+'/'+pk]=null; n++;
+      });
+    });
+    if(Object.keys(upd).length) await db.ref('smTbQuestions').update(upd);
+    return n;
+  }catch(e){ return 0; }
+}
+
 async function delStudent(){
   if(!confirm(`${students[uid_]?.name} 학생을 삭제하시겠습니까?\n모든 기록이 삭제됩니다.`))return;
   await Promise.all([db.ref(`smStudents/${uid_}`).remove(),db.ref(`smSessions/${uid_}`).remove(),db.ref(`smConsultations/${uid_}`).remove()]);
+  await purgeTbQuestionsForStudent(uid_);
   uid_=null;
   document.getElementById('empty').style.display='';
   document.getElementById('detail').style.display='none';
