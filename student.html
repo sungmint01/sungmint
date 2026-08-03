@@ -67,21 +67,22 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
 .planner-card{background:#fff;border-radius:20px;box-shadow:0 2px 16px rgba(120,100,200,.07);margin-bottom:16px;overflow:hidden}
 .pc-head{padding:16px 20px 12px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between}
 .pc-title{font-family:'MaruBuri','Noto Sans KR',sans-serif;font-size:16px;background:linear-gradient(135deg,#8B7FD9,#A89BEB);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.upload-area{margin:16px 20px;border:2px dashed #e2e8f0;border-radius:12px;padding:28px 20px;text-align:center;cursor:pointer;transition:.2s;position:relative}
-.upload-area:hover{border-color:var(--pu);background:#faf5ff}
+.upload-area{margin:0 20px 14px;border:2px dashed rgba(139,127,217,.3);border-radius:16px;padding:30px 20px;text-align:center;cursor:pointer;transition:.25s;position:relative;background:linear-gradient(160deg,#FBFAFF,#F7F5FE)}
+.upload-area:hover{border-color:#A89BEB;background:linear-gradient(160deg,#F7F5FE,#F2EFFC)}
 .upload-area input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.upload-icon{font-size:32px;margin-bottom:8px}
-.upload-text{font-size:13px;color:#7070A8;line-height:1.6}
-.upload-text strong{color:var(--pu)}
-.date-row{display:flex;align-items:center;gap:10px;margin:0 20px 12px}
-.date-label{font-size:12px;font-weight:600;color:#374151;white-space:nowrap}
-.date-inp{flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;outline:none;transition:.2s}
-.date-inp:focus{border-color:var(--pu)}
-.upload-btn{width:calc(100% - 40px);margin:0 20px 20px;background:linear-gradient(135deg,#8B7FD9,#A89BEB);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px}
-.upload-btn:hover{opacity:.9}
-.upload-btn:disabled{background:#cbd5e1;cursor:not-allowed}
-.preview-img{width:100%;border-radius:10px;margin:0 0 12px;object-fit:cover;max-height:300px;display:none}
-.prog-bar{height:4px;background:#e2e8f0;border-radius:99px;margin:0 20px 12px;overflow:hidden;display:none}
+.upload-icon{font-size:30px;margin-bottom:9px;line-height:1}
+.upload-icon:after{content:'📷'}
+.upload-text{font-size:12.5px;color:#AAA5C8;line-height:1.6}
+.upload-text strong{color:#6B5FB8;font-size:13.5px}
+.date-row{display:flex;align-items:center;gap:11px;margin:14px 20px 12px;background:#F7F5FE;border:1px solid rgba(139,127,217,.13);border-radius:14px;padding:9px 12px}
+.date-label{font-size:11px;font-weight:700;color:#8B7FD9;white-space:nowrap;letter-spacing:.4px}
+.date-inp{flex:1;border:1.5px solid transparent;border-radius:9px;padding:7px 10px;font-size:13px;font-weight:600;font-family:inherit;color:#3D3860;background:#fff;outline:none;transition:.2s;box-shadow:0 1px 3px rgba(120,105,205,.06)}
+.date-inp:focus{border-color:#A89BEB;box-shadow:0 0 0 3px rgba(139,127,217,.13)}
+.upload-btn{width:calc(100% - 40px);margin:0 20px 20px;background:linear-gradient(135deg,#8B7FD9,#A89BEB);color:#fff;border:none;border-radius:13px;padding:13px;box-shadow:0 4px 12px rgba(139,127,217,.22);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.upload-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 16px rgba(139,127,217,.28)}
+.upload-btn:disabled{background:#E4E0F2;color:#AAA5C8;cursor:not-allowed;box-shadow:none}
+.preview-img{width:calc(100% - 40px);border-radius:14px;margin:0 20px 12px;object-fit:cover;max-height:300px;display:none;box-shadow:0 4px 14px rgba(120,105,205,.14)}
+.prog-bar{height:5px;background:#EDEAF9;border-radius:99px;margin:0 20px 12px;overflow:hidden;display:none}
 .prog-fill{height:100%;background:linear-gradient(90deg,var(--pu),var(--pud));border-radius:99px;transition:width .3s}
 .upload-msg{font-size:12px;text-align:center;margin:0 20px 8px;min-height:16px}
 .upload-msg.ok{color:#15803d}
@@ -151,10 +152,14 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
 .pdm-comment-head{font-size:10px;font-weight:700;color:#15803d;margin-bottom:3px}
 .pdm-no-comment{padding:8px 12px;font-size:12px;color:#AAA5C8;font-style:italic}
 .pdm-empty{text-align:center;padding:28px;color:#AAA5C8;font-size:13px}
-.type-row{display:flex;gap:8px;margin:0 20px 12px}
-.type-btn{flex:1;padding:9px;border-radius:10px;border:1.5px solid #e2e8f0;background:#FBFAFF;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:#7070A8;transition:.15s;text-align:center}
-.type-btn:hover{border-color:#a78bfa;background:#faf5ff}
-.type-btn.sel{border-color:#a78bfa;background:#FBFAFF;color:#8B7FD9}
+.type-row{display:flex;gap:9px;margin:0 20px 14px}
+.type-btn{flex:1;padding:11px 8px;border-radius:14px;border:1.5px solid rgba(139,127,217,.16);background:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:#AAA5C8;transition:.2s cubic-bezier(.34,1.56,.64,1);text-align:center;line-height:1.35}
+.type-btn:hover{border-color:rgba(139,127,217,.4);transform:translateY(-1px)}
+.type-btn .tb-sub{display:block;font-size:10px;font-weight:500;margin-top:3px;color:#C4C0DA}
+#typePlan.sel{border-color:#8B7FD9;background:linear-gradient(135deg,#F2EFFC,#EAE5FA);color:#6B5FB8;box-shadow:0 3px 10px rgba(139,127,217,.16)}
+#typePlan.sel .tb-sub{color:#8B7FD9}
+#typeDone.sel{border-color:#9DD9C4;background:linear-gradient(135deg,#EAF7F2,#DDF0E8);color:#3F8A72;box-shadow:0 3px 10px rgba(86,160,138,.16)}
+#typeDone.sel .tb-sub{color:#56A08A}
 .plan-type-badge{display:inline-flex;align-items:center;border-radius:99px;padding:2px 10px;font-size:11px;font-weight:600}
 .badge-plan{background:#eff6ff;color:#2563eb}
 .badge-done{background:#f0fdf4;color:#15803d}
@@ -214,11 +219,12 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
     </div>
     <div class="date-row">
       <span class="date-label">날짜</span>
-      <input class="date-inp" type="date" id="planDate">
+      <input class="date-inp" type="date" id="planDate" onchange="onPlanDateChange()">
     </div>
+    <div id="planDateNotice" style="display:none;margin:0 20px 8px;padding:8px 11px;border-radius:10px;background:#FDF0F6;border:1px solid #F0A6C4;color:#B4527C;font-size:12px;font-weight:600;line-height:1.45"></div>
     <div class="type-row">
-      <button class="type-btn sel" id="typePlan" onclick="setType('plan')">계획 플래너<br><span style="font-size:10px;font-weight:400;color:#94a3b8">전날 밤 · 아침</span></button>
-      <button class="type-btn" id="typeDone" onclick="setType('done')">✅ 완료 플래너<br><span style="font-size:10px;font-weight:400;color:#94a3b8">하루 끝</span></button>
+      <button class="type-btn sel" id="typePlan" onclick="setType('plan')">계획 플래너<span class="tb-sub">전날 밤 · 아침</span></button>
+      <button class="type-btn" id="typeDone" onclick="setType('done')">완료 플래너<span class="tb-sub">하루 끝</span></button>
     </div>
     <div class="upload-area" id="uploadArea">
       <input type="file" id="fileInput" accept="image/*" onchange="onFileSelect(event)">
@@ -415,11 +421,43 @@ function renderHomework() {
 }
 
 // ── Planner upload ──
+// 직접 고른 날짜는 그날 안에서는 유지하고, 날이 바뀌면 자동으로 오늘로 되돌린다
+let _pdTouched = false, _pdDay = null;
+function naturalPlanDate(t) { return (t === 'done') ? todayForDone() : todayForPlan(); }
+function realDayKey() { const d = new Date(); return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); }
+
+function onPlanDateChange() {
+  const v = document.getElementById('planDate').value;
+  _pdTouched = !!v && v !== naturalPlanDate(planType);
+  _pdDay = realDayKey();
+  updatePlanDateNotice();
+}
+
+function updatePlanDateNotice() {
+  const el = document.getElementById('planDateNotice');
+  if (!el) return;
+  const v = document.getElementById('planDate').value;
+  const nat = naturalPlanDate(planType);
+  if (v && v !== nat) {
+    el.style.display = 'block';
+    el.textContent = '⚠️ 오늘(' + nat + ')이 아닌 ' + v + ' 플래너로 제출됩니다.';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
 function setType(t) {
   planType = t;
   document.getElementById('typePlan').className = 'type-btn' + (t === 'plan' ? ' sel' : '');
   document.getElementById('typeDone').className = 'type-btn' + (t === 'done' ? ' sel' : '');
-  document.getElementById('planDate').value = t === 'done' ? todayForDone() : todayForPlan();
+  // 날짜를 직접 고른 적이 있고 아직 같은 날이면 그 선택을 유지
+  if (_pdTouched && _pdDay === realDayKey()) {
+    updatePlanDateNotice();
+    return;
+  }
+  _pdTouched = false;
+  document.getElementById('planDate').value = naturalPlanDate(t);
+  updatePlanDateNotice();
 }
 
 function onFileSelect(e) {
@@ -443,6 +481,10 @@ async function uploadPlanner() {
   if (!selectedFile) return;
   const date = document.getElementById('planDate').value;
   if (!date) { alert('날짜를 선택하세요'); return; }
+  const _nat = naturalPlanDate(planType);
+  if (date !== _nat) {
+    if (!confirm(date + ' 날짜의 ' + (planType === 'done' ? '완료' : '계획') + ' 플래너로 제출합니다.\n오늘은 ' + _nat + '입니다. 계속할까요?')) return;
+  }
 
   const btn = document.getElementById('uploadBtn');
   const msg = document.getElementById('uploadMsg');
