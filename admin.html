@@ -275,6 +275,8 @@ textarea.inp{resize:vertical;min-height:68px}
 .cl-form-ans-num{font-size:10px;color:#5a6e96;font-weight:600;text-align:center}
 .cl-form-ans-inp{border:1.5px solid #e2e8f0;border-radius:7px;padding:6px 4px;font-size:12px;text-align:center;font-family:inherit;outline:none;width:100%;transition:.15s}
 .cl-form-ans-inp:focus{border-color:#8B7FD9}
+.cl-form-pts-inp{border:1.5px dashed #e2e8f0;border-radius:7px;padding:4px 3px;font-size:11px;text-align:center;font-family:inherit;outline:none;width:100%;margin-top:3px;color:#7B76A8}
+.cl-form-pts-inp:focus{border-color:#F0A6C4;border-style:solid}
 .sb-class-head{padding:7px 14px 3px;font-size:10px;font-weight:700;color:#AAA5C8;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between}
 .sb-class-hw{background:none;border:none;color:#7B76A8;font-size:10px;cursor:pointer;font-family:inherit;padding:2px 6px;border-radius:4px;transition:.15s}
 .sb-class-hw:hover{background:rgba(116,179,216,.15);color:var(--bl)}
@@ -1820,7 +1822,8 @@ function renderClinicList(){
       resArr.forEach(function([sid,r]){
         var wrong=r.wrong&&r.wrong.length?r.wrong.join(', '):'없음';
         var noScore=(r.score===null||r.score===undefined);
-        var scoreTxt=r.isText?'내용 작성':(noScore?(r.total||0)+'문항':r.score+'/'+r.total+'점');
+        var ptsTxt=(r.pts!==null&&r.pts!==undefined)?', '+r.pts+'점':'';
+        var scoreTxt=r.isText?'내용 작성':(noScore?(r.total||0)+'문항':r.score+'/'+r.total+ptsTxt);
         resHtml+='<div class="cl-result-row" id="cr_'+cid+'_'+sid+'">';
         resHtml+='<span class="cl-result-name">'+r.name+'</span>';
         resHtml+='<div style="text-align:right"><span class="cl-result-score">'+scoreTxt+'</span>';
@@ -1897,7 +1900,7 @@ function openClinicForm(editId){
   for(var i=1;i<=150;i++){
     var item=document.createElement('div');
     item.className='cl-form-ans-item';
-    item.innerHTML='<span class="cl-form-ans-num">'+i+'번</span><input class="cl-form-ans-inp" id="clAns'+i+'" type="text" placeholder="-" maxlength="10">';
+    item.innerHTML='<span class="cl-form-ans-num">'+i+'번</span><input class="cl-form-ans-inp" id="clAns'+i+'" type="text" placeholder="-" maxlength="10"><input class="cl-form-pts-inp" id="clPts'+i+'" type="number" min="0" step="0.5" placeholder="배점">';
     grid.appendChild(item);
   }
   // Pre-fill answers if editing
@@ -1906,6 +1909,11 @@ function openClinicForm(editId){
     Object.entries(ans).forEach(function([num,val]){
       var inp=document.getElementById('clAns'+num);
       if(inp) inp.value=val;
+    });
+    var pts=clinicSets[editId].points||{};
+    Object.entries(pts).forEach(function([num,val]){
+      var pi=document.getElementById('clPts'+num);
+      if(pi) pi.value=val;
     });
   }
   // 기존 PDF 표시
@@ -1957,16 +1965,19 @@ function onClPdfSelect(e){
 async function saveClinicSet(){
   var title=document.getElementById('clTitle').value.trim();
   if(!title){alert('제목을 입력하세요');return;}
-  var answers={};
+  var answers={}, points={};
   var lastNum=0;
   for(var i=1;i<=150;i++){
     var v=(document.getElementById('clAns'+i)||{}).value||'';
     if(v.trim()){answers[String(i)]=v.trim();lastNum=i;}
+    var pv=(document.getElementById('clPts'+i)||{}).value||'';
+    if(String(pv).trim()!==''&&!isNaN(parseFloat(pv))) points[String(i)]=parseFloat(pv);
   }
-  if(!lastNum){alert('정답을 1개 이상 입력하세요');return;}
+  // 정답은 없어도 저장 가능 (개수 입력/내용 작성용 클리닉)
   var date=document.getElementById('clDate').value;
   if(!date){alert('날짜를 입력하세요');return;}
   var data={title,date,answers,active:true,createdAt:Date.now(),targetType:_clTargetType};
+  data.points=Object.keys(points).length?points:null;
   if(_clTargetType==='class'){
     data.targetCls=document.getElementById('clTargetCls').value;
   }else if(_clTargetType==='student'){
@@ -2109,7 +2120,7 @@ async function applyClinicResultsToSessions(cid){
     if(!sesList.length) continue; // 세션 없으면 건너뜀 (새 세션 생성 안 함)
     const newEntry = (r.score===null||r.score===undefined)
       ? cs.title+', '+r.total+'문항'
-      : cs.title+', '+r.score+'/'+r.total+'점';
+      : cs.title+', '+r.score+'/'+r.total+((r.pts!==null&&r.pts!==undefined)?', '+r.pts+'점':'');
     // 우선순위: ①이미 이 클리닉 cli 있는 세션 ②cli가 있는 세션(다른 클리닉) ③클리닉 날짜 세션(hwC) ④클리닉 날짜 세션 ⑤가장 최근
     const sortedSes = sesList.slice().sort(([,a],[,b])=>((b.upd||b.at||0)-(a.upd||a.at||0)));
     let target =
