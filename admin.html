@@ -1926,7 +1926,7 @@ function openClinicForm(editId){
   for(var i=1;i<=150;i++){
     var item=document.createElement('div');
     item.className='cl-form-ans-item';
-    item.innerHTML='<span class="cl-form-ans-num">'+i+'번</span><input class="cl-form-ans-inp" id="clAns'+i+'" type="text" placeholder="-" maxlength="10"><input class="cl-form-pts-inp" id="clPts'+i+'" type="number" min="0" step="0.5" placeholder="배점" oninput="updateClPtsSum()">';
+    item.innerHTML='<span class="cl-form-ans-num">'+i+'번</span><input class="cl-form-ans-inp" id="clAns'+i+'" type="text" placeholder="-" maxlength="10"><input class="cl-form-pts-inp" id="clPts'+i+'" type="number" min="0" step="0.5" placeholder="배점" tabindex="-1" oninput="updateClPtsSum()">';
     grid.appendChild(item);
   }
   // Pre-fill answers if editing
