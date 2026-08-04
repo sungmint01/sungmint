@@ -80,6 +80,10 @@ body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,
 .tb-item.selected{border-color:transparent;background:linear-gradient(140deg,#F4F1FE,#E8E2FA);box-shadow:0 0 0 1.5px #A89BEB}
 .tb-name{font-size:14px;font-weight:700;color:#3D3860;letter-spacing:-.2px}
 .tb-cnt{font-size:11px;color:#AAA5C8;font-variant-numeric:tabular-nums}
+.tb-toggle{font-size:10px;color:#8B7FD9;font-weight:700;line-height:1;
+  background:rgba(139,127,217,.10);border-radius:99px;width:19px;height:19px;
+  display:inline-flex;align-items:center;justify-content:center;transition:.2s}
+.tb-toggle:hover{background:rgba(139,127,217,.2)}
 
 /* PROBLEM GRID */
 .prob-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:9px}
@@ -233,9 +237,9 @@ body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,
     <!-- 교재 선택 (여러 권 배정된 경우) -->
     <div id="tbSelectWrap">
       <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleTbList()">
-          <div class="card-title">교재 선택</div>
-          <span id="tbListToggleIcon" style="font-size:13px;color:#8B7FD9;font-weight:700">▲</span>
+        <div style="display:inline-flex;align-items:center;gap:6px;cursor:pointer" onclick="toggleTbList()">
+          <div class="card-title" style="margin-bottom:0">교재 선택</div>
+          <span id="tbListToggleIcon" class="tb-toggle">▲</span>
         </div>
         <div id="tbSelectList" style="margin-top:8px"></div>
       </div>
