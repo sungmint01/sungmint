@@ -18,18 +18,18 @@
   --border:rgba(120,100,200,.12);
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,transparent 42%),radial-gradient(circle at 88% 92%,rgba(139,127,217,.10) 0%,transparent 45%);font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;-webkit-font-smoothing:antialiased;
+body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,transparent 42%),radial-gradient(circle at 88% 92%,rgba(139,127,217,.10) 0%,transparent 45%);font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;-webkit-font-smoothing:antialiased;
   background-image:radial-gradient(ellipse 60% 40% at 10% 0%,rgba(155,143,224,.12) 0%,transparent 60%),
   radial-gradient(ellipse 50% 40% at 90% 100%,rgba(86,160,138,.08) 0%,transparent 60%)}
 
 /* LOGIN */
 #loginPage{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:linear-gradient(150deg,#8B7FD9 0%,#A89BEB 45%,#D4A5C8 100%)}
-.lbox{background:#fff;border-radius:28px;padding:44px 36px;width:320px;max-width:100%;box-shadow:0 20px 50px rgba(120,105,205,.28),0 6px 16px rgba(120,105,205,.14);text-align:center}
+.lbox{background:#fff;border-radius:26px;padding:42px 34px;width:320px;max-width:100%;box-shadow:0 1px 2px rgba(120,105,205,.06),0 16px 40px -12px rgba(120,105,205,.32);text-align:center}
 .lbox .ico{color:#fff;font-weight:800;width:60px;height:60px;background:linear-gradient(135deg,#8B7FD9,#A89BEB);border-radius:19px;display:flex;align-items:center;justify-content:center;font-size:27px;margin:0 auto 18px;box-shadow:0 8px 20px rgba(139,127,217,.35)}
-.lbox-badge{display:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:10px;font-weight:600;
+.lbox-badge{display:none;font-family:inherit;font-size:10px;font-weight:600;
   letter-spacing:2.5px;text-transform:uppercase;color:var(--p1);background:rgba(157,145,238,.1);
   padding:4px 12px;border-radius:20px;margin-bottom:18px}
-.lbox h1{font-family:'MaruBuri','Noto Sans KR',sans-serif;font-size:22px;margin-bottom:4px;background:linear-gradient(135deg,#8B7FD9,#A89BEB);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.lbox h1{font-family:'MaruBuri','Pretendard',sans-serif;font-size:22px;margin-bottom:4px;background:linear-gradient(135deg,#8B7FD9,#A89BEB);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .lbox .sub{font-size:10px;color:#AAA5C8;letter-spacing:2px;margin-bottom:28px;text-transform:uppercase}
 .inp{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;
   font-size:14px;font-family:inherit;color:var(--fg);background:#fff;outline:none;transition:.15s}
@@ -47,17 +47,17 @@ body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,
 #app{display:none;max-width:480px;margin:0 auto;padding:0 0 40px}
 
 /* HEADER */
-.hdr{background:linear-gradient(145deg,#6A5CC8 0%,#8878E0 50%,#AAA0F0 100%);
-  padding:44px 22px 52px;position:relative;overflow:hidden;border-radius:0 0 32px 32px}
+.hdr{background:linear-gradient(170deg,#4B4380,#6B5FB8 60%,#8B7FD9);
+  padding:38px 22px 44px;position:relative;overflow:hidden;border-radius:0 0 30px 30px}
 .hdr::before{content:'';position:absolute;width:200px;height:200px;
   background:rgba(255,255,255,.07);border-radius:50%;right:-40px;top:-60px}
 .hdr::after{content:'';position:absolute;left:20px;bottom:-50px;width:130px;height:130px;
   background:rgba(232,121,90,.15);border-radius:50%;filter:blur(24px)}
 .hdr-inner{position:relative;z-index:2}
-.hdr-label{font-family:'Plus Jakarta Sans',sans-serif;font-size:10px;letter-spacing:2.5px;
+.hdr-label{font-family:'Pretendard',sans-serif;font-size:9.5px;letter-spacing:2px;
   color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:6px}
-.hdr-name{font-size:26px;font-weight:700;color:#fff;letter-spacing:-.5px;margin-bottom:2px}
-.hdr-sub{font-size:12px;color:rgba(255,255,255,.5)}
+.hdr-name{font-size:25px;font-weight:800;color:#fff;letter-spacing:-.6px;margin-bottom:3px}
+.hdr-sub{font-size:12px;color:rgba(255,255,255,.7)}
 .logout-btn{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);
   border:none;padding:6px 12px;border-radius:20px;color:#fff;font-size:12px;cursor:pointer;
   font-family:inherit;font-weight:500;z-index:10}
@@ -65,24 +65,31 @@ body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,
 /* BODY */
 .body{padding:16px 16px 0}
 
-.card{background:var(--surface);border-radius:18px;padding:18px;
-  box-shadow:0 4px 24px var(--shadow);margin-bottom:14px}
-.card-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;
-  letter-spacing:1.5px;color:var(--fg3);text-transform:uppercase;margin-bottom:12px}
+.card{position:relative;background:var(--surface);border-radius:22px;padding:18px 19px;margin-bottom:13px;overflow:hidden;
+  box-shadow:0 1px 2px rgba(120,105,205,.06),0 10px 28px -10px rgba(120,105,205,.22)}
+.card:before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(180deg,transparent 0 25px,rgba(107,95,184,.035) 25px 26px)}
+.card>*{position:relative}
+.card-title{font-size:10px;font-weight:700;letter-spacing:1.4px;color:#8B7FD9;margin-bottom:12px}
 
 /* TB SELECTOR */
-.tb-item{padding:12px 14px;border-radius:12px;background:var(--bg);cursor:pointer;
+.tb-item{padding:13px 15px;border-radius:15px;background:#FBFAFE;cursor:pointer;
   margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;
-  border:1.5px solid transparent;transition:.15s}
-.tb-item:hover{border-color:var(--p2)}
-.tb-item.selected{border-color:var(--p1);background:rgba(157,145,238,.08)}
-.tb-name{font-size:14px;font-weight:600;color:var(--fg)}
-.tb-cnt{font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;color:var(--fg3)}
+  border:1px solid rgba(139,127,217,.10);transition:.22s cubic-bezier(.34,1.56,.64,1)}
+.tb-item:hover{border-color:rgba(139,127,217,.35);transform:translateY(-2px);box-shadow:0 6px 16px rgba(120,105,205,.13)}
+.tb-item.selected{border-color:transparent;background:linear-gradient(140deg,#F4F1FE,#E8E2FA);box-shadow:0 0 0 1.5px #A89BEB}
+.tb-name{font-size:14px;font-weight:700;color:#3D3860;letter-spacing:-.2px}
+.tb-cnt{font-size:11px;color:#AAA5C8;font-variant-numeric:tabular-nums}
 
 /* PROBLEM GRID */
 .prob-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:9px}
-.sec-box{background:#fff;border-radius:16px;padding:13px 15px;margin-bottom:8px;
-  box-shadow:0 1px 2px rgba(120,105,205,.05),0 6px 18px -9px rgba(120,105,205,.20)}
+.sec-box{position:relative;background:#fff;border-radius:18px;padding:14px 16px;margin-bottom:8px;overflow:hidden;
+  box-shadow:0 1px 2px rgba(120,105,205,.05),0 8px 20px -9px rgba(120,105,205,.20);
+  transition:box-shadow .25s ease}
+.sec-box:before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(180deg,transparent 0 25px,rgba(107,95,184,.035) 25px 26px)}
+.sec-box>*{position:relative}
+.sec-box.open{box-shadow:0 1px 2px rgba(120,105,205,.06),0 12px 28px -10px rgba(120,105,205,.26)}
 .sec-bar{display:flex;justify-content:space-between;align-items:center;cursor:pointer;gap:10px}
 .sec-t{font-size:13px;font-weight:700;color:#3D3860;letter-spacing:-.2px}
 .sec-s{font-size:10.5px;color:#AAA5C8;margin-top:3px}
@@ -91,8 +98,12 @@ body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,
 .sec-box.open .sec-chev{transform:rotate(180deg);color:#8B7FD9}
 .sec-body{display:none}
 .sec-box.open .sec-body{display:block}
-.myq-card{background:#fff;border-radius:18px;padding:15px 16px;margin-bottom:14px;
-  box-shadow:0 1px 2px rgba(120,105,205,.06),0 8px 22px -9px rgba(120,105,205,.22)}
+.myq-card{position:relative;background:#fff;border-radius:20px;padding:16px 17px;margin-bottom:14px;overflow:hidden;
+  box-shadow:0 1px 2px rgba(120,105,205,.06),0 10px 26px -10px rgba(120,105,205,.24)}
+.myq-card:before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(180deg,transparent 0 25px,rgba(107,95,184,.04) 25px 26px)}
+.myq-card:after{content:'';position:absolute;top:0;bottom:0;left:13px;width:1px;background:rgba(240,166,196,.26)}
+.myq-card>*{position:relative}
 .myq-cap{font-size:10px;letter-spacing:1.4px;font-weight:700;color:#8B7FD9}
 .myq-row{display:flex;align-items:center;gap:10px;margin-top:8px;border-radius:13px;padding:10px 12px;
   background:#F7F5FE;cursor:pointer;transition:.2s}
@@ -119,7 +130,7 @@ body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,
 .prob-cell.checked{background:#8B7FD9;border-color:#8B7FD9;box-shadow:0 2px 8px rgba(139,127,217,.28)}
 .prob-cell.has-yt{background:#7FC7AC;border-color:#7FC7AC;box-shadow:0 2px 8px rgba(86,160,138,.26)}
 .prob-cell.checked.has-yt{background:#7FC7AC;border-color:#7FC7AC}
-.prob-num{font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:700;
+.prob-num{font-family:inherit;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;
   color:var(--fg);line-height:1}
 .prob-cell.checked .prob-num{color:#fff}
 .prob-cell.has-yt .prob-num{color:#fff}
@@ -132,7 +143,7 @@ body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,
 /* YOUTUBE PANEL */
 .yt-panel{background:var(--surface);border-radius:18px;padding:16px;
   box-shadow:0 4px 24px var(--shadow);margin-bottom:14px}
-.yt-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;
+.yt-title{font-family:inherit;font-size:10px;font-weight:700;
   letter-spacing:1.5px;color:var(--fg3);text-transform:uppercase;margin-bottom:10px}
 .yt-item{display:flex;align-items:center;gap:10px;padding:10px 12px;
   background:rgba(232,121,90,.06);border:1.5px solid rgba(232,121,90,.2);
@@ -142,7 +153,7 @@ body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,
   display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .yt-play::after{content:'▶';color:#fff;font-size:10px;margin-left:2px}
 .yt-info{flex:1}
-.yt-prob{font-family:'Plus Jakarta Sans',sans-serif;font-size:10px;color:var(--warm);
+.yt-prob{font-family:inherit;font-size:10px;color:#8B7FD9;font-variant-numeric:tabular-nums;
   font-weight:600;letter-spacing:.5px;margin-bottom:1px}
 .yt-empty{font-size:13px;color:var(--fg3);font-style:italic;padding:8px 0;font-weight:300}
 
@@ -167,7 +178,7 @@ body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,
 .range-btn.uncheck{background:rgba(120,100,200,.1);color:var(--p1)}
 .range-btn.all-uncheck{background:var(--bg);color:var(--fg3)}
 /* 섹션 그룹 */
-.sec-header{font-family:'Plus Jakarta Sans',sans-serif;font-size:10px;font-weight:700;
+.sec-header{font-size:10px;font-weight:700;
   letter-spacing:1.5px;color:var(--fg3);text-transform:uppercase;
   padding:6px 0 4px;margin-top:10px}
 .sec-header:first-child{margin-top:0}
@@ -305,11 +316,11 @@ body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,
                 <button onclick="toggleProbBody()" id="probCollapseBtn" style="border:none;background:#FBFAFF;border-radius:8px;padding:4px 10px;font-size:11px;color:#8B7FD9;font-weight:700;cursor:pointer;font-family:inherit">접기</button>
               </div>
             </div>
-            <div id="tbNameDisplay" style="font-size:14px;font-weight:600;color:var(--fg)"></div>
+            <div id="tbNameDisplay" style="font-size:15px;font-weight:800;color:#3D3860;letter-spacing:-.3px"></div>
           </div>
-          <div id="qCntBadge" style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;
-            font-weight:700;color:var(--p1);background:rgba(157,145,238,.12);padding:4px 10px;
-            border-radius:20px">0개 질문</div>
+          <div id="qCntBadge" style="font-size:11px;font-weight:700;color:#8B7FD9;
+            background:rgba(139,127,217,.10);padding:5px 12px;border-radius:99px;
+            font-variant-numeric:tabular-nums;white-space:nowrap">대기 없음</div>
         </div>
         <div id="probBody">
 
@@ -786,7 +797,7 @@ function loadFreeQList(){
     arr.forEach(function(e){_freeQDetailData[e[0]]=e[1];});
     _freeQAll={};
     arr.forEach(function(e){ _freeQAll[e[0]]=e[1]; });
-    if(activeTbId && tbData[activeTbId]) renderMyQ(tbData[activeTbId]);
+    if(activeTbId && tbData[activeTbId]){ renderMyQ(tbData[activeTbId]); updateQCnt(); }
     var el=document.getElementById('fqMyList');
     if(!el) return;
     if(!arr.length){el.innerHTML='<div style="font-size:12px;color:#A8A4C0;text-align:center;padding:8px">등록된 질문이 없습니다</div>';return;}
@@ -837,8 +848,18 @@ function deleteFreeQFromSheet(){
   });
 }
 function updateQCnt(){
-  var cnt=Object.values(myQuestions).filter(Boolean).length;
-  document.getElementById('qCntBadge').textContent=cnt+'개 질문';
+  // 전체가 아니라 '아직 해결 안 된' 개수 (영상이 등록되지 않은 질문)
+  var tb=tbData[activeTbId]||{};
+  var problems=tb.problems||{};
+  var cnt=0;
+  Object.keys(myQuestions).forEach(function(n){
+    if(!myQuestions[n]) return;
+    if(!(problems[n]||{}).youtubeUrl) cnt++;
+  });
+  Object.keys(_freeQAll).forEach(function(id){
+    if(!(_freeQAll[id]||{}).youtubeUrl) cnt++;
+  });
+  document.getElementById('qCntBadge').textContent = cnt ? (cnt+'개 대기') : '대기 없음';
 }
 
 function renderYtPanel(tb){
