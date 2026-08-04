@@ -64,42 +64,58 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
 .hw-nav-btn.active{background:var(--pu);color:#fff}
 
 /* Planner upload */
-.planner-card{position:relative;background:#fff;border-radius:24px;margin-bottom:16px;overflow:hidden;
-  box-shadow:0 1px 2px rgba(120,105,205,.06),0 8px 24px rgba(120,105,205,.09),0 24px 48px -16px rgba(120,105,205,.10);
-  transition:box-shadow .35s ease}
-.planner-card:before{content:'';position:absolute;inset:0 0 auto;height:120px;pointer-events:none;
-  background:linear-gradient(180deg,rgba(139,127,217,.055),transparent)}
 .pc-head{position:relative;padding:20px 22px 4px;display:flex;align-items:baseline;justify-content:space-between;gap:10px}
-.pc-daylabel{font-size:12.5px;font-weight:700;color:#8B7FD9;letter-spacing:-.2px;font-variant-numeric:tabular-nums;
-  background:rgba(139,127,217,.09);padding:4px 10px;border-radius:99px;white-space:nowrap}
-.slot-row{display:flex;gap:10px;margin:16px 22px 14px}
-.slot{position:relative;flex:1;padding:14px 13px 13px;border-radius:18px;border:1.5px solid rgba(139,127,217,.14);
-  background:#fff;cursor:pointer;font-family:inherit;text-align:left;overflow:hidden;
-  transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s ease,border-color .25s ease}
-.slot:before{content:'';position:absolute;top:-18px;right:-18px;width:56px;height:56px;border-radius:50%;
-  background:rgba(139,127,217,.06);transition:.3s}
-.slot:hover{transform:translateY(-2px);border-color:rgba(139,127,217,.32);box-shadow:0 6px 18px rgba(120,105,205,.10)}
-.slot-name{position:relative;display:block;font-size:14px;font-weight:800;color:#AAA5C8;letter-spacing:-.3px;transition:color .25s}
-.slot-state{position:relative;display:block;font-size:11px;font-weight:600;margin-top:5px;color:#C4C0DA;font-variant-numeric:tabular-nums;transition:color .25s}
+/* ── Day timeline ── */
+.tl-wrap{margin-bottom:16px}
+.tl-daybar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 4px 12px}
+.tl-dayname{font-size:12.5px;font-weight:700;color:#8B7FD9;letter-spacing:-.2px;font-variant-numeric:tabular-nums;
+  background:rgba(139,127,217,.10);padding:5px 12px;border-radius:99px}
+.tl-back{display:none;border:1px solid rgba(240,166,196,.55);background:#fff;color:#B4527C;border-radius:99px;
+  padding:5px 12px;font-size:11.5px;font-weight:700;font-family:inherit;cursor:pointer}
+.tl{position:relative;padding-left:34px}
+.tl-spine{position:absolute;left:5px;top:16px;bottom:16px;width:2px;border-radius:2px;
+  background:linear-gradient(180deg,#CFC8F1,#8B7FD9 55%,#4B4380)}
+.tl-node{position:relative;margin-bottom:13px}
+.tl-dot{position:absolute;left:-34px;top:19px;width:12px;height:12px;border-radius:50%;background:#FBFAFF;
+  box-shadow:0 0 0 2px #A89BEB;transition:.3s cubic-bezier(.34,1.56,.64,1)}
+.tl-dot.neutral{box-shadow:0 0 0 2px #D6D1EE;background:#EFECF9}
+.tl-dot.filled{background:#9DD9C4;box-shadow:0 0 0 3.5px #FBFAFF,0 0 0 5px #9DD9C4}
+.tl-card{position:relative;background:#fff;border-radius:18px;padding:15px 17px;overflow:hidden;
+  box-shadow:0 1px 2px rgba(70,60,130,.05),0 8px 22px -9px rgba(70,60,130,.22);
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s ease}
+.tl-card.paper:before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(180deg,transparent 0 24px,rgba(107,95,184,.055) 24px 25px)}
+.tl-card.paper:after{content:'';position:absolute;top:0;bottom:0;left:13px;width:1px;background:rgba(240,166,196,.28)}
+#cardPlan,#cardDone{cursor:pointer}
+#cardPlan:hover,#cardDone:hover{transform:translateY(-2px);box-shadow:0 12px 28px -10px rgba(70,60,130,.30)}
+.tl-card.sel{background:linear-gradient(160deg,#F5F2FE,#EAE5FA);box-shadow:0 0 0 1.5px #A89BEB,0 10px 26px -9px rgba(107,95,184,.34)}
+.tl-cap{position:relative;font-size:9.5px;letter-spacing:1.6px;font-weight:700;color:#C4C0DA}
+.tl-card.sel .tl-cap{color:#8B7FD9}
+.tl-title{position:relative;font-size:14.5px;font-weight:800;color:#3D3860;margin-top:5px;letter-spacing:-.3px}
+.tl-state{position:relative;font-size:11.5px;font-weight:600;color:#C4C0DA;margin-top:4px;font-variant-numeric:tabular-nums}
+.tl-state.ok{color:#56A08A}
+.tl-act{margin-top:4px}
+.tl-act-lb{font-size:11.5px;font-weight:700;color:#8B7FD9;padding:0 4px 9px}
+.hw-latest{position:relative}
+.hw-item-date{font-size:11px;color:#8B7FD9;font-weight:700;margin:9px 0 6px;display:flex;align-items:center;gap:6px}
+.hw-item-today{background:#8B7FD9;color:#fff;border-radius:5px;padding:1px 7px;font-size:9.5px;font-weight:700}
+.hw-item-content{font-size:13px;color:#5C5680;line-height:1.75;font-weight:500}
+.hw-more{position:relative;font-size:10.5px;color:#C4C0DA;margin-top:9px;padding-top:8px;border-top:1px dashed rgba(139,127,217,.2)}
+.pdm-jump{width:100%;margin-top:10px;border:1px solid rgba(139,127,217,.25);background:#fff;color:#8B7FD9;
+  border-radius:12px;padding:11px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer}
+/* 다른 날짜 보는 중 */
+.tl-wrap.off-today .tl-dayname{background:rgba(240,166,196,.16);color:#B4527C}
+.tl-wrap.off-today .tl-back{display:block}
+.tl-wrap.off-today .tl-spine{background:linear-gradient(180deg,#F6D3E1,#F0A6C4)}
+.tl-wrap.off-today .tl-card.sel{background:linear-gradient(160deg,#FFF8FB,#FDEDF4);box-shadow:0 0 0 1.5px #F0A6C4,0 10px 26px -9px rgba(200,100,150,.32)}
+.tl-wrap.off-today .tl-card.sel .tl-cap{color:#B4527C}
+.tl-wrap.off-today .tl-act-lb{color:#B4527C}
+.tl-wrap.off-today .upload-area{border-color:rgba(240,166,196,.55);
+  background:repeating-linear-gradient(180deg,transparent 0 25px,rgba(240,166,196,.14) 25px 26px),linear-gradient(160deg,#FFFBFD,#FDF2F7)}
+.tl-wrap.off-today .upload-btn{background:linear-gradient(135deg,#D4749B,#F0A6C4);box-shadow:0 6px 18px rgba(200,100,150,.28)}
 /* 계획 = 이른 시간(라벤더) · 완료 = 하루 끝(민트) */
-#slotPlan.sel{border-color:transparent;background:linear-gradient(140deg,#F4F1FE,#E8E2FA);
-  box-shadow:0 0 0 1.5px #A89BEB,0 8px 20px rgba(139,127,217,.20)}
-#slotPlan.sel:before{background:rgba(139,127,217,.16);transform:scale(1.15)}
-#slotPlan.sel .slot-name{color:#5B4FA8}
-#slotPlan.sel .slot-state{color:#8B7FD9}
-#slotDone.sel{border-color:transparent;background:linear-gradient(140deg,#EDF9F4,#DCF0E7);
-  box-shadow:0 0 0 1.5px #86CDB2,0 8px 20px rgba(86,160,138,.18)}
-#slotDone.sel:before{background:rgba(86,160,138,.15);transform:scale(1.15)}
-#slotDone.sel .slot-name{color:#357A63}
-#slotDone.sel .slot-state{color:#3F8A72}
 /* 제출 완료 배지 */
-.slot.filled:after{content:'✓';position:absolute;top:11px;right:11px;width:19px;height:19px;border-radius:50%;
-  background:linear-gradient(135deg,#9DD9C4,#7FC7AC);color:#fff;font-size:11px;font-weight:800;
-  display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(86,160,138,.35)}
-.slot.filled .slot-name{color:#7B76A8}
-.slot.filled .slot-state{color:#56A08A;font-weight:700}
-.slot.sel.filled .slot-state{color:#3F8A72}
-.done-box{margin:0 22px 14px;padding:14px;border-radius:20px;text-align:center;
+.done-box{margin:0 0 14px;padding:14px;border-radius:20px;text-align:center;
   background:linear-gradient(160deg,#FBFAFF,#F5F2FD);border:1px solid rgba(139,127,217,.13);
   box-shadow:inset 0 1px 0 #fff}
 .done-thumb{font-size:12px;color:#AAA5C8;min-height:70px;display:flex;align-items:center;justify-content:center}
@@ -108,21 +124,9 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
   padding:9px 18px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;
   box-shadow:0 2px 8px rgba(120,105,205,.10);transition:.25s}
 .redo-btn:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(120,105,205,.16);border-color:#A89BEB}
-.datetoggle-wrap{text-align:center;padding:6px 22px 18px}
-.datetoggle{background:none;border:none;font-family:inherit;font-size:11.5px;font-weight:600;color:#C4C0DA;cursor:pointer;text-decoration:underline;text-decoration-color:rgba(196,192,218,.5);text-underline-offset:4px;transition:.2s}
-.datetoggle:hover{color:#8B7FD9}
-.date-reset{border:1px solid rgba(139,127,217,.25);background:#fff;color:#8B7FD9;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap}
 /* 오늘이 아닌 날짜 = 경고 상태 */
-#plannerCard.off-today{box-shadow:0 0 0 2px #F0A6C4,0 10px 30px -8px rgba(200,100,150,.30)}
-#plannerCard.off-today:before{background:linear-gradient(180deg,rgba(240,166,196,.10),transparent)}
-#plannerCard.off-today .upload-area{border-color:rgba(240,166,196,.55);
-  background:repeating-linear-gradient(180deg,transparent 0 25px,rgba(240,166,196,.14) 25px 26px),linear-gradient(160deg,#FFFBFD,#FDF2F7)}
-#plannerCard.off-today .pc-daylabel{color:#B4527C}
-#plannerCard.off-today .date-row{background:#FDF0F6;border-color:rgba(240,166,196,.5)}
-#plannerCard.off-today .date-label{color:#B4527C}
-#plannerCard.off-today .datetoggle{color:#B4527C}
 .pc-title{font-family:'MaruBuri','Noto Sans KR',sans-serif;font-size:16px;background:linear-gradient(135deg,#8B7FD9,#A89BEB);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.upload-area{position:relative;margin:0 22px 14px;border:1.5px dashed rgba(139,127,217,.34);border-radius:20px;
+.upload-area{position:relative;margin:0 0 14px;border:1.5px dashed rgba(139,127,217,.34);border-radius:20px;
   padding:34px 20px 32px;text-align:center;cursor:pointer;overflow:hidden;transition:.3s cubic-bezier(.34,1.56,.64,1);
   background:
     repeating-linear-gradient(180deg,transparent 0 25px,rgba(139,127,217,.10) 25px 26px),
@@ -139,15 +143,11 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
 .upload-area:hover .upload-icon{transform:scale(1.07) rotate(-4deg)}
 .upload-text{position:relative;font-size:12px;color:#AAA5C8;line-height:1.65}
 .upload-text strong{display:block;color:#5B4FA8;font-size:14px;font-weight:800;letter-spacing:-.3px;margin-bottom:3px}
-.date-row{display:flex;align-items:center;gap:10px;margin:0 22px 18px;background:#F7F5FE;border:1px solid rgba(139,127,217,.13);border-radius:16px;padding:10px 12px}
-.date-label{font-size:11px;font-weight:700;color:#8B7FD9;white-space:nowrap;letter-spacing:.4px}
-.date-inp{flex:1;border:1.5px solid transparent;border-radius:9px;padding:7px 10px;font-size:13px;font-weight:600;font-family:inherit;color:#3D3860;background:#fff;outline:none;transition:.2s;box-shadow:0 1px 3px rgba(120,105,205,.06)}
-.date-inp:focus{border-color:#A89BEB;box-shadow:0 0 0 3px rgba(139,127,217,.13)}
-.upload-btn{width:calc(100% - 44px);margin:0 22px 6px;background:linear-gradient(135deg,#8B7FD9,#A89BEB);color:#fff;border:none;border-radius:16px;padding:15px;letter-spacing:-.2px;box-shadow:0 6px 18px rgba(139,127,217,.28),inset 0 1px 0 rgba(255,255,255,.28);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.upload-btn{width:100%;margin:0 0 6px;background:linear-gradient(135deg,#8B7FD9,#A89BEB);color:#fff;border:none;border-radius:16px;padding:15px;letter-spacing:-.2px;box-shadow:0 6px 18px rgba(139,127,217,.28),inset 0 1px 0 rgba(255,255,255,.28);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px}
 .upload-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 26px rgba(139,127,217,.34),inset 0 1px 0 rgba(255,255,255,.28)}
 .upload-btn:active:not(:disabled){transform:translateY(0)}
 .upload-btn:disabled{background:#EFECF9;color:#B9B4D2;cursor:not-allowed;box-shadow:none}
-.preview-img{width:calc(100% - 44px);border-radius:16px;margin:0 22px 14px;object-fit:cover;max-height:300px;display:none;
+.preview-img{width:100%;border-radius:16px;margin:0 0 14px;object-fit:cover;max-height:300px;display:none;
   border:5px solid #fff;box-shadow:0 2px 6px rgba(120,105,205,.10),0 12px 30px -8px rgba(120,105,205,.28)}
 .prog-bar{height:5px;background:#EDEAF9;border-radius:99px;margin:0 20px 12px;overflow:hidden;display:none}
 .prog-fill{height:100%;background:linear-gradient(90deg,var(--pu),var(--pud));border-radius:99px;transition:width .3s}
@@ -258,68 +258,71 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
     <div class="hdr-sub" id="stuSub"></div>
   </div>
 
-  <!-- Today HW -->
-  <div class="hw-card">
-    <div class="hw-label">This Week's Homework</div>
-    <div class="hw-title">이번 주 숙제</div>
-    <div id="hwContent"><div class="hw-empty">등록된 숙제가 없습니다</div></div>
-  </div>
-
   <!-- 플래너 코멘트 -->
   <div class="planner-comment-card" id="plannerCommentCard" style="display:none">
     <div class="pc-comment-label">선생님 코멘트</div>
     <div id="plannerCommentContent"></div>
   </div>
 
-  <!-- Planner upload -->
-  <div class="planner-card" id="plannerCard">
-    <div class="pc-head">
-      <span class="pc-title">플래너 제출</span>
-      <span class="pc-daylabel" id="pcDayLabel"></span>
+  <!-- Day timeline -->
+  <div class="tl-wrap" id="tlWrap">
+    <div class="tl-daybar" id="tlDaybar">
+      <span class="tl-dayname" id="tlDayName"></span>
+      <button class="tl-back" id="tlBack" onclick="jumpToDate(null)">오늘로 돌아가기</button>
     </div>
 
-    <!-- 오늘 상태 -->
-    <div class="slot-row">
-      <button class="slot" id="slotPlan" onclick="setType('plan')">
-        <span class="slot-name">계획</span>
-        <span class="slot-state" id="slotPlanState">확인 중</span>
-      </button>
-      <button class="slot" id="slotDone" onclick="setType('done')">
-        <span class="slot-name">완료</span>
-        <span class="slot-state" id="slotDoneState">확인 중</span>
-      </button>
-    </div>
+    <div class="tl">
+      <div class="tl-spine"></div>
 
-    <!-- 제출됨 -->
-    <div class="done-box" id="doneBox" style="display:none">
-      <div class="done-thumb" id="doneThumb">불러오는 중...</div>
-      <button class="redo-btn" onclick="startRedo()">다시 올리기</button>
-    </div>
-
-    <!-- 업로드 -->
-    <div id="uploadWrap">
-      <div class="upload-area" id="uploadArea">
-        <input type="file" id="fileInput" accept="image/*" onchange="onFileSelect(event)">
-        <div class="upload-icon"></div>
-        <div class="upload-text"><strong>사진 찍기 또는 선택</strong><br>플래너를 촬영하거나 갤러리에서 선택하세요</div>
+      <div class="tl-node">
+        <span class="tl-dot" id="dotPlan"></span>
+        <div class="tl-card paper" id="cardPlan" onclick="setType('plan')">
+          <div class="tl-cap">MORNING</div>
+          <div class="tl-title">계획 플래너</div>
+          <div class="tl-state" id="statePlan">확인 중</div>
+        </div>
       </div>
-      <img class="preview-img" id="previewImg">
-      <div class="prog-bar" id="progBar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
-      <div class="upload-msg" id="uploadMsg"></div>
-      <button class="upload-btn" id="uploadBtn" onclick="uploadPlanner()" disabled> 플래너 제출하기
-      </button>
+
+      <div class="tl-node">
+        <span class="tl-dot neutral"></span>
+        <div class="tl-card paper">
+          <div class="tl-cap">DAYTIME</div>
+          <div class="tl-title">최근 숙제</div>
+          <div id="hwContent"><div class="hw-empty">등록된 숙제가 없습니다</div></div>
+        </div>
+      </div>
+
+      <div class="tl-node">
+        <span class="tl-dot" id="dotDone"></span>
+        <div class="tl-card paper" id="cardDone" onclick="setType('done')">
+          <div class="tl-cap">TONIGHT</div>
+          <div class="tl-title">완료 플래너</div>
+          <div class="tl-state" id="stateDone">확인 중</div>
+        </div>
+      </div>
     </div>
 
-    <!-- 날짜 (기본 숨김) -->
-    <div class="datetoggle-wrap">
-      <button class="datetoggle" id="dateToggle" onclick="togglePlanDate()">다른 날짜로 제출하기</button>
+    <div class="tl-act" id="tlAct">
+      <div class="tl-act-lb" id="tlActLb"></div>
+
+      <div class="done-box" id="doneBox" style="display:none">
+        <div class="done-thumb" id="doneThumb">불러오는 중...</div>
+        <button class="redo-btn" onclick="startRedo()">다시 올리기</button>
+      </div>
+
+      <div id="uploadWrap">
+        <div class="upload-area" id="uploadArea">
+          <input type="file" id="fileInput" accept="image/*" onchange="onFileSelect(event)">
+          <div class="upload-icon"></div>
+          <div class="upload-text"><strong>사진 찍기 또는 선택</strong>플래너를 촬영하거나 갤러리에서 선택하세요</div>
+        </div>
+        <img class="preview-img" id="previewImg">
+        <div class="prog-bar" id="progBar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+        <div class="upload-msg" id="uploadMsg"></div>
+        <button class="upload-btn" id="uploadBtn" onclick="uploadPlanner()" disabled>플래너 제출하기</button>
+      </div>
     </div>
-    <div class="date-row" id="dateRow" style="display:none">
-      <span class="date-label">날짜</span>
-      <input class="date-inp" type="date" id="planDate" onchange="onPlanDateChange()">
-      <button class="date-reset" onclick="resetPlanDate()">오늘로</button>
-    </div>
-    <div id="planDateNotice" style="display:none"></div>
+    <input type="date" id="planDate" onchange="onPlanDateChange()" style="display:none">
   </div>
 
   <!-- Planner calendar -->
@@ -347,6 +350,7 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
         <button class="pdm-close" onclick="closePlanDetail()">✕</button>
       </div>
       <div class="pdm-body" id="pdmBody"></div>
+      <button class="pdm-jump" id="pdmJump">이 날짜로 플래너 제출하기</button>
     </div>
   </div>
 </div>
@@ -494,17 +498,15 @@ function renderHomework() {
     el.innerHTML = '<div class="hw-empty">최근 1주일 내 숙제가 없습니다</div>';
     return;
   }
-  el.innerHTML = arr.map(r => {
-    const [y,m,d] = r.date.split('-');
-    const isToday = r.date === todayStr;
-    return `<div class="hw-item">
-      <div class="hw-item-date">
-        ${y}년 ${+m}월 ${+d}일
-        ${isToday ? '<span class="hw-item-today">오늘</span>' : ''}
-      </div>
+  const r = arr[0];
+  const [y,m,d] = r.date.split('-');
+  const isToday = r.date === todayStr;
+  const more = arr.length > 1
+    ? `<div class="hw-more">이전 숙제 ${arr.length - 1}건은 아래 달력에서 볼 수 있어요</div>` : '';
+  el.innerHTML = `<div class="hw-latest">
+      <div class="hw-item-date">${+m}월 ${+d}일${isToday ? '<span class="hw-item-today">오늘</span>' : ''}</div>
       <div class="hw-item-content">${r.hwC}</div>
-    </div>`;
-  }).join('');
+    </div>${more}`;
 }
 
 // ── Planner upload ──
@@ -521,13 +523,7 @@ function onPlanDateChange() {
   renderPlanSlots();
 }
 
-function updatePlanDateNotice() {
-  const card = document.getElementById('plannerCard');
-  if (!card) return;
-  const v = (document.getElementById('planDate') || {}).value || '';
-  const nat = naturalPlanDate(planType);
-  card.className = 'planner-card' + (v && v !== nat ? ' off-today' : '');
-}
+function updatePlanDateNotice() { renderPlanSlots(); }
 
 var _planAll = {}, _redo = false;
 
@@ -553,22 +549,30 @@ function fmtTime(ts) {
 }
 function renderPlanSlots() {
   var date = planTargetDate();
-  var lab = document.getElementById('pcDayLabel');
-  if (lab) {
-    var nat = naturalPlanDate(planType);
-    var d = new Date(date + 'T00:00:00');
-    var wd = ['일','월','화','수','목','금','토'][d.getDay()] || '';
-    lab.textContent = (date === nat ? '오늘 · ' : '') + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + wd + ')';
-  }
-  [['plan','slotPlan','slotPlanState'],['done','slotDone','slotDoneState']].forEach(function (a) {
+  var nat = naturalPlanDate(planType);
+  var wrap = document.getElementById('tlWrap');
+  var d = new Date(date + 'T00:00:00');
+  var wd = ['일','월','화','수','목','금','토'][d.getDay()] || '';
+  var isToday = (date === nat);
+  document.getElementById('tlDayName').textContent =
+    (isToday ? '오늘 · ' : '') + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + wd + ')';
+  wrap.className = 'tl-wrap' + (isToday ? '' : ' off-today');
+
+  [['plan','cardPlan','statePlan','dotPlan'],['done','cardDone','stateDone','dotDone']].forEach(function (a) {
     var sub = findSubmission(date, a[0]);
-    var el = document.getElementById(a[1]);
+    var card = document.getElementById(a[1]);
     var st = document.getElementById(a[2]);
-    if (!el || !st) return;
-    el.className = 'slot' + (planType === a[0] ? ' sel' : '') + (sub ? ' filled' : '');
-    st.textContent = sub ? ('✓ 제출 ' + fmtTime(sub.ts)) : '아직 안 냈어요';
+    var dot = document.getElementById(a[3]);
+    if (!card || !st || !dot) return;
+    card.className = 'tl-card paper' + (planType === a[0] ? ' sel' : '');
+    dot.className = 'tl-dot' + (sub ? ' filled' : '');
+    st.className = 'tl-state' + (sub ? ' ok' : '');
+    st.textContent = sub ? ('제출 완료 · ' + fmtTime(sub.ts)) : '아직 안 냈어요';
   });
-  // 제출됨이면 업로드 영역 대신 사진 표시
+
+  var lab = document.getElementById('tlActLb');
+  if (lab) lab.textContent = (planType === 'done' ? '완료' : '계획') + ' 플래너 ' + (isToday ? '' : '· ' + date);
+
   var sub = findSubmission(date, planType);
   var doneBox = document.getElementById('doneBox');
   var upWrap = document.getElementById('uploadWrap');
@@ -578,29 +582,32 @@ function renderPlanSlots() {
     var t = document.getElementById('doneThumb');
     t.textContent = '불러오는 중...';
     loadPlannerImg(sub.pid).then(function (src) {
-      if (findSubmission(planTargetDate(), planType) !== null && src) t.innerHTML = '<img src="' + src + '">';
-      else if (!src) t.textContent = '사진을 불러오지 못했습니다';
+      if (src) t.innerHTML = '<img src="' + src + '">';
+      else t.textContent = '사진을 불러오지 못했습니다';
     }).catch(function () { t.textContent = '사진을 불러오지 못했습니다'; });
   } else {
     doneBox.style.display = 'none';
     upWrap.style.display = 'block';
   }
-  updatePlanDateNotice();
-}
-function startRedo() { _redo = true; renderPlanSlots(); }
-function togglePlanDate() {
-  var row = document.getElementById('dateRow');
-  var open = row.style.display !== 'none';
-  row.style.display = open ? 'none' : 'flex';
-  document.getElementById('dateToggle').textContent = open ? '다른 날짜로 제출하기' : '날짜 선택 닫기';
-}
-function resetPlanDate() {
-  _pdTouched = false;
-  document.getElementById('planDate').value = naturalPlanDate(planType);
-  _redo = false;
-  renderPlanSlots();
 }
 
+// 달력에서 특정 날짜로 이동 (null이면 오늘)
+function jumpToDate(ds) {
+  _redo = false;
+  if (!ds) {
+    _pdTouched = false;
+    document.getElementById('planDate').value = naturalPlanDate(planType);
+  } else {
+    _pdTouched = true;
+    _pdDay = realDayKey();
+    document.getElementById('planDate').value = ds;
+  }
+  renderPlanSlots();
+  var w = document.getElementById('tlWrap');
+  if (w) w.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function startRedo() { _redo = true; renderPlanSlots(); }
 function setType(t) {
   planType = t;
   _redo = false;
@@ -839,6 +846,7 @@ function renderPlanCal() {
       cell.style.cursor = 'pointer';
       (function(date, ps) {
         cell.addEventListener('click', function() { openPlanDetail(date, ps); });
+        cell.dataset.d = date;
       })(ds, plans);
     }
     grid.appendChild(cell);
@@ -909,6 +917,8 @@ function openPlanDetail(ds, plans) {
       el.replaceWith(img);
     });
   });
+  var jb = document.getElementById('pdmJump');
+  if (jb) { jb.onclick = function(){ closePlanDetail(); jumpToDate(ds); }; }
   document.getElementById('planDetailOv').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
