@@ -96,6 +96,16 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
 .tl-state.ok{color:#56A08A}
 .tl-act{margin-top:4px}
 .tl-act-lb{font-size:11.5px;font-weight:700;color:#8B7FD9;padding:0 4px 9px}
+.tl-cmt{position:relative;margin-top:11px;padding-top:10px;border-top:1px dashed rgba(139,127,217,.22);display:none}
+.tl-cmt-h{font-size:9.5px;letter-spacing:1.3px;font-weight:700;color:#56A08A;margin-bottom:5px}
+.tl-cmt-b{font-size:12.5px;color:#3F6E5E;line-height:1.7;white-space:pre-wrap}
+.tl-cmt-wait{font-size:11.5px;color:#C4C0DA}
+.tl-card.yest{background:linear-gradient(160deg,#EDF9F4,#DFF2EA);box-shadow:0 0 0 1.5px #86CDB2,0 10px 26px -9px rgba(86,160,138,.28)}
+.tl-card.yest .tl-cap{color:#3F8A72}
+.tl-card.yest .tl-cmt{display:block;border-top-color:rgba(86,160,138,.28)}
+.cmt-read{position:relative;width:100%;margin-top:12px;border:1px solid rgba(86,160,138,.32);background:#fff;color:#3F8A72;
+  border-radius:12px;padding:10px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;transition:.2s}
+.cmt-read:hover{background:#F3FBF8;transform:translateY(-1px)}
 .tl-daynav{display:flex;align-items:center;gap:2px}
 .tl-arrow{border:none;background:none;font-family:inherit;font-size:19px;line-height:1;color:#C4C0DA;
   cursor:pointer;padding:2px 7px;border-radius:9px;transition:.2s}
@@ -195,13 +205,6 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
 .pdm-item-head{padding:8px 12px;display:flex;align-items:center;justify-content:space-between;background:#f1f5f9}
 .pdm-img{width:100%;max-height:260px;object-fit:cover;cursor:pointer}
 .pdm-comment{padding:10px 12px;font-size:13px;color:#166534;background:#f0fdf4;line-height:1.6;white-space:pre-wrap}
-.planner-comment-card{background:#e4e8f4;border-radius:20px;padding:20px;margin-bottom:16px;box-shadow:5px 5px 14px rgba(145,165,210,.5),-4px -4px 12px rgba(255,255,255,.85)}
-.pc-comment-label{font-family:'Noto Sans KR','MaruBuri',sans-serif;font-size:9px;color:#AAA5C8;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
-.pc-comment-item{background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:8px;border-left:4px solid #86efac}
-.pc-comment-item.plan{border-left-color:#93c5fd}
-.pc-comment-type{font-size:10px;font-weight:700;color:#5a6e96;margin-bottom:4px}
-.pc-comment-text{font-size:13px;color:#166534;line-height:1.6;white-space:pre-wrap}
-.pc-comment-empty{font-size:12px;color:#AAA5C8;font-style:italic;padding:4px 0}
 .pdm-comment-head{font-size:10px;font-weight:700;color:#15803d;margin-bottom:3px}
 .pdm-no-comment{padding:8px 12px;font-size:12px;color:#AAA5C8;font-style:italic}
 .pdm-empty{text-align:center;padding:28px;color:#AAA5C8;font-size:13px}
@@ -245,11 +248,6 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
   </div>
 
   <!-- 플래너 코멘트 -->
-  <div class="planner-comment-card" id="plannerCommentCard" style="display:none">
-    <div class="pc-comment-label">선생님 코멘트</div>
-    <div id="plannerCommentContent"></div>
-  </div>
-
   <!-- Day timeline -->
   <div class="tl-wrap" id="tlWrap">
     <div class="tl-daybar" id="tlDaybar">
@@ -264,12 +262,23 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
     <div class="tl">
       <div class="tl-spine"></div>
 
+      <div class="tl-node" id="nodeYest" style="display:none">
+        <span class="tl-dot filled"></span>
+        <div class="tl-card paper yest" id="cardYest">
+          <div class="tl-cap">LAST NIGHT</div>
+          <div class="tl-title">어제 완료 플래너</div>
+          <div class="tl-cmt" id="cmtYest"></div>
+          <button class="cmt-read" onclick="markCmtRead(event)">확인했어요</button>
+        </div>
+      </div>
+
       <div class="tl-node">
         <span class="tl-dot" id="dotPlan"></span>
         <div class="tl-card paper" id="cardPlan" onclick="tapSlot('plan')">
           <div class="tl-cap">MORNING</div>
           <div class="tl-title">계획 플래너</div>
           <div class="tl-state" id="statePlan">확인 중</div>
+          <div class="tl-cmt" id="cmtPlan"></div>
         </div>
       </div>
 
@@ -288,6 +297,7 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
           <div class="tl-cap">TONIGHT</div>
           <div class="tl-title">완료 플래너</div>
           <div class="tl-state" id="stateDone">확인 중</div>
+          <div class="tl-cmt" id="cmtDone"></div>
         </div>
       </div>
     </div>
@@ -523,7 +533,7 @@ function findSubmission(date, type) {
   Object.keys(_planAll || {}).forEach(function (pid) {
     var p = _planAll[pid] || {};
     if (p.date === date && p.type === type) {
-      if (!best || (p.ts || 0) > (best.ts || 0)) best = { pid: pid, ts: p.ts || 0 };
+      if (!best || (p.ts || 0) > (best.ts || 0)) best = { pid: pid, ts: p.ts || 0, comment: p.comment || '', cRead: !!p.cRead };
     }
   });
   return best;
@@ -555,6 +565,19 @@ function renderPlanSlots() {
     st.className = 'tl-state' + (sub ? ' ok' : '');
     st.textContent = sub ? ('제출 완료 · ' + fmtTime(sub.ts)) : '눌러서 사진 올리기';
   });
+
+  // 카드 안 코멘트
+  [['plan','cmtPlan'],['done','cmtDone']].forEach(function (a) {
+    var sub = findSubmission(date, a[0]);
+    var el = document.getElementById(a[1]);
+    if (!el) return;
+    if (!sub) { el.innerHTML = ''; el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.innerHTML = sub.comment
+      ? '<div class="tl-cmt-h">선생님 코멘트</div><div class="tl-cmt-b">' + esc(sub.comment).split('\n').join('<br>') + '</div>'
+      : '<div class="tl-cmt-wait">코멘트 대기 중</div>';
+  });
+  renderYesterdayNode();
 
   var lab = document.getElementById('tlActLb');
   if (lab) lab.textContent = (planType === 'done' ? '완료' : '계획') + ' 플래너 ' + (isToday ? '' : '· ' + date);
@@ -599,6 +622,34 @@ function shiftDay(n) {
   d.setDate(d.getDate() + n);
   var ds = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   jumpToDate(ds === naturalPlanDate(planType) ? null : ds);
+}
+
+function esc(t) {
+  return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+// 어제 완료 플래너에 아직 안 읽은 코멘트가 있으면 오늘 위에 띄운다
+var _yestPid = null;
+function renderYesterdayNode() {
+  var node = document.getElementById('nodeYest');
+  if (!node) return;
+  var nat = naturalPlanDate('plan');
+  var d = new Date(nat + 'T00:00:00'); d.setDate(d.getDate() - 1);
+  var yest = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  var sub = findSubmission(yest, 'done');
+  // 오늘 화면에서, 어제 완료 코멘트가 있고, 아직 안 읽었을 때만
+  var show = (planTargetDate() === nat) && sub && sub.comment && !sub.cRead;
+  node.style.display = show ? 'block' : 'none';
+  if (!show) { _yestPid = null; return; }
+  _yestPid = sub.pid;
+  document.getElementById('cmtYest').innerHTML =
+    '<div class="tl-cmt-h">선생님 코멘트</div><div class="tl-cmt-b">' + esc(sub.comment).split('\n').join('<br>') + '</div>';
+}
+function markCmtRead(e) {
+  if (e) e.stopPropagation();
+  if (!_yestPid || !stuId) return;
+  var pid = _yestPid;
+  document.getElementById('nodeYest').style.display = 'none';
+  db.ref('smPlanners/' + stuId + '/' + pid + '/cRead').set(true).catch(function () {});
 }
 
 // 달력에서 특정 날짜로 이동 (null이면 오늘)
@@ -763,38 +814,7 @@ function renderPlanners(data) {
   renderPlannerComments();
 }
 
-function renderPlannerComments() {
-  var todayStr = today();
-  // 어제 날짜
-  var yd = new Date(); yd.setDate(yd.getDate() - 1);
-  var yestStr = yd.getFullYear()+'-'+String(yd.getMonth()+1).padStart(2,'0')+'-'+String(yd.getDate()).padStart(2,'0');
-
-  var items = [];
-  Object.entries(plannerData).forEach(function([pid, p]) {
-    if (p.date === yestStr && p.type === 'done') {
-      items.push({type:'done', label:'어제 ✅ 완료 플래너', comment:p.comment||''});
-    }
-    if (p.date === todayStr && p.type === 'plan') {
-      items.push({type:'plan', label:'오늘 계획 플래너', comment:p.comment||''});
-    }
-  });
-
-  var card = document.getElementById('plannerCommentCard');
-  var content = document.getElementById('plannerCommentContent');
-  card.style.display = '';
-  if (!items.length) {
-    content.innerHTML = '<div class="pc-comment-empty">오늘/어제 제출된 플래너가 없습니다</div>';
-    return;
-  }
-
-  card.style.display = '';
-  content.innerHTML = items.map(function(item) {
-    return '<div class="pc-comment-item ' + item.type + '">'
-      + '<div class="pc-comment-type">' + item.label + '</div>'
-      + '<div class="pc-comment-text">' + (item.comment ? item.comment.split('\n').join('<br>') : '<span style="color:#94a3b8;font-style:italic">⏳ 코멘트 대기 중</span>') + '</div>'
-      + '</div>';
-  }).join('');
-}
+function renderPlannerComments() { /* 코멘트는 타임라인 카드 안에서 표시 */ }
 function changePlanMonth(dir) {
   _planCalMonth += dir;
   if (_planCalMonth > 11) { _planCalMonth = 0; _planCalYear++; }
