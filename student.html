@@ -96,6 +96,11 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
 .tl-state.ok{color:#56A08A}
 .tl-act{margin-top:4px}
 .tl-act-lb{font-size:11.5px;font-weight:700;color:#8B7FD9;padding:0 4px 9px}
+.tl-daynav{display:flex;align-items:center;gap:2px}
+.tl-arrow{border:none;background:none;font-family:inherit;font-size:19px;line-height:1;color:#C4C0DA;
+  cursor:pointer;padding:2px 7px;border-radius:9px;transition:.2s}
+.tl-arrow:hover{color:#8B7FD9;background:rgba(139,127,217,.10)}
+.tl-wrap.off-today .tl-arrow:hover{color:#B4527C;background:rgba(240,166,196,.16)}
 .hw-latest{position:relative}
 .hw-item-date{font-size:11px;color:#8B7FD9;font-weight:700;margin:9px 0 6px;display:flex;align-items:center;gap:6px}
 .hw-item-today{background:#8B7FD9;color:#fff;border-radius:5px;padding:1px 7px;font-size:9.5px;font-weight:700}
@@ -110,8 +115,6 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
 .tl-wrap.off-today .tl-card.sel{background:linear-gradient(160deg,#FFF8FB,#FDEDF4);box-shadow:0 0 0 1.5px #F0A6C4,0 10px 26px -9px rgba(200,100,150,.32)}
 .tl-wrap.off-today .tl-card.sel .tl-cap{color:#B4527C}
 .tl-wrap.off-today .tl-act-lb{color:#B4527C}
-.tl-wrap.off-today .upload-area{border-color:rgba(240,166,196,.55);
-  background:repeating-linear-gradient(180deg,transparent 0 25px,rgba(240,166,196,.14) 25px 26px),linear-gradient(160deg,#FFFBFD,#FDF2F7)}
 .tl-wrap.off-today .upload-btn{background:linear-gradient(135deg,#D4749B,#F0A6C4);box-shadow:0 6px 18px rgba(200,100,150,.28)}
 /* 계획 = 이른 시간(라벤더) · 완료 = 하루 끝(민트) */
 /* 제출 완료 배지 */
@@ -126,23 +129,6 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
 .redo-btn:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(120,105,205,.16);border-color:#A89BEB}
 /* 오늘이 아닌 날짜 = 경고 상태 */
 .pc-title{font-family:'MaruBuri','Noto Sans KR',sans-serif;font-size:16px;background:linear-gradient(135deg,#8B7FD9,#A89BEB);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.upload-area{position:relative;margin:0 0 14px;border:1.5px dashed rgba(139,127,217,.34);border-radius:20px;
-  padding:34px 20px 32px;text-align:center;cursor:pointer;overflow:hidden;transition:.3s cubic-bezier(.34,1.56,.64,1);
-  background:
-    repeating-linear-gradient(180deg,transparent 0 25px,rgba(139,127,217,.10) 25px 26px),
-    linear-gradient(160deg,#FCFBFF,#F6F3FE)}
-.upload-area:after{content:'';position:absolute;top:0;bottom:0;left:26px;width:1.5px;background:rgba(240,166,196,.42)}
-.upload-area:hover{border-color:#A89BEB;transform:translateY(-2px);box-shadow:0 10px 26px rgba(120,105,205,.13)}
-.upload-area:active{transform:translateY(0)}
-.upload-area input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.upload-icon{position:relative;width:52px;height:52px;margin:0 auto 12px;border-radius:17px;
-  background:linear-gradient(140deg,#fff,#F2EFFC);display:flex;align-items:center;justify-content:center;
-  font-size:23px;line-height:1;box-shadow:0 4px 14px rgba(120,105,205,.16),inset 0 1px 0 #fff;
-  transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
-.upload-icon:after{content:'📷'}
-.upload-area:hover .upload-icon{transform:scale(1.07) rotate(-4deg)}
-.upload-text{position:relative;font-size:12px;color:#AAA5C8;line-height:1.65}
-.upload-text strong{display:block;color:#5B4FA8;font-size:14px;font-weight:800;letter-spacing:-.3px;margin-bottom:3px}
 .upload-btn{width:100%;margin:0 0 6px;background:linear-gradient(135deg,#8B7FD9,#A89BEB);color:#fff;border:none;border-radius:16px;padding:15px;letter-spacing:-.2px;box-shadow:0 6px 18px rgba(139,127,217,.28),inset 0 1px 0 rgba(255,255,255,.28);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px}
 .upload-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 26px rgba(139,127,217,.34),inset 0 1px 0 rgba(255,255,255,.28)}
 .upload-btn:active:not(:disabled){transform:translateY(0)}
@@ -267,8 +253,12 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
   <!-- Day timeline -->
   <div class="tl-wrap" id="tlWrap">
     <div class="tl-daybar" id="tlDaybar">
-      <span class="tl-dayname" id="tlDayName"></span>
-      <button class="tl-back" id="tlBack" onclick="jumpToDate(null)">오늘로 돌아가기</button>
+      <div class="tl-daynav">
+        <button class="tl-arrow" onclick="shiftDay(-1)" aria-label="어제">‹</button>
+        <span class="tl-dayname" id="tlDayName"></span>
+        <button class="tl-arrow" onclick="shiftDay(1)" aria-label="내일">›</button>
+      </div>
+      <button class="tl-back" id="tlBack" onclick="jumpToDate(null)">오늘로</button>
     </div>
 
     <div class="tl">
@@ -276,7 +266,7 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
 
       <div class="tl-node">
         <span class="tl-dot" id="dotPlan"></span>
-        <div class="tl-card paper" id="cardPlan" onclick="setType('plan')">
+        <div class="tl-card paper" id="cardPlan" onclick="tapSlot('plan')">
           <div class="tl-cap">MORNING</div>
           <div class="tl-title">계획 플래너</div>
           <div class="tl-state" id="statePlan">확인 중</div>
@@ -294,7 +284,7 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
 
       <div class="tl-node">
         <span class="tl-dot" id="dotDone"></span>
-        <div class="tl-card paper" id="cardDone" onclick="setType('done')">
+        <div class="tl-card paper" id="cardDone" onclick="tapSlot('done')">
           <div class="tl-cap">TONIGHT</div>
           <div class="tl-title">완료 플래너</div>
           <div class="tl-state" id="stateDone">확인 중</div>
@@ -311,11 +301,6 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
       </div>
 
       <div id="uploadWrap">
-        <div class="upload-area" id="uploadArea">
-          <input type="file" id="fileInput" accept="image/*" onchange="onFileSelect(event)">
-          <div class="upload-icon"></div>
-          <div class="upload-text"><strong>사진 찍기 또는 선택</strong>플래너를 촬영하거나 갤러리에서 선택하세요</div>
-        </div>
         <img class="preview-img" id="previewImg">
         <div class="prog-bar" id="progBar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
         <div class="upload-msg" id="uploadMsg"></div>
@@ -323,6 +308,7 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
       </div>
     </div>
     <input type="date" id="planDate" onchange="onPlanDateChange()" style="display:none">
+    <input type="file" id="fileInput" accept="image/*" onchange="onFileSelect(event)" style="display:none">
   </div>
 
   <!-- Planner calendar -->
@@ -567,7 +553,7 @@ function renderPlanSlots() {
     card.className = 'tl-card paper' + (planType === a[0] ? ' sel' : '');
     dot.className = 'tl-dot' + (sub ? ' filled' : '');
     st.className = 'tl-state' + (sub ? ' ok' : '');
-    st.textContent = sub ? ('제출 완료 · ' + fmtTime(sub.ts)) : '아직 안 냈어요';
+    st.textContent = sub ? ('제출 완료 · ' + fmtTime(sub.ts)) : '눌러서 사진 올리기';
   });
 
   var lab = document.getElementById('tlActLb');
@@ -576,6 +562,9 @@ function renderPlanSlots() {
   var sub = findSubmission(date, planType);
   var doneBox = document.getElementById('doneBox');
   var upWrap = document.getElementById('uploadWrap');
+  var act = document.getElementById('tlAct');
+  var staged = !!(document.getElementById('previewImg') || {}).src && document.getElementById('previewImg').style.display !== 'none';
+  if (act) act.style.display = (sub && !_redo) || staged ? 'block' : 'none';
   if (sub && !_redo) {
     doneBox.style.display = 'block';
     upWrap.style.display = 'none';
@@ -589,6 +578,27 @@ function renderPlanSlots() {
     doneBox.style.display = 'none';
     upWrap.style.display = 'block';
   }
+}
+
+// 카드를 누르면 그 슬롯을 선택하고 바로 사진 선택창을 연다
+function tapSlot(t) {
+  var wasSel = (planType === t);
+  var sub = findSubmission(planTargetDate(), t);
+  setType(t);
+  if (sub && !_redo) return;            // 이미 제출됨 -> 사진만 보여줌
+  if (wasSel || !sub) openPicker();
+}
+function openPicker() {
+  var f = document.getElementById('fileInput');
+  if (f) { f.value = ''; f.click(); }
+}
+// 하루 앞뒤로 이동
+function shiftDay(n) {
+  var cur = planTargetDate();
+  var d = new Date(cur + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  var ds = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  jumpToDate(ds === naturalPlanDate(planType) ? null : ds);
 }
 
 // 달력에서 특정 날짜로 이동 (null이면 오늘)
@@ -627,8 +637,14 @@ function onFileSelect(e) {
     const img = document.getElementById('previewImg');
     img.src = ev.target.result;
     img.style.display = 'block';
-    img.style.margin = '0 20px 12px';
-    img.style.width = 'calc(100% - 40px)';
+    img.style.margin = '0 0 14px';
+    img.style.width = '100%';
+    var act = document.getElementById('tlAct');
+    if (act) act.style.display = 'block';
+    var wrap = document.getElementById('uploadWrap');
+    if (wrap) wrap.style.display = 'block';
+    var dbx = document.getElementById('doneBox');
+    if (dbx) dbx.style.display = 'none';
   };
   reader.readAsDataURL(file);
   document.getElementById('uploadBtn').disabled = false;
