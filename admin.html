@@ -1160,6 +1160,8 @@ async function saveTb(){
         if(src.youtubeUrl){
           problems[key].youtubeUrl=src.youtubeUrl;
           problems[key].ytTitle=src.ytTitle||'';
+          if(src.ytAt) problems[key].ytAt=src.ytAt;
+          if(src.title) problems[key].title=src.title;
         }
         if(oldKey!==key) _qKeyMap[oldKey]=key;
       });
@@ -1270,7 +1272,7 @@ async function saveYtLink(){
     if(!sid||!pid){closeYtModal();return;}
     var title=document.getElementById('ytTitleInp').value.trim();
     var url=document.getElementById('ytUrlInp').value.trim();
-    db.ref('smFreeQuestions/'+sid+'/'+pid).update({ytTitle:title,youtubeUrl:url}).then(()=>{
+    db.ref('smFreeQuestions/'+sid+'/'+pid).update({ytTitle:title,youtubeUrl:url,ytAt:url?Date.now():null}).then(()=>{
       closeYtModal();loadTextbookData();
     });
     return;
@@ -1279,12 +1281,15 @@ async function saveYtLink(){
   var probNum=document.getElementById('ytProbNum').value;
   var title=document.getElementById('ytTitleInp').value.trim();
   var url=document.getElementById('ytUrlInp').value.trim();
+  // ytAt: 영상 등록 시각. 학생 쪽 seenAt과 비교해 '새 영상'을 판정한다.
+  var _ytAt = url ? Date.now() : null;
   await db.ref('smTextbooks/'+tbId+'/problems/'+probNum).update({
-    title:title||'', youtubeUrl:url
+    title:title||'', youtubeUrl:url, ytAt:_ytAt
   });
   if(tbSets[tbId]&&tbSets[tbId].problems&&tbSets[tbId].problems[probNum]){
     tbSets[tbId].problems[probNum].title=title;
     tbSets[tbId].problems[probNum].youtubeUrl=url;
+    tbSets[tbId].problems[probNum].ytAt=_ytAt;
   }
   closeYtModal();
   renderTbList();

@@ -450,12 +450,6 @@ function selectTb(tbId){
 function renderGrid(tb){
   var problems=tb.problems||{};
   var nums=Object.keys(problems);
-  // ord 필드가 있으면(신규 JSON 등록 교재) 작성 순서대로 정렬. 없으면 기존 순서 유지(하위 호환)
-  nums.sort(function(a,b){
-    var oa=(problems[a]||{}).ord, ob=(problems[b]||{}).ord;
-    if(oa!=null&&ob!=null) return oa-ob;
-    return 0;
-  });
   activeTbNums=nums;
   var html='';
 
@@ -563,11 +557,30 @@ function toggleProb(num){
 var activeTbNums=[];
 
 var ytSheetNum=null;
+// 영상을 연 시각을 기록. ytAt(등록 시각) > seenAt 이면 '새 영상'으로 본다.
+function markVideoSeen(tbId, num){
+  if(!tbId || !num || !currentStuId) return;
+  db.ref('smTbQuestions/'+tbId+'/'+currentStuId+'/'+num).once('value').then(function(sn){
+    if(sn.val()===null) return;   // 질문 체크가 없으면 기록하지 않음
+    db.ref('smTbSeen/'+currentStuId+'/'+tbId+'/'+num).set(Date.now()).catch(function(){});
+  }).catch(function(){});
+}
+function markFreeQSeen(id){
+  if(!id || !currentStuId) return;
+  db.ref('smFreeQuestions/'+currentStuId+'/'+id+'/seenAt').set(Date.now()).catch(function(){});
+}
+// 새 영상 여부 (등록 시각이 없으면 기존 영상 -> 새것 아님)
+function isNewVideo(ytAt, seenAt){
+  if(!ytAt) return false;
+  return !seenAt || ytAt > seenAt;
+}
+
 function openYtSheet(num){
   var tb=tbData[activeTbId]||{};
   var p=(tb.problems||{})[num]||{};
   if(!p.youtubeUrl) return;
   ytSheetNum=num;
+  markVideoSeen(activeTbId, num);
   var url=p.youtubeUrl;
   var embedUrl=url.replace('watch?v=','embed/').replace('youtu.be/','www.youtube.com/embed/');
   if(embedUrl.includes('?')) embedUrl=embedUrl.split('?')[0];
@@ -677,6 +690,7 @@ function loadFreeQList(){
 function openFreeQDetail(id){
   _freeQDetailId=id;
   var q=_freeQDetailData[id]||{};
+  if(q.youtubeUrl) markFreeQSeen(id);
   document.getElementById('fqDetailTitle').textContent=q.bookName||'';
   document.getElementById('fqDetailInfo').textContent=(q.page||'')+'p · '+(q.probNum||'')+'번';
   var ytWrap=document.getElementById('fqDetailYt');
