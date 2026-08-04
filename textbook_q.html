@@ -496,69 +496,32 @@ function selectTb(tbId){
 function renderGrid(tb){
   var problems=tb.problems||{};
   var nums=Object.keys(problems);
+  // 표시 순서: ord(JSON 작성 순서) 우선, 없으면 숫자/문자 정렬
+  nums.sort(function(a,b){
+    var oa=(problems[a]||{}).ord, ob=(problems[b]||{}).ord;
+    if(oa!=null&&ob!=null) return oa-ob;
+    var na=parseFloat(a), nb=parseFloat(b);
+    if(!isNaN(na)&&!isNaN(nb)&&String(na)===a&&String(nb)===b) return na-nb;
+    return a.localeCompare(b,'ko');
+  });
   activeTbNums=nums;
   var html='';
 
-  // JSON 등록 교재 판별: section 필드가 있으면 섹션 모드
-  var hasSection=nums.some(function(n){return !!(problems[n]&&problems[n].section);});
-
-  if(hasSection){
-    // 섹션별로 그루핑
-    var groups={};
-    var groupOrder=[];
-    nums.forEach(function(n){
-      var p=problems[n]||{};
-      var sec=p.section||'기타';
-      var kind=p.kind||'';
-      var label=sec+(kind?(' · '+kind):'');
-      if(!groups[label]){groups[label]=[];groupOrder.push(label);}
-      groups[label].push(n);
-    });
-    groupOrder.forEach(function(label,gi){
-      var grpNums=groups[label];
-      var qn=grpNums.filter(function(n){return !!myQuestions[n];}).length;
-      var pg=(problems[grpNums[0]]||{}).page||0;
-      var open=qn>0;   // 질문이 있는 단원은 펼친 채로 시작
-      var inner='';
-      grpNums.forEach(function(n){
-        var p=problems[n]||{};
-        inner+=buildCell(n,p,p.num||n);
-      });
-      html+=secBox('g'+gi,label,(pg?pg+'p · ':'')+grpNums.length+'문항'+(qn?' · <b>질문 '+qn+'</b>':''),inner,open);
-    });
+  // 단원과 무관하게 50문항 단위로 끊어서 접이식 구성
+  var CHUNK=50;
+  var disp=function(n){ var p=problems[n]||{}; return p.num||n; };
+  if(nums.length<=CHUNK){
+    var inner='';
+    nums.forEach(function(n){ inner+=buildCell(n,problems[n]||{},disp(n)); });
+    html+='<div class="prob-grid">'+inner+'</div>';
   }else{
-    // 기존 방식 (숫자 번호)
-    nums.sort(function(a,b){
-      var na=parseFloat(a),nb=parseFloat(b);
-      if(!isNaN(na)&&!isNaN(nb)) return na-nb;
-      return a.localeCompare(b,'ko');
-    });
-    var SECTION=50;
-    var numNums=nums.filter(function(n){return !isNaN(parseFloat(n));});
-    var strNums=nums.filter(function(n){return isNaN(parseFloat(n));});
-    if(nums.length>SECTION){
-      var min=parseFloat(numNums[0])||1;
-      var max=parseFloat(numNums[numNums.length-1])||1;
-      for(var s=Math.floor((min-1)/SECTION)*SECTION+1;s<=max;s+=SECTION){
-        var e=s+SECTION-1;
-        var secNums=numNums.filter(function(n){var v=parseFloat(n);return v>=s&&v<=e;});
-        if(!secNums.length) continue;
-        var _lab=s+'~'+Math.min(e,max)+'번';
-        var _qn=secNums.filter(function(n){return !!myQuestions[n];}).length;
-        var _inner='';
-        secNums.forEach(function(n){ _inner+=buildCell(n,problems[n]||{}); });
-        html+=secBox('s'+s,_lab,secNums.length+'문항'+(_qn?' · <b>질문 '+_qn+'</b>':''),_inner,_qn>0);
-      }
-      if(strNums.length){
-        var _oq=strNums.filter(function(n){return !!myQuestions[n];}).length;
-        var _oi='';
-        strNums.forEach(function(num){ _oi+=buildCell(num,problems[num]||{}); });
-        html+=secBox('other','기타',strNums.length+'문항'+(_oq?' · <b>질문 '+_oq+'</b>':''),_oi,_oq>0);
-      }
-    }else{
-      html='<div class="prob-grid">';
-      nums.forEach(function(num){html+=buildCell(num,problems[num]||{});});
-      html+='</div>';
+    for(var i=0;i<nums.length;i+=CHUNK){
+      var part=nums.slice(i,i+CHUNK);
+      var qn=part.filter(function(n){return !!myQuestions[n];}).length;
+      var inner2='';
+      part.forEach(function(n){ inner2+=buildCell(n,problems[n]||{},disp(n)); });
+      var label=disp(part[0])+' ~ '+disp(part[part.length-1]);
+      html+=secBox('c'+i,label,part.length+'문항'+(qn?' · <b>질문 '+qn+'</b>':''),inner2,qn>0);
     }
   }
   document.getElementById('probGrid').innerHTML=html||'<div class="empty-msg">문제가 없습니다</div>';
