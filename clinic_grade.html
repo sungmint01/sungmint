@@ -817,6 +817,7 @@ async function submitGrade(){
       }
     }
     score=score||0;
+    if(maxPts!==null&&earnedPts===null) earnedPts=0;   // 전부 오답이어도 0점 표기
   }
   lastResult={stuAnswers,score,total,wrong,isDirect:_gradeTab==='direct'||_gradeTab==='totalOnly',isTotalOnly:_gradeTab==='totalOnly'};
   try{localStorage.setItem('cgLast_'+currentStuId+'_'+selectedClinicId,JSON.stringify(lastResult));}catch(e){}

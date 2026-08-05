@@ -2180,26 +2180,34 @@ async function adminRegrade(cid,sid){
   const answers=cs.answers||{};
   const nums=Object.keys(answers).map(Number).sort((a,b)=>a-b);
   const maxNum=nums[nums.length-1]||0;
-  var score=0,wrong=[],stuAnswers={};
+  var score=0,wrong=[],stuAnswers={},earnedPts=null,maxPts=null;
+  var _pts=(cs&&cs.points)||{};
   for(var i=1;i<=maxNum;i++){
     var inp=document.getElementById('admEd_'+cid+'_'+sid+'_'+i);
     var val=inp?inp.value.trim():'';
     stuAnswers[i]=val;
     var correct=answers[String(i)]||'';
     if(correct){
-      if(val&&answersEqual(val,correct))score++;
+      var _p=parseFloat(_pts[String(i)]);
+      if(!isNaN(_p)) maxPts=(maxPts||0)+_p;
+      if(val&&answersEqual(val,correct)){
+        score++;
+        if(!isNaN(_p)) earnedPts=(earnedPts||0)+_p;
+      }
       else wrong.push(i);   // 공란도 오답
     }
   }
+  if(maxPts!==null&&earnedPts===null) earnedPts=0;   // 전부 오답이어도 0점 표기
   const total=nums.length;
   const r=(clinicResults[cid]||{})[sid];
   const updated={name:r.name,answers:stuAnswers,score,total,wrong,gradedAt:Date.now()};
+  if(earnedPts!==null){updated.pts=earnedPts;updated.maxPts=maxPts;}
   await db.ref('smClinicResults/'+cid+'/'+sid).set(updated);
   // update session
   const sesSnap=await db.ref('smSessions/'+sid).get();
   const sessions=sesSnap.val()||{};
   const sesEntry=Object.entries(sessions).find(([,s])=>s.cli&&s.cli.startsWith(cs.title));
-  if(sesEntry) await db.ref('smSessions/'+sid+'/'+sesEntry[0]+'/note').set('[클리닉 채점] '+score+'/'+total+'점'+(wrong.length?'\n오답: '+wrong.join(', ')+'번':''));
+  if(sesEntry) await db.ref('smSessions/'+sid+'/'+sesEntry[0]+'/note').set('[클리닉 채점] '+score+'/'+total+(earnedPts!==null?', '+earnedPts+'점':'점')+(wrong.length?'\n오답: '+wrong.join(', ')+'번':''));
   toast(r.name+' 채점 수정 완료');
   document.getElementById('crEdit_'+cid+'_'+sid).style.display='none';
 }
