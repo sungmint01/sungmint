@@ -901,14 +901,14 @@ async function regrade(){
       const _p=parseFloat((selectedClinic.points||{})[String(i)]);
       if(!isNaN(_p)) maxPts=(maxPts||0)+_p;
     }
-    if(val&&correct){
-      if(answersEqual(val,correct)){
+    if(correct){
+      if(val&&answersEqual(val,correct)){
         score++;
         const _p2=parseFloat((selectedClinic.points||{})[String(i)]);
         if(!isNaN(_p2)) earnedPts=(earnedPts||0)+_p2;
         if(inp)inp.className='edit-ans-inp correct';
       }
-      else{wrong.push(i);if(inp)inp.className='edit-ans-inp wrong';}
+      else{wrong.push(i);if(inp)inp.className='edit-ans-inp wrong';}   // 공란도 오답
     }
   }
   if(maxPts!==null&&earnedPts===null) earnedPts=0;

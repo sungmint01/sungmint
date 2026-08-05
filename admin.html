@@ -2186,9 +2186,9 @@ async function adminRegrade(cid,sid){
     var val=inp?inp.value.trim():'';
     stuAnswers[i]=val;
     var correct=answers[String(i)]||'';
-    if(val&&correct){
-      if(answersEqual(val,correct))score++;
-      else wrong.push(i);
+    if(correct){
+      if(val&&answersEqual(val,correct))score++;
+      else wrong.push(i);   // 공란도 오답
     }
   }
   const total=nums.length;
