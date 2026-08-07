@@ -115,6 +115,22 @@ body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,
 .pdf-hint{font-size:11px;color:var(--txt2)}
 .back-link{display:block;text-align:center;margin-top:20px;font-size:11px;color:#8a96b4;text-decoration:none;font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;letter-spacing:1px}
 .back-link:hover{color:var(--txt2)}
+.done-ov{position:fixed;inset:0;background:rgba(45,38,80,.5);backdrop-filter:blur(4px);z-index:9000;
+  display:none;align-items:center;justify-content:center;padding:24px}
+.done-ov.open{display:flex}
+.done-modal{background:#fff;border-radius:24px;padding:30px 24px 22px;width:100%;max-width:330px;text-align:center;
+  box-shadow:0 20px 50px rgba(45,38,80,.35);animation:donePop .35s cubic-bezier(.34,1.56,.64,1)}
+@keyframes donePop{from{opacity:0;transform:scale(.9) translateY(10px)}to{opacity:1;transform:none}}
+.done-check{width:56px;height:56px;margin:0 auto 14px;border-radius:50%;
+  background:linear-gradient(135deg,#9DD9C4,#7FC7AC);color:#fff;font-size:28px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(86,160,138,.38)}
+.done-ttl{font-size:18px;font-weight:800;color:#3D3860;letter-spacing:-.4px}
+.done-desc{font-size:13px;color:#7B76A8;margin-top:7px;line-height:1.6}
+.done-primary{width:100%;margin-top:20px;border:none;border-radius:15px;padding:14px;
+  background:linear-gradient(135deg,#8B7FD9,#A89BEB);color:#fff;font-size:14px;font-weight:700;
+  font-family:inherit;cursor:pointer;box-shadow:0 6px 18px rgba(139,127,217,.30)}
+.done-secondary{width:100%;margin-top:8px;border:none;background:none;color:#AAA5C8;font-size:12.5px;
+  font-weight:600;font-family:inherit;cursor:pointer;padding:8px}
 </style>
   <style>
     @font-face {
@@ -154,6 +170,17 @@ body{background-image:radial-gradient(circle at 12% 8%,rgba(240,166,196,.10) 0%,
   </div>
 
   <!-- Step 1: 학생 이름 -->
+  <!-- 채점 완료 알림 -->
+  <div class="done-ov" id="doneOv" onclick="if(event.target===this)nextStudent()">
+    <div class="done-modal">
+      <div class="done-check">✓</div>
+      <div class="done-ttl" id="doneTtl"></div>
+      <div class="done-desc" id="doneDesc"></div>
+      <button class="done-primary" onclick="nextStudent()">다음 학생 채점하기</button>
+      <button class="done-secondary" onclick="closeDoneOv()">결과 확인 · 수정</button>
+    </div>
+  </div>
+
   <div id="step1">
     <div class="card">
       <div class="card-title">학생 이름 입력</div>
@@ -781,6 +808,7 @@ async function submitGrade(){
     document.getElementById('resultSaved').textContent='✓ 학생 기록에 자동 저장됨';
     document.getElementById('editGrid').innerHTML='<button onclick="backToTextEdit()" style="width:100%;padding:11px;background:#FBFAFF;border:none;border-radius:12px;color:#6B5DC8;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:4px">내용 수정하기</button>';
     setStep(4);
+    showDone(currentStuName, '<b>'+selectedClinic.title+'</b><br>내용 저장 완료');
     return;
   }
   if(_gradeTab==='totalOnly'){
@@ -860,6 +888,10 @@ async function submitGrade(){
   if(_gradeTab!=='direct') buildEditGrid(stuAnswers);
   else document.getElementById('editGrid').innerHTML='<div style="text-align:center;padding:12px;color:#8a96b4;font-size:12px">직접 점수 입력 방식으로 채점되었습니다</div>';
   setStep(4);
+  showDone(currentStuName,
+    '<b>'+selectedClinic.title+'</b><br>'+score+' / '+total+
+    (earnedPts!==null?' · '+earnedPts+'점':'')+
+    (wrong.length?'<br>오답 '+wrong.length+'문항':'<br>모두 정답!'));
 }
 
 function buildEditGrid(stuAnswers){
@@ -952,6 +984,26 @@ function setStepDot(n){
     if(d) d.className='step-dot'+(i<=n?' active':'');
   });
 }
+// 채점 완료 알림
+function showDone(name, desc){
+  document.getElementById('doneTtl').textContent=name+' 채점 완료';
+  document.getElementById('doneDesc').innerHTML=desc;
+  document.getElementById('doneOv').classList.add('open');
+}
+function closeDoneOv(){
+  document.getElementById('doneOv').classList.remove('open');
+}
+// 다음 학생: 이름 입력 화면으로
+function nextStudent(){
+  closeDoneOv();
+  var inp=document.getElementById('stuNameInp');
+  if(inp) inp.value='';
+  var e1=document.getElementById('err1'); if(e1) e1.textContent='';
+  var s1=document.getElementById('sugg1'); if(s1) s1.textContent='';
+  resetAll();
+  if(inp) setTimeout(function(){ inp.focus(); }, 100);
+}
+
 function setStep(n){
   [1,2,3,4].forEach(i=>{
     const el=document.getElementById('step'+i);
