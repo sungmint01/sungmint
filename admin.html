@@ -2174,40 +2174,76 @@ function adminInsertMath(ch){
   inp.focus();
 }
 
+/* ===== 채점 공용 로직 (clinic_grade.html / admin.html 동일 · 수정 시 양쪽 함께 교체) ===== */
+// 채점 규칙 단일 정의: 공란=오답, 배점은 정답 문항만 합산, total=정답이 등록된 문항 수
+function gradeAnswers(answers, inputs, points){
+  answers = answers || {}; inputs = inputs || {}; points = points || {};
+  var nums = Object.keys(answers).map(Number).filter(function(n){return !isNaN(n);}).sort(function(a,b){return a-b;});
+  var maxNum = nums.length ? nums[nums.length-1] : 0;
+  var score = 0, wrong = [], earnedPts = null, maxPts = null, stuAnswers = {};
+  for (var i = 1; i <= maxNum; i++) {
+    var val = String(inputs[i] == null ? '' : inputs[i]).trim();
+    stuAnswers[i] = val;
+    var correct = answers[String(i)] || '';
+    if (!correct) continue;
+    var p = parseFloat(points[String(i)]);
+    if (!isNaN(p)) maxPts = (maxPts || 0) + p;
+    if (val && answersEqual(val, correct)) {
+      score++;
+      if (!isNaN(p)) earnedPts = (earnedPts || 0) + p;
+    } else {
+      wrong.push(i);
+    }
+  }
+  if (maxPts !== null && earnedPts === null) earnedPts = 0;
+  return { score: score, total: nums.length, wrong: wrong,
+           earnedPts: earnedPts, maxPts: maxPts, stuAnswers: stuAnswers };
+}
+// 학생 기록(cli) 한 줄 생성
+function buildCliEntry(title, r){
+  if (r && r.isText) return String(r.text || '');
+  if (!r || r.score === null || r.score === undefined) return title + ', ' + ((r && r.total) || 0) + '문항';
+  return title + ', ' + r.score + '/' + r.total +
+         (r.earnedPts !== null && r.earnedPts !== undefined ? ', ' + r.earnedPts + '점' : '');
+}
+// cli는 여러 클리닉이 줄 단위로 쌓이므로 해당 제목 줄만 교체
+function mergeCliLines(prevCli, title, entry){
+  var lines = (prevCli || '').trim() ? String(prevCli).trim().split('\n') : [];
+  var i = -1;
+  for (var k = 0; k < lines.length; k++) { if (lines[k].indexOf(title) === 0) { i = k; break; } }
+  if (i >= 0) lines[i] = entry; else lines.push(entry);
+  return lines.join('\n');
+}
+/* ===== 채점 공용 로직 끝 ===== */
+
 async function adminRegrade(cid,sid){
   const cs=clinicSets[cid];
   if(!cs)return;
   const answers=cs.answers||{};
   const nums=Object.keys(answers).map(Number).sort((a,b)=>a-b);
   const maxNum=nums[nums.length-1]||0;
-  var score=0,wrong=[],stuAnswers={},earnedPts=null,maxPts=null;
-  var _pts=(cs&&cs.points)||{};
+  const inputs={};
   for(var i=1;i<=maxNum;i++){
     var inp=document.getElementById('admEd_'+cid+'_'+sid+'_'+i);
-    var val=inp?inp.value.trim():'';
-    stuAnswers[i]=val;
-    var correct=answers[String(i)]||'';
-    if(correct){
-      var _p=parseFloat(_pts[String(i)]);
-      if(!isNaN(_p)) maxPts=(maxPts||0)+_p;
-      if(val&&answersEqual(val,correct)){
-        score++;
-        if(!isNaN(_p)) earnedPts=(earnedPts||0)+_p;
-      }
-      else wrong.push(i);   // 공란도 오답
-    }
+    inputs[i]=inp?inp.value.trim():'';
   }
-  if(maxPts!==null&&earnedPts===null) earnedPts=0;   // 전부 오답이어도 0점 표기
-  const total=nums.length;
+  const g=gradeAnswers(answers,inputs,cs.points);
+  const score=g.score, total=g.total, wrong=g.wrong,
+        earnedPts=g.earnedPts, maxPts=g.maxPts, stuAnswers=g.stuAnswers;
   const r=(clinicResults[cid]||{})[sid];
   const updated={name:r.name,answers:stuAnswers,score,total,wrong,gradedAt:Date.now()};
   if(earnedPts!==null){updated.pts=earnedPts;updated.maxPts=maxPts;}
   await db.ref('smClinicResults/'+cid+'/'+sid).set(updated);
-  // update session
+  // 학생 기록(cli)의 해당 클리닉 줄만 교체. note는 '학부모 전달 메모'이므로 건드리지 않는다.
   const sesSnap=await db.ref('smSessions/'+sid).get();
   const sessions=sesSnap.val()||{};
   const sesEntry=Object.entries(sessions).find(([,s])=>s.cli&&s.cli.startsWith(cs.title));
-  if(sesEntry) await db.ref('smSessions/'+sid+'/'+sesEntry[0]+'/note').set('[클리닉 채점] '+score+'/'+total+(earnedPts!==null?', '+earnedPts+'점':'점')+(wrong.length?'\n오답: '+wrong.join(', ')+'번':''));
+  if(sesEntry){
+    const entry=buildCliEntry(cs.title,{score:score,total:total,earnedPts:earnedPts});
+    const fresh=await db.ref('smSessions/'+sid+'/'+sesEntry[0]+'/cli').get();
+    const merged=mergeCliLines(fresh.val()||'',cs.title,entry);
+    await db.ref('smSessions/'+sid+'/'+sesEntry[0]).update({cli:merged,upd:Date.now()});
+  }
   toast(r.name+' 채점 수정 완료');
   document.getElementById('crEdit_'+cid+'_'+sid).style.display='none';
 }
@@ -2239,9 +2275,7 @@ async function applyClinicResultsToSessions(cid){
     const sesData = snap.val()||{};
     const sesList = Object.entries(sesData);
     if(!sesList.length) continue; // 세션 없으면 건너뜀 (새 세션 생성 안 함)
-    const newEntry = (r.score===null||r.score===undefined)
-      ? cs.title+', '+r.total+'문항'
-      : cs.title+', '+r.score+'/'+r.total+((r.pts!==null&&r.pts!==undefined)?', '+r.pts+'점':'');
+    const newEntry = buildCliEntry(cs.title,{score:r.score,total:r.total,earnedPts:r.pts});
     // 우선순위: ①이미 이 클리닉 cli 있는 세션 ②cli가 있는 세션(다른 클리닉) ③클리닉 날짜 세션(hwC) ④클리닉 날짜 세션 ⑤가장 최근
     const sortedSes = sesList.slice().sort(([,a],[,b])=>((b.upd||b.at||0)-(a.upd||a.at||0)));
     let target =
