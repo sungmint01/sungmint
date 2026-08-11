@@ -365,6 +365,15 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
           <div class="tl-cmt" id="cmtDone"></div>
         </div>
       </div>
+
+      <div class="tl-node" id="nodeNext">
+        <span class="tl-dot" id="dotNext"></span>
+        <div class="tl-card paper" id="cardNext" onclick="tapSlot('next')">
+          <div class="tl-cap">TOMORROW</div>
+          <div class="tl-title" id="nextTitle">내일 계획 플래너</div>
+          <div class="tl-state" id="stateNext">확인 중</div>
+        </div>
+      </div>
     </div>
 
     <div class="tl-act" id="tlAct">
@@ -382,7 +391,7 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
         <button class="upload-btn" id="uploadBtn" onclick="uploadPlanner()" disabled>플래너 제출하기</button>
       </div>
     </div>
-    <input type="date" id="planDate" onchange="onPlanDateChange()" style="display:none">
+    <input type="date" id="planDate" style="display:none">
     <input type="file" id="fileInput" accept="image/*,.heic,.heif" onchange="onFileSelect(event)"
       style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;left:-9999px">
   </div>
@@ -431,8 +440,8 @@ function today(){
 }
 // 계획 플래너: 오후 10시 이후 → 다음날
 function todayForPlan(){
+  // 내일 계획은 전용 노드에서 올리므로 계획 플래너는 항상 '오늘'
   const d=new Date();
-  if(d.getHours()>=22) d.setDate(d.getDate()+1);
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 // 완료 플래너: 새벽 4시 기준
@@ -574,26 +583,21 @@ function renderHomework() {
 
 // ── Planner upload ──
 // 직접 고른 날짜는 그날 안에서는 유지하고, 날이 바뀌면 자동으로 오늘로 되돌린다
-let _pdTouched = false, _pdDay = null;
-function naturalPlanDate(t) { return (t === 'done') ? todayForDone() : todayForPlan(); }
-function realDayKey() { const d = new Date(); return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); }
-
-function onPlanDateChange() {
-  const v = document.getElementById('planDate').value;
-  _pdTouched = !!v && v !== naturalPlanDate(planType);
-  _pdDay = realDayKey();
-  _redo = false;
-  renderPlanSlots();
-}
-
 function updatePlanDateNotice() { renderPlanSlots(); }
 
 var _planAll = {}, _redo = false;
 
-function planTargetDate() {
-  var v = (document.getElementById('planDate') || {}).value || '';
-  return v || naturalPlanDate(planType);
+// _baseDate: 타임라인이 보여주는 날 (null이면 오늘) / planDate: 실제로 올릴 날
+var _baseDate = null, _selSlot = 'plan';
+function addDays(ds, n) {
+  var d = new Date(ds + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
+function baseDate() { return _baseDate || todayForPlan(); }
+function slotDate(slot) { return slot === 'next' ? addDays(baseDate(), 1) : baseDate(); }
+function slotType(slot) { return slot === 'done' ? 'done' : 'plan'; }
+function planTargetDate() { return slotDate(_selSlot); }
 // 해당 날짜·유형의 제출 기록 (가장 최근 것)
 function findSubmission(date, type) {
   var best = null;
@@ -674,24 +678,34 @@ function renderHeaderStats(){
   }
 }
 
+var WD = ['일','월','화','수','목','금','토'];
+function fmtDay(ds) {
+  var d = new Date(ds + 'T00:00:00');
+  return (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + WD[d.getDay()] + ')';
+}
 function renderPlanSlots() {
-  var date = planTargetDate();
-  var nat = naturalPlanDate(planType);
+  var base = baseDate();
+  var isToday = (base === todayForPlan());
   var wrap = document.getElementById('tlWrap');
-  var d = new Date(date + 'T00:00:00');
-  var wd = ['일','월','화','수','목','금','토'][d.getDay()] || '';
-  var isToday = (date === nat);
-  document.getElementById('tlDayName').textContent =
-    (isToday ? '오늘 · ' : '') + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + wd + ')';
+  document.getElementById('tlDayName').textContent = (isToday ? '오늘 · ' : '') + fmtDay(base);
   wrap.className = 'tl-wrap' + (isToday ? '' : ' off-today');
 
-  [['plan','cardPlan','statePlan','dotPlan'],['done','cardDone','stateDone','dotDone']].forEach(function (a) {
-    var sub = findSubmission(date, a[0]);
+  // 내일 계획 노드는 오늘 화면에서만
+  var nn = document.getElementById('nodeNext');
+  if (nn) nn.style.display = isToday ? '' : 'none';
+  var ntl = document.getElementById('nextTitle');
+  if (ntl) ntl.textContent = fmtDay(addDays(base, 1)) + ' 계획 플래너';
+
+  [['plan','cardPlan','statePlan','dotPlan'],
+   ['done','cardDone','stateDone','dotDone'],
+   ['next','cardNext','stateNext','dotNext']].forEach(function (a) {
+    var slot = a[0];
+    var sub = findSubmission(slotDate(slot), slotType(slot));
     var card = document.getElementById(a[1]);
     var st = document.getElementById(a[2]);
     var dot = document.getElementById(a[3]);
     if (!card || !st || !dot) return;
-    card.className = 'tl-card paper' + (planType === a[0] ? ' sel' : '');
+    card.className = 'tl-card paper' + (_selSlot === slot ? ' sel' : '');
     dot.className = 'tl-dot' + (sub ? ' filled' : '');
     st.className = 'tl-state' + (sub ? ' ok' : '');
     st.textContent = sub ? ('제출 완료 · ' + fmtTime(sub.ts)) : '눌러서 사진 올리기';
@@ -699,7 +713,7 @@ function renderPlanSlots() {
 
   // 카드 안 코멘트
   [['plan','cmtPlan'],['done','cmtDone']].forEach(function (a) {
-    var sub = findSubmission(date, a[0]);
+    var sub = findSubmission(baseDate(), a[0]);
     var el = document.getElementById(a[1]);
     if (!el) return;
     if (!sub) { el.innerHTML = ''; el.style.display = 'none'; return; }
@@ -713,7 +727,7 @@ function renderPlanSlots() {
   renderHeaderStats();
   // 헤더 진행 표시 (오늘 기준)
   (function () {
-    var nd = naturalPlanDate('plan');
+    var nd = todayForPlan();
     var a = !!findSubmission(nd, 'plan'), b = !!findSubmission(nd, 'done');
     var ep = document.getElementById('hprogPlan'), ed = document.getElementById('hprogDone');
     if (ep) ep.className = 'hdr-prog-seg' + (a ? ' on' : '');
@@ -723,9 +737,9 @@ function renderPlanSlots() {
   })();
 
   var lab = document.getElementById('tlActLb');
-  if (lab) lab.textContent = (planType === 'done' ? '완료' : '계획') + ' 플래너 ' + (isToday ? '' : '· ' + date);
+  if (lab) lab.textContent = (_selSlot === 'done' ? '완료' : '계획') + ' 플래너 · ' + fmtDay(planTargetDate());
 
-  var sub = findSubmission(date, planType);
+  var sub = findSubmission(planTargetDate(), planType);
   var doneBox = document.getElementById('doneBox');
   var upWrap = document.getElementById('uploadWrap');
   var act = document.getElementById('tlAct');
@@ -747,13 +761,22 @@ function renderPlanSlots() {
 }
 
 // 카드를 누르면 그 슬롯을 선택하고 바로 사진 선택창을 연다
-function tapSlot(t) {
-  var wasSel = (planType === t);
-  var sub = findSubmission(planTargetDate(), t);
-  setType(t);
-  if (sub && !_redo) return;            // 이미 제출됨 -> 사진만 보여줌
+function tapSlot(slot) {
+  var wasSel = (_selSlot === slot);
+  var sub = findSubmission(slotDate(slot), slotType(slot));
+  selectSlot(slot);
+  if (sub && !_redo) return;          // 이미 제출됨 -> 사진만 보여줌
   if (wasSel || !sub) openPicker();
 }
+function selectSlot(slot) {
+  _selSlot = slot;
+  planType = slotType(slot);
+  _redo = false;
+  var inp = document.getElementById('planDate');
+  if (inp) inp.value = slotDate(slot);
+  renderPlanSlots();
+}
+function setType(t) { selectSlot(t); }
 function openPicker() {
   var f = document.getElementById('fileInput');
   if (!f) return;
@@ -761,13 +784,10 @@ function openPicker() {
   f.removeAttribute('capture'); // 카메라 전용으로 잠기지 않게
   f.click();
 }
-// 하루 앞뒤로 이동
+// 하루 앞뒤로 이동 (오늘로 돌아오면 기준 해제)
 function shiftDay(n) {
-  var cur = planTargetDate();
-  var d = new Date(cur + 'T00:00:00');
-  d.setDate(d.getDate() + n);
-  var ds = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-  jumpToDate(ds === naturalPlanDate(planType) ? null : ds);
+  var ds = addDays(baseDate(), n);
+  jumpToDate(ds === todayForPlan() ? null : ds);
 }
 
 function esc(t) {
@@ -778,12 +798,11 @@ var _yestPid = null;
 function renderYesterdayNode() {
   var node = document.getElementById('nodeYest');
   if (!node) return;
-  var nat = naturalPlanDate('plan');
-  var d = new Date(nat + 'T00:00:00'); d.setDate(d.getDate() - 1);
-  var yest = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  var nat = todayForPlan();
+  var yest = addDays(nat, -1);
   var sub = findSubmission(yest, 'done');
   // 오늘 화면에서, 어제 완료 코멘트가 있고, 아직 안 읽었을 때만
-  var show = (planTargetDate() === nat) && sub && sub.comment && !sub.cRead;
+  var show = (baseDate() === nat) && sub && sub.comment && !sub.cRead;
   node.style.display = show ? 'block' : 'none';
   if (!show) { _yestPid = null; return; }
   _yestPid = sub.pid;
@@ -801,29 +820,13 @@ function markCmtRead(e) {
 // 달력에서 특정 날짜로 이동 (null이면 오늘)
 function jumpToDate(ds) {
   _redo = false;
-  if (!ds) {
-    _pdTouched = false;
-    document.getElementById('planDate').value = naturalPlanDate(planType);
-  } else {
-    _pdTouched = true;
-    _pdDay = realDayKey();
-    document.getElementById('planDate').value = ds;
-  }
-  renderPlanSlots();
+  _baseDate = ds || null;
+  selectSlot('plan');
   var w = document.getElementById('tlWrap');
   if (w) w.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function startRedo() { _redo = true; renderPlanSlots(); }
-function setType(t) {
-  planType = t;
-  _redo = false;
-  if (!(_pdTouched && _pdDay === realDayKey())) {
-    _pdTouched = false;
-    document.getElementById('planDate').value = naturalPlanDate(t);
-  }
-  renderPlanSlots();
-}
 
 function onFileSelect(e) {
   const file = e.target.files[0];
@@ -857,10 +860,10 @@ async function uploadPlanner() {
   if (!selectedFile) return;
   const date = document.getElementById('planDate').value;
   if (!date) { alert('날짜를 선택하세요'); return; }
-  const _nat = naturalPlanDate(planType);
   const _lab = (planType === 'done' ? '완료' : '계획');
-  if (date !== _nat) {
-    if (!confirm(date + ' 날짜의 ' + _lab + ' 플래너로 제출합니다.\n오늘은 ' + _nat + '입니다. 계속할까요?')) return;
+  const _t = todayForPlan();
+  if (date !== _t && date !== addDays(_t, 1) && date !== todayForDone()) {
+    if (!confirm(fmtDay(date) + ' ' + _lab + ' 플래너로 제출합니다.\n계속할까요?')) return;
   }
   const _prev = findSubmission(date, planType);
   if (_prev) {
@@ -1029,13 +1032,15 @@ function renderPlanCal() {
     cell.innerHTML = '<span class="plan-cal-day-num">' + d + '</span>'
       + (dotsHtml ? '<div class="plan-cal-dots">' + dotsHtml + '</div>' : '');
     var od4pDay2 = od4pData[ds] || [];
-    if (plans.length || od4pDay2.length) {
-      cell.style.cursor = 'pointer';
-      (function(date, ps) {
-        cell.addEventListener('click', function() { openPlanDetail(date, ps); });
-        cell.dataset.d = date;
-      })(ds, plans);
-    }
+    cell.style.cursor = 'pointer';
+    (function(date, ps, hasOd) {
+      cell.addEventListener('click', function() {
+        // 기록이 있으면 상세, 없으면 바로 그날 타임라인으로 이동해 제출
+        if (ps.length || hasOd) openPlanDetail(date, ps);
+        else jumpToDate(date === todayForPlan() ? null : date);
+      });
+      cell.dataset.d = date;
+    })(ds, plans, od4pDay2.length > 0);
     grid.appendChild(cell);
   }
   var total = firstDay + daysInMonth;
