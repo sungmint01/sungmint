@@ -61,6 +61,31 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
 .hdr-prog-seg{flex:1;height:4px;border-radius:99px;background:rgba(255,255,255,.22);transition:background .35s ease}
 .hdr-prog-seg.on{background:#9DD9C4;box-shadow:0 0 8px rgba(157,217,196,.5)}
 .hdr-prog-txt{font-size:11px;color:rgba(255,255,255,.62);margin-top:8px;font-variant-numeric:tabular-nums}
+.hdr-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+/* 숙제온도 */
+.hdr-temp{flex-shrink:0;text-align:center;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14);
+  backdrop-filter:blur(8px);border-radius:15px;padding:9px 11px 8px}
+.hdr-temp-lb{font-size:8.5px;font-weight:700;color:rgba(255,255,255,.72);letter-spacing:.3px;margin-bottom:6px}
+.hdr-temp-tube{position:relative;width:17px;height:46px;margin:0 auto;background:rgba(255,255,255,.18);
+  border-radius:99px;overflow:hidden}
+.hdr-temp-fill{position:absolute;left:0;right:0;bottom:0;height:0;border-radius:99px 99px 0 0;
+  background:linear-gradient(180deg,#E9C6F0,#F0A6C4);transition:height .6s cubic-bezier(.34,1.4,.64,1)}
+.hdr-temp-bulb{width:21px;height:21px;margin:-6px auto 0;border-radius:50%;
+  background:linear-gradient(140deg,#F0A6C4,#DE8FAC);box-shadow:0 2px 7px rgba(200,100,150,.35)}
+.hdr-temp-txt{font-size:9px;font-weight:800;color:#FCE7F0;margin-top:5px;letter-spacing:-.2px}
+/* 이번 달 지표 */
+.hdr-stats{display:flex;gap:16px;margin-top:14px;padding-top:13px;border-top:1px solid rgba(255,255,255,.14)}
+.hdr-stat{display:flex;flex-direction:column}
+.hs-lb{font-size:9px;color:rgba(255,255,255,.6)}
+.hs-v{font-size:17px;font-weight:800;color:#fff;margin-top:1px;letter-spacing:-.4px;font-variant-numeric:tabular-nums}
+.hs-v span{font-size:10px;font-weight:600;color:rgba(255,255,255,.6);margin-left:1px}
+/* 한 달 제출 잔디 */
+.hdr-grass{display:grid;gap:1.5px;margin-top:11px}
+.hdr-grass i{aspect-ratio:1;border-radius:1.5px;background:rgba(255,255,255,.12);display:block}
+.hdr-grass i.one{background:rgba(255,255,255,.45)}
+.hdr-grass i.both{background:#9DD9C4}
+.hdr-grass i.future{background:rgba(255,255,255,.28)}
+.hdr-grass-lb{font-size:8.5px;color:rgba(255,255,255,.45);margin-top:6px;font-variant-numeric:tabular-nums}
 .logout-btn{position:absolute;top:14px;right:16px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);font-size:11px;border-radius:8px;padding:5px 10px;cursor:pointer;font-family:inherit}
 
 /* Homework card (1 week) */
@@ -258,14 +283,33 @@ body{font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;background
 <div id="app">
   <div class="hdr">
     <button class="logout-btn" onclick="logout()">로그아웃</button>
-    <div class="hdr-badge">Student</div>
-    <div class="hdr-name" id="stuName"></div>
-    <div class="hdr-sub" id="stuSub"></div>
+    <div class="hdr-top">
+      <div>
+        <div class="hdr-badge">Student</div>
+        <div class="hdr-name" id="stuName"></div>
+        <div class="hdr-sub" id="stuSub"></div>
+      </div>
+      <div class="hdr-temp" id="hdrTemp" style="display:none">
+        <div class="hdr-temp-lb">숙제온도</div>
+        <div class="hdr-temp-tube"><div class="hdr-temp-fill" id="hTempFill"></div></div>
+        <div class="hdr-temp-bulb"></div>
+        <div class="hdr-temp-txt" id="hTempTxt"></div>
+      </div>
+    </div>
+
     <div class="hdr-prog">
       <div class="hdr-prog-seg" id="hprogPlan"></div>
       <div class="hdr-prog-seg" id="hprogDone"></div>
     </div>
     <div class="hdr-prog-txt" id="hprogTxt"></div>
+
+    <div class="hdr-stats">
+      <div class="hdr-stat"><span class="hs-lb">이번 달 계획</span><span class="hs-v" id="hsPlan">-</span></div>
+      <div class="hdr-stat"><span class="hs-lb">완료</span><span class="hs-v" id="hsDone">-</span></div>
+      <div class="hdr-stat"><span class="hs-lb">코멘트</span><span class="hs-v" id="hsCmt">-</span></div>
+    </div>
+    <div class="hdr-grass" id="hdrGrass"></div>
+    <div class="hdr-grass-lb" id="hdrGrassLb"></div>
   </div>
 
   <!-- 플래너 코멘트 -->
@@ -448,6 +492,7 @@ function showApp() {
   db.ref(`smSessions/${stuId}`).on('value', s => {
     sessions = s.val() || {};
     renderHomework();
+    renderHeaderStats();
   });
   // Load planners
   db.ref(`smPlanners/${stuId}`).on('value', s => {
@@ -565,6 +610,70 @@ function fmtTime(ts) {
   var d = new Date(ts);
   return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
 }
+// 숙제온도: 최근 5회 별점 평균 (0=안함 제외)
+var TEMP_LV=[[4.5,'아주 뜨거워요'],[3.5,'잘 하고 있어요'],[2.5,'따뜻해지는 중'],[1.5,'조금씩 올려봐요'],[0,'이제 시작이에요']];
+function calcTemp(){
+  var arr=Object.values(sessions||{})
+    .filter(function(r){ return r && r.eval != null && r.eval > 0; })
+    .sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); })
+    .slice(0,5);
+  if(!arr.length) return null;
+  var avg=arr.reduce(function(a,r){ return a + r.eval; },0)/arr.length;
+  var lv=TEMP_LV.find(function(l){ return avg>=l[0]; });
+  return { pct: Math.round(avg/5*100), txt: lv[1] };
+}
+// 헤더의 이번 달 지표 + 한 달 잔디
+function renderHeaderStats(){
+  var now=new Date(), y=now.getFullYear(), m=now.getMonth();
+  var days=new Date(y,m+1,0).getDate(), todayD=now.getDate();
+  var pad=function(n){ return String(n).padStart(2,'0'); };
+  var pre=y+'-'+pad(m+1)+'-';
+
+  // 날짜별 제출 유형 집계
+  var byDay={};
+  Object.values(_planAll||{}).forEach(function(p){
+    if(!p||!p.date||p.date.indexOf(pre)!==0) return;
+    var d=parseInt(p.date.slice(8),10);
+    if(!byDay[d]) byDay[d]={};
+    byDay[d][p.type]=1;
+  });
+  var nPlan=0,nDone=0;
+  Object.keys(byDay).forEach(function(d){
+    if(byDay[d].plan) nPlan++;
+    if(byDay[d].done) nDone++;
+  });
+  var nCmt=Object.values(_planAll||{}).filter(function(p){
+    return p && p.date && p.date.indexOf(pre)===0 && p.comment;
+  }).length;
+
+  var set=function(id,v,u){ var e=document.getElementById(id); if(e) e.innerHTML=v+'<span>'+u+'</span>'; };
+  set('hsPlan',nPlan,'일'); set('hsDone',nDone,'일'); set('hsCmt',nCmt,'개');
+
+  var g=document.getElementById('hdrGrass');
+  if(g){
+    g.style.gridTemplateColumns='repeat('+days+',1fr)';
+    var h='';
+    for(var d=1;d<=days;d++){
+      var v=byDay[d]||{};
+      var cls = d>todayD ? 'future' : (v.plan&&v.done ? 'both' : (v.plan||v.done ? 'one' : ''));
+      h+='<i class="'+cls+'"></i>';
+    }
+    g.innerHTML=h;
+  }
+  var lb=document.getElementById('hdrGrassLb');
+  if(lb) lb.textContent=(m+1)+'월 1일 → '+days+'일';
+
+  var t=calcTemp(), box=document.getElementById('hdrTemp');
+  if(box){
+    if(!t){ box.style.display='none'; }
+    else{
+      box.style.display='';
+      document.getElementById('hTempFill').style.height=Math.max(6,t.pct)+'%';
+      document.getElementById('hTempTxt').textContent=t.txt;
+    }
+  }
+}
+
 function renderPlanSlots() {
   var date = planTargetDate();
   var nat = naturalPlanDate(planType);
@@ -601,6 +710,7 @@ function renderPlanSlots() {
   });
   renderYesterdayNode();
 
+  renderHeaderStats();
   // 헤더 진행 표시 (오늘 기준)
   (function () {
     var nd = naturalPlanDate('plan');
