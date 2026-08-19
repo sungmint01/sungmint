@@ -911,18 +911,26 @@ async function submitGrade(){
     });
   }
   // Show result
-  document.getElementById('resultName').textContent=currentStuName;
-  document.getElementById('resultScore').textContent=score;
-  document.getElementById('resultTotal').textContent='/ '+total+' 점';
-  document.getElementById('resultWrong').innerHTML=(wrong.length?'<div class="result-wrong">❌ 오답: '+wrong.join('번, ')+'번</div>':'<div class="result-ok">모두 정답!</div>')+buildOmokHtml(stuAnswers,selectedClinic.answers);
-  document.getElementById('resultSaved').textContent='✓ 학생 기록에 자동 저장됨';
-  if(_gradeTab!=='direct') buildEditGrid(stuAnswers);
-  else document.getElementById('editGrid').innerHTML='<div style="text-align:center;padding:12px;color:#8a96b4;font-size:12px">직접 점수 입력 방식으로 채점되었습니다</div>';
-  setStep(4);
+  // 결과 화면 표시 (여기서 오류가 나도 완료 안내는 반드시 뜨도록 분리)
+  var _noScore=(score===null||score===undefined);
+  var _sum=_noScore ? (total+'문항') : (score+' / '+total+(earnedPts!==null?' · '+earnedPts+'점':''));
+  try{
+    document.getElementById('resultName').textContent=currentStuName;
+    document.getElementById('resultScore').textContent=_noScore?'✅':score;
+    document.getElementById('resultTotal').textContent=_noScore?(total+'문항 기록됨'):('/ '+total+' 점');
+    var _hasAns=Object.keys(selectedClinic.answers||{}).length>0;
+    document.getElementById('resultWrong').innerHTML=
+      _hasAns
+        ? ((wrong.length?'<div class="result-wrong">❌ 오답: '+wrong.join('번, ')+'번</div>':'<div class="result-ok">모두 정답!</div>')+buildOmokHtml(stuAnswers,selectedClinic.answers))
+        : '';
+    document.getElementById('resultSaved').textContent='✓ 학생 기록에 자동 저장됨';
+    if(_gradeTab!=='direct'&&_gradeTab!=='totalOnly'&&_hasAns) buildEditGrid(stuAnswers);
+    else document.getElementById('editGrid').innerHTML='<div style="text-align:center;padding:12px;color:#8a96b4;font-size:12px">개수 입력 방식으로 채점되었습니다</div>';
+    setStep(4);
+  }catch(e){ try{setStep(4);}catch(e2){} }
   showDone(currentStuName,
-    '<b>'+selectedClinic.title+'</b><br>'+score+' / '+total+
-    (earnedPts!==null?' · '+earnedPts+'점':'')+
-    (wrong.length?'<br>오답 '+wrong.length+'문항':'<br>모두 정답!'));
+    '<b>'+selectedClinic.title+'</b><br>'+_sum+
+    (wrong.length?'<br>오답 '+wrong.length+'문항':''));
 }
 
 function buildEditGrid(stuAnswers){
